@@ -155,6 +155,21 @@ export interface Alert {
   created_at: string;
 }
 
+export type NotificationType = "info" | "success" | "warning" | "error" | "welcome";
+
+export interface Notification {
+  id: string;
+  user_id: string;
+  title: string;
+  message: string;
+  type: NotificationType;
+  icon: string | null;
+  is_read: boolean;
+  action_url: string | null;
+  created_at: string;
+  read_at: string | null;
+}
+
 export interface AIConversation {
   id: string;
   user_id: string;

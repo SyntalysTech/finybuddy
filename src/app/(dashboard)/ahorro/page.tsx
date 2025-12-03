@@ -45,7 +45,7 @@ interface SavingsContribution {
   id: string;
   savings_goal_id: string;
   amount: number;
-  note: string | null;
+  notes: string | null;
   contribution_date: string;
   created_at: string;
 }
@@ -532,8 +532,8 @@ export default function AhorroPage() {
                                     <p className="text-sm font-medium text-[var(--success)]">
                                       +{formatCurrency(contrib.amount)}
                                     </p>
-                                    {contrib.note && (
-                                      <p className="text-xs text-[var(--brand-gray)]">{contrib.note}</p>
+                                    {contrib.notes && (
+                                      <p className="text-xs text-[var(--brand-gray)]">{contrib.notes}</p>
                                     )}
                                   </div>
                                 </div>
@@ -934,7 +934,7 @@ function ContributionModal({
         .insert({
           savings_goal_id: goal.id,
           amount: parseFloat(amount),
-          note: note.trim() || null,
+          notes: note.trim() || null,
           contribution_date: contributionDate,
         });
 

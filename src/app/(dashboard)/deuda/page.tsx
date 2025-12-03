@@ -51,7 +51,7 @@ interface DebtPayment {
   id: string;
   debt_id: string;
   amount: number;
-  note: string | null;
+  notes: string | null;
   payment_date: string;
   created_at: string;
 }
@@ -540,8 +540,8 @@ export default function DeudaPage() {
                                     <p className="text-sm font-medium text-[var(--success)]">
                                       -{formatCurrency(payment.amount)}
                                     </p>
-                                    {payment.note && (
-                                      <p className="text-xs text-[var(--brand-gray)]">{payment.note}</p>
+                                    {payment.notes && (
+                                      <p className="text-xs text-[var(--brand-gray)]">{payment.notes}</p>
                                     )}
                                   </div>
                                 </div>
@@ -992,7 +992,7 @@ function PaymentModal({
         .insert({
           debt_id: debt.id,
           amount: parseFloat(amount),
-          note: note.trim() || null,
+          notes: note.trim() || null,
           payment_date: paymentDate,
         });
 
