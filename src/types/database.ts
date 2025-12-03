@@ -261,3 +261,18 @@ export interface DebtsSummary {
   overall_progress: number;
   total_monthly_payment: number;
 }
+
+// Learning Module
+export type ExperienceLevel = "beginner" | "intermediate" | "advanced";
+
+export interface LearningProgress {
+  id: string;
+  user_id: string;
+  experience_level: ExperienceLevel;
+  started_at: string;
+  current_week: number;
+  completed_lessons: string[];
+  last_activity_at: string;
+  created_at: string;
+  updated_at: string;
+}
