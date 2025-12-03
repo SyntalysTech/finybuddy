@@ -15,8 +15,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "ElevenLabs API key not configured" }, { status: 500 });
     }
 
+    // Use streaming endpoint for faster response
     const response = await fetch(
-      `https://api.elevenlabs.io/v1/text-to-speech/${VOICE_ID}`,
+      `https://api.elevenlabs.io/v1/text-to-speech/${VOICE_ID}/stream`,
       {
         method: "POST",
         headers: {
@@ -26,13 +27,14 @@ export async function POST(request: NextRequest) {
         },
         body: JSON.stringify({
           text,
-          model_id: "eleven_multilingual_v2",
+          model_id: "eleven_turbo_v2_5",
           voice_settings: {
             stability: 0.5,
             similarity_boost: 0.75,
-            style: 0.5,
+            style: 0.0,
             use_speaker_boost: true,
           },
+          optimize_streaming_latency: 4,
         }),
       }
     );
@@ -43,12 +45,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Failed to generate audio" }, { status: 500 });
     }
 
-    const audioBuffer = await response.arrayBuffer();
-
-    return new NextResponse(audioBuffer, {
+    // Stream the response directly
+    return new NextResponse(response.body, {
       headers: {
         "Content-Type": "audio/mpeg",
-        "Content-Length": audioBuffer.byteLength.toString(),
+        "Transfer-Encoding": "chunked",
       },
     });
   } catch (error) {
