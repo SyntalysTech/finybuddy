@@ -197,7 +197,7 @@ export default function ChatPage() {
                     {message.role === "user" ? (
                       <p className="text-white">{message.content}</p>
                     ) : (
-                      <div className="prose prose-sm max-w-none dark:prose-invert prose-p:my-2 prose-ul:my-2 prose-ol:my-2 prose-li:my-0.5 prose-strong:text-[var(--foreground)] prose-headings:text-[var(--foreground)]">
+                      <div className="prose prose-sm max-w-none dark:prose-invert prose-p:my-3 prose-ul:my-3 prose-ol:my-3 prose-li:my-1 prose-strong:text-[var(--brand-cyan)] prose-strong:font-semibold prose-headings:text-[var(--foreground)] prose-headings:mt-4 prose-headings:mb-2 [&>p]:leading-relaxed">
                         <ReactMarkdown>{message.content}</ReactMarkdown>
                       </div>
                     )}
