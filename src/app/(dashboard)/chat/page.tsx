@@ -1,11 +1,11 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import Image from "next/image";
 import Header from "@/components/layout/Header";
 import { createClient } from "@/lib/supabase/client";
 import {
   Send,
-  Bot,
   User,
   Loader2,
   Sparkles,
@@ -129,8 +129,13 @@ export default function ChatPage() {
           {messages.length === 0 ? (
             // Welcome screen
             <div className="h-full flex flex-col items-center justify-center max-w-2xl mx-auto text-center">
-              <div className="w-20 h-20 rounded-full gradient-brand flex items-center justify-center mb-6">
-                <Bot className="w-10 h-10 text-white" />
+              <div className="w-24 h-24 relative mb-6">
+                <Image
+                  src="/assets/finybuddy-mascot.png"
+                  alt="FinyBot"
+                  fill
+                  className="object-contain"
+                />
               </div>
               <h2 className="text-2xl font-bold mb-3">¡Hola! Soy FinyBot</h2>
               <p className="text-[var(--brand-gray)] mb-8">
@@ -165,19 +170,20 @@ export default function ChatPage() {
                   className={`flex gap-4 ${message.role === "user" ? "flex-row-reverse" : ""}`}
                 >
                   {/* Avatar */}
-                  <div
-                    className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${
-                      message.role === "user"
-                        ? "bg-[var(--brand-purple)]"
-                        : "gradient-brand"
-                    }`}
-                  >
-                    {message.role === "user" ? (
+                  {message.role === "user" ? (
+                    <div className="w-10 h-10 rounded-full flex items-center justify-center shrink-0 bg-[var(--brand-purple)]">
                       <User className="w-5 h-5 text-white" />
-                    ) : (
-                      <Bot className="w-5 h-5 text-white" />
-                    )}
-                  </div>
+                    </div>
+                  ) : (
+                    <div className="w-10 h-10 relative shrink-0">
+                      <Image
+                        src="/assets/finybuddy-mascot.png"
+                        alt="FinyBot"
+                        fill
+                        className="object-contain"
+                      />
+                    </div>
+                  )}
 
                   {/* Message content */}
                   <div
@@ -201,8 +207,13 @@ export default function ChatPage() {
               {/* Loading indicator */}
               {loading && (
                 <div className="flex gap-4">
-                  <div className="w-10 h-10 rounded-full gradient-brand flex items-center justify-center shrink-0">
-                    <Bot className="w-5 h-5 text-white" />
+                  <div className="w-10 h-10 relative shrink-0">
+                    <Image
+                      src="/assets/finybuddy-mascot.png"
+                      alt="FinyBot"
+                      fill
+                      className="object-contain"
+                    />
                   </div>
                   <div className="flex-1 p-4 rounded-2xl bg-[var(--background-secondary)] border border-[var(--border)]">
                     <div className="flex items-center gap-2 text-[var(--brand-gray)]">
