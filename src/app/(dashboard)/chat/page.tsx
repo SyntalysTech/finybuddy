@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import Image from "next/image";
+import ReactMarkdown from "react-markdown";
 import Header from "@/components/layout/Header";
 import { createClient } from "@/lib/supabase/client";
 import {
@@ -193,13 +194,13 @@ export default function ChatPage() {
                         : "bg-[var(--background-secondary)] border border-[var(--border)]"
                     }`}
                   >
-                    <div className="prose prose-sm max-w-none dark:prose-invert">
-                      {message.content.split("\n").map((line, i) => (
-                        <p key={i} className={`${i > 0 ? "mt-2" : ""} ${message.role === "user" ? "text-white" : ""}`}>
-                          {line}
-                        </p>
-                      ))}
-                    </div>
+                    {message.role === "user" ? (
+                      <p className="text-white">{message.content}</p>
+                    ) : (
+                      <div className="prose prose-sm max-w-none dark:prose-invert prose-p:my-2 prose-ul:my-2 prose-ol:my-2 prose-li:my-0.5 prose-strong:text-[var(--foreground)] prose-headings:text-[var(--foreground)]">
+                        <ReactMarkdown>{message.content}</ReactMarkdown>
+                      </div>
+                    )}
                   </div>
                 </div>
               ))}
