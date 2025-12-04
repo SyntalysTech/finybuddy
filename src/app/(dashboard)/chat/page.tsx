@@ -33,17 +33,27 @@ export default function ChatPage() {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
+  const [userAvatar, setUserAvatar] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
   const supabase = createClient();
 
-  // Get user ID on mount
+  // Get user ID and avatar on mount
   useEffect(() => {
     const getUser = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
         setUserId(user.id);
+        // Get user's avatar from profile
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("avatar_url")
+          .eq("id", user.id)
+          .single();
+        if (profile?.avatar_url) {
+          setUserAvatar(profile.avatar_url);
+        }
       }
     };
     getUser();
@@ -172,8 +182,19 @@ export default function ChatPage() {
                 >
                   {/* Avatar */}
                   {message.role === "user" ? (
-                    <div className="w-10 h-10 rounded-full flex items-center justify-center shrink-0 bg-[var(--brand-purple)]">
-                      <User className="w-5 h-5 text-white" />
+                    <div className="w-10 h-10 rounded-full shrink-0 bg-[var(--brand-purple)] overflow-hidden relative">
+                      {userAvatar ? (
+                        <Image
+                          src={userAvatar}
+                          alt="Tu avatar"
+                          fill
+                          className="object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center">
+                          <User className="w-5 h-5 text-white" />
+                        </div>
+                      )}
                     </div>
                   ) : (
                     <div className="w-10 h-10 relative shrink-0">
@@ -197,7 +218,7 @@ export default function ChatPage() {
                     {message.role === "user" ? (
                       <p className="text-white">{message.content}</p>
                     ) : (
-                      <div className="prose prose-sm max-w-none dark:prose-invert prose-p:my-3 prose-ul:my-3 prose-ol:my-3 prose-li:my-1 prose-strong:text-[var(--brand-cyan)] prose-strong:font-semibold prose-headings:text-[var(--foreground)] prose-headings:mt-4 prose-headings:mb-2 [&>p]:leading-relaxed">
+                      <div className="text-sm leading-relaxed space-y-4 [&_strong]:text-[var(--brand-cyan)] [&_strong]:font-semibold [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_li]:my-1">
                         <ReactMarkdown>{message.content}</ReactMarkdown>
                       </div>
                     )}
