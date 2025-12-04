@@ -18,6 +18,7 @@ import {
   ChevronLeft,
   ChevronRight,
   GraduationCap,
+  Bot,
 } from "lucide-react";
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
@@ -38,6 +39,7 @@ const mainNavItems: NavItem[] = [
   { name: "Calendario", href: "/calendario", icon: Calendar },
   { name: "Ahorro", href: "/ahorro", icon: PiggyBank },
   { name: "Deuda", href: "/deuda", icon: CreditCard },
+  { name: "FinyBot", href: "/chat", icon: Bot },
   { name: "Aprender", href: "/aprender", icon: GraduationCap },
 ];
 
