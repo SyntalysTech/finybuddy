@@ -164,9 +164,14 @@ export default function OperacionesPage() {
 
   // Cerrar menú al hacer click fuera
   useEffect(() => {
-    const handleClick = () => setActiveMenu(null);
-    document.addEventListener("click", handleClick);
-    return () => document.removeEventListener("click", handleClick);
+    const handleClickOutside = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      // No cerrar si el click es dentro del menú o botón
+      if (target.closest('[data-menu-container]')) return;
+      setActiveMenu(null);
+    };
+    document.addEventListener("click", handleClickOutside);
+    return () => document.removeEventListener("click", handleClickOutside);
   }, []);
 
   const handleEdit = (operation: Operation) => {
@@ -356,7 +361,7 @@ export default function OperacionesPage() {
         </div>
 
         {/* Lista de operaciones */}
-        <div className="card overflow-hidden">
+        <div className="card">
           {loading ? (
             <div className="p-8 text-center text-[var(--brand-gray)]">
               Cargando operaciones...
@@ -424,7 +429,7 @@ export default function OperacionesPage() {
                     </div>
 
                     {/* Menú acciones */}
-                    <div className="relative">
+                    <div className="relative" data-menu-container>
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
@@ -436,16 +441,22 @@ export default function OperacionesPage() {
                       </button>
 
                       {activeMenu === operation.id && (
-                        <div className="absolute right-0 top-full mt-1 w-36 bg-[var(--background)] border border-[var(--border)] rounded-lg shadow-lg overflow-hidden z-10">
+                        <div className="absolute right-0 top-full mt-1 w-36 bg-[var(--background)] border border-[var(--border)] rounded-lg shadow-lg z-50">
                           <button
-                            onClick={() => handleEdit(operation)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleEdit(operation);
+                            }}
                             className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-[var(--background-secondary)] transition-colors"
                           >
                             <Edit className="w-4 h-4" />
                             Editar
                           </button>
                           <button
-                            onClick={() => handleDelete(operation.id)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDelete(operation.id);
+                            }}
                             className="w-full flex items-center gap-2 px-3 py-2 text-sm text-[var(--danger)] hover:bg-[var(--danger)]/10 transition-colors"
                           >
                             <Trash2 className="w-4 h-4" />
