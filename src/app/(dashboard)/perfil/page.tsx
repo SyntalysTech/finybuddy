@@ -16,16 +16,7 @@ import {
   X,
   AlertTriangle,
   CheckCircle,
-  Wallet,
-  TrendingUp,
-  TrendingDown,
-  Target,
-  CreditCard,
-  Tag,
-  Receipt,
-  PiggyBank,
   Settings,
-  Info,
   ChevronRight,
   Building2,
   FileText,
@@ -42,9 +33,6 @@ interface Profile {
   avatar_url: string | null;
   start_page: string;
   show_decimals: boolean;
-  rule_needs_percent: number;
-  rule_wants_percent: number;
-  rule_savings_percent: number;
   billing_type: string | null;
   billing_name: string | null;
   billing_tax_id: string | null;
@@ -52,17 +40,6 @@ interface Profile {
   billing_country: string | null;
   created_at: string;
   updated_at: string;
-}
-
-interface UserStats {
-  totalOperations: number;
-  totalCategories: number;
-  totalSavingsGoals: number;
-  totalDebts: number;
-  activeSavingsGoals: number;
-  activeDebts: number;
-  totalIncome: number;
-  totalExpenses: number;
 }
 
 const START_PAGES = [
@@ -81,7 +58,6 @@ const BILLING_TYPES = [
 export default function PerfilPage() {
   const router = useRouter();
   const [profile, setProfile] = useState<Profile | null>(null);
-  const [stats, setStats] = useState<UserStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -91,9 +67,6 @@ export default function PerfilPage() {
   const [fullName, setFullName] = useState("");
   const [startPage, setStartPage] = useState("dashboard");
   const [showDecimals, setShowDecimals] = useState(true);
-  const [ruleNeeds, setRuleNeeds] = useState(50);
-  const [ruleWants, setRuleWants] = useState(30);
-  const [ruleSavings, setRuleSavings] = useState(20);
   const [billingType, setBillingType] = useState("");
   const [billingName, setBillingName] = useState("");
   const [billingTaxId, setBillingTaxId] = useState("");
@@ -106,9 +79,6 @@ export default function PerfilPage() {
     fullName: string;
     startPage: string;
     showDecimals: boolean;
-    ruleNeeds: number;
-    ruleWants: number;
-    ruleSavings: number;
     billingType: string;
     billingName: string;
     billingTaxId: string;
@@ -148,9 +118,6 @@ export default function PerfilPage() {
         const initialFullName = profileData.full_name || "";
         const initialStartPage = profileData.start_page || "dashboard";
         const initialShowDecimals = profileData.show_decimals ?? true;
-        const initialRuleNeeds = profileData.rule_needs_percent || 50;
-        const initialRuleWants = profileData.rule_wants_percent || 30;
-        const initialRuleSavings = profileData.rule_savings_percent || 20;
         const initialBillingType = profileData.billing_type || "";
         const initialBillingName = profileData.billing_name || "";
         const initialBillingTaxId = profileData.billing_tax_id || "";
@@ -160,9 +127,6 @@ export default function PerfilPage() {
         setFullName(initialFullName);
         setStartPage(initialStartPage);
         setShowDecimals(initialShowDecimals);
-        setRuleNeeds(initialRuleNeeds);
-        setRuleWants(initialRuleWants);
-        setRuleSavings(initialRuleSavings);
         setBillingType(initialBillingType);
         setBillingName(initialBillingName);
         setBillingTaxId(initialBillingTaxId);
@@ -175,9 +139,6 @@ export default function PerfilPage() {
           fullName: initialFullName,
           startPage: initialStartPage,
           showDecimals: initialShowDecimals,
-          ruleNeeds: initialRuleNeeds,
-          ruleWants: initialRuleWants,
-          ruleSavings: initialRuleSavings,
           billingType: initialBillingType,
           billingName: initialBillingName,
           billingTaxId: initialBillingTaxId,
@@ -186,36 +147,6 @@ export default function PerfilPage() {
         };
         setHasChanges(false);
       }
-
-      // Fetch stats
-      const [
-        { count: operationsCount },
-        { count: categoriesCount },
-        { data: savingsGoals },
-        { data: debts },
-        { data: monthlyData },
-      ] = await Promise.all([
-        supabase.from("operations").select("*", { count: "exact", head: true }).eq("user_id", user.id),
-        supabase.from("categories").select("*", { count: "exact", head: true }).eq("user_id", user.id),
-        supabase.from("savings_goals").select("id, status").eq("user_id", user.id),
-        supabase.from("debts").select("id, status").eq("user_id", user.id),
-        supabase.rpc("get_monthly_summary", {
-          p_user_id: user.id,
-          p_year: new Date().getFullYear(),
-          p_month: new Date().getMonth() + 1,
-        }),
-      ]);
-
-      setStats({
-        totalOperations: operationsCount || 0,
-        totalCategories: categoriesCount || 0,
-        totalSavingsGoals: savingsGoals?.length || 0,
-        totalDebts: debts?.length || 0,
-        activeSavingsGoals: savingsGoals?.filter(g => g.status === "active").length || 0,
-        activeDebts: debts?.filter(d => d.status === "active").length || 0,
-        totalIncome: monthlyData?.[0]?.total_income || 0,
-        totalExpenses: monthlyData?.[0]?.total_expenses || 0,
-      });
     } catch (error) {
       console.error("Error fetching profile:", error);
       setError("Error al cargar el perfil");
@@ -235,9 +166,6 @@ export default function PerfilPage() {
         fullName !== initialValuesRef.current.fullName ||
         startPage !== initialValuesRef.current.startPage ||
         showDecimals !== initialValuesRef.current.showDecimals ||
-        ruleNeeds !== initialValuesRef.current.ruleNeeds ||
-        ruleWants !== initialValuesRef.current.ruleWants ||
-        ruleSavings !== initialValuesRef.current.ruleSavings ||
         billingType !== initialValuesRef.current.billingType ||
         billingName !== initialValuesRef.current.billingName ||
         billingTaxId !== initialValuesRef.current.billingTaxId ||
@@ -245,16 +173,10 @@ export default function PerfilPage() {
         billingCountry !== initialValuesRef.current.billingCountry;
       setHasChanges(changed);
     }
-  }, [fullName, startPage, showDecimals, ruleNeeds, ruleWants, ruleSavings, billingType, billingName, billingTaxId, billingAddress, billingCountry]);
+  }, [fullName, startPage, showDecimals, billingType, billingName, billingTaxId, billingAddress, billingCountry]);
 
   const handleSaveProfile = async () => {
     if (!profile) return;
-
-    // Validate 50/30/20 rule
-    if (ruleNeeds + ruleWants + ruleSavings !== 100) {
-      setError("La suma de los porcentajes debe ser 100%");
-      return;
-    }
 
     setSaving(true);
     setError("");
@@ -267,9 +189,6 @@ export default function PerfilPage() {
           full_name: fullName.trim() || null,
           start_page: startPage,
           show_decimals: showDecimals,
-          rule_needs_percent: ruleNeeds,
-          rule_wants_percent: ruleWants,
-          rule_savings_percent: ruleSavings,
           billing_type: billingType || null,
           billing_name: billingName.trim() || null,
           billing_tax_id: billingTaxId.trim() || null,
@@ -286,9 +205,6 @@ export default function PerfilPage() {
         fullName,
         startPage,
         showDecimals,
-        ruleNeeds,
-        ruleWants,
-        ruleSavings,
         billingType,
         billingName,
         billingTaxId,
@@ -373,18 +289,6 @@ export default function PerfilPage() {
     router.push("/login");
   };
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("es-ES", {
-      style: "currency",
-      currency: "EUR",
-      minimumFractionDigits: showDecimals ? 2 : 0,
-      maximumFractionDigits: showDecimals ? 2 : 0,
-    }).format(amount);
-  };
-
-  const ruleTotal = ruleNeeds + ruleWants + ruleSavings;
-  const isRuleValid = ruleTotal === 100;
-
   if (loading) {
     return (
       <>
@@ -460,75 +364,6 @@ export default function PerfilPage() {
                 <p className="text-xs text-[var(--brand-gray)] mt-2">
                   Miembro desde {profile?.created_at && format(new Date(profile.created_at), "MMMM yyyy", { locale: es })}
                 </p>
-              </div>
-            </div>
-
-            {/* Stats Card */}
-            <div className="card p-6">
-              <h3 className="font-semibold mb-4 flex items-center gap-2">
-                <Wallet className="w-5 h-5 text-[var(--brand-purple)]" />
-                Estadísticas
-              </h3>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="p-3 rounded-lg bg-[var(--background-secondary)]">
-                  <div className="flex items-center gap-2 text-[var(--brand-gray)] mb-1">
-                    <Receipt className="w-4 h-4" />
-                    <span className="text-xs">Operaciones</span>
-                  </div>
-                  <p className="text-lg font-bold">{stats?.totalOperations || 0}</p>
-                </div>
-                <div className="p-3 rounded-lg bg-[var(--background-secondary)]">
-                  <div className="flex items-center gap-2 text-[var(--brand-gray)] mb-1">
-                    <Tag className="w-4 h-4" />
-                    <span className="text-xs">Categorías</span>
-                  </div>
-                  <p className="text-lg font-bold">{stats?.totalCategories || 0}</p>
-                </div>
-                <div className="p-3 rounded-lg bg-[var(--background-secondary)]">
-                  <div className="flex items-center gap-2 text-[var(--brand-gray)] mb-1">
-                    <Target className="w-4 h-4" />
-                    <span className="text-xs">Metas ahorro</span>
-                  </div>
-                  <p className="text-lg font-bold">
-                    {stats?.activeSavingsGoals || 0}
-                    <span className="text-sm font-normal text-[var(--brand-gray)]">/{stats?.totalSavingsGoals || 0}</span>
-                  </p>
-                </div>
-                <div className="p-3 rounded-lg bg-[var(--background-secondary)]">
-                  <div className="flex items-center gap-2 text-[var(--brand-gray)] mb-1">
-                    <CreditCard className="w-4 h-4" />
-                    <span className="text-xs">Deudas</span>
-                  </div>
-                  <p className="text-lg font-bold">
-                    {stats?.activeDebts || 0}
-                    <span className="text-sm font-normal text-[var(--brand-gray)]">/{stats?.totalDebts || 0}</span>
-                  </p>
-                </div>
-              </div>
-
-              {/* This month summary */}
-              <div className="mt-4 pt-4 border-t border-[var(--border)]">
-                <p className="text-sm text-[var(--brand-gray)] mb-3">Este mes</p>
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <TrendingUp className="w-4 h-4 text-[var(--success)]" />
-                      <span className="text-sm">Ingresos</span>
-                    </div>
-                    <span className="font-semibold text-[var(--success)]">
-                      {formatCurrency(stats?.totalIncome || 0)}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <TrendingDown className="w-4 h-4 text-[var(--danger)]" />
-                      <span className="text-sm">Gastos</span>
-                    </div>
-                    <span className="font-semibold text-[var(--danger)]">
-                      {formatCurrency(stats?.totalExpenses || 0)}
-                    </span>
-                  </div>
-                </div>
               </div>
             </div>
 
@@ -619,6 +454,7 @@ export default function PerfilPage() {
                       ))}
                     </select>
                   </div>
+                  <p className="text-xs text-[var(--brand-gray)] mt-1">Se aplicará en el próximo inicio de sesión</p>
                 </div>
                 <div>
                   <label className="block text-sm font-medium mb-2">Mostrar decimales</label>
@@ -645,118 +481,6 @@ export default function PerfilPage() {
                       />
                     </div>
                   </button>
-                </div>
-              </div>
-            </div>
-
-            {/* Financial Rule 50/30/20 */}
-            <div className="card p-6">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="font-semibold flex items-center gap-2">
-                  <PiggyBank className="w-5 h-5 text-[var(--brand-purple)]" />
-                  Regla financiera
-                </h3>
-                <button
-                  onClick={() => {
-                    setRuleNeeds(50);
-                    setRuleWants(30);
-                    setRuleSavings(20);
-                  }}
-                  className="text-sm text-[var(--brand-cyan)] hover:underline"
-                >
-                  Restaurar 50/30/20
-                </button>
-              </div>
-
-              <div className="p-4 rounded-xl bg-[var(--background-secondary)] mb-4">
-                <div className="flex items-start gap-3">
-                  <Info className="w-5 h-5 text-[var(--brand-cyan)] shrink-0 mt-0.5" />
-                  <p className="text-sm text-[var(--brand-gray)]">
-                    Personaliza los porcentajes de distribución de tus ingresos. La suma debe ser 100%.
-                    Los valores por defecto son 50% necesidades, 30% deseos y 20% ahorro.
-                  </p>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div>
-                  <label className="block text-sm font-medium mb-2 text-[var(--brand-cyan)]">
-                    Necesidades
-                  </label>
-                  <div className="relative">
-                    <input
-                      type="number"
-                      min="0"
-                      max="100"
-                      value={ruleNeeds}
-                      onChange={(e) => setRuleNeeds(Math.max(0, Math.min(100, parseInt(e.target.value) || 0)))}
-                      className="w-full px-4 py-3 bg-[var(--background-secondary)] border border-[var(--border)] rounded-xl text-center text-lg font-semibold focus:outline-none focus:border-[var(--brand-cyan)] focus:ring-1 focus:ring-[var(--brand-cyan)]"
-                    />
-                    <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[var(--brand-gray)]">%</span>
-                  </div>
-                  <p className="text-xs text-[var(--brand-gray)] mt-1 text-center">Gastos esenciales</p>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-2 text-[var(--brand-purple)]">
-                    Deseos
-                  </label>
-                  <div className="relative">
-                    <input
-                      type="number"
-                      min="0"
-                      max="100"
-                      value={ruleWants}
-                      onChange={(e) => setRuleWants(Math.max(0, Math.min(100, parseInt(e.target.value) || 0)))}
-                      className="w-full px-4 py-3 bg-[var(--background-secondary)] border border-[var(--border)] rounded-xl text-center text-lg font-semibold focus:outline-none focus:border-[var(--brand-cyan)] focus:ring-1 focus:ring-[var(--brand-cyan)]"
-                    />
-                    <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[var(--brand-gray)]">%</span>
-                  </div>
-                  <p className="text-xs text-[var(--brand-gray)] mt-1 text-center">Gastos opcionales</p>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-2 text-[var(--success)]">
-                    Ahorro
-                  </label>
-                  <div className="relative">
-                    <input
-                      type="number"
-                      min="0"
-                      max="100"
-                      value={ruleSavings}
-                      onChange={(e) => setRuleSavings(Math.max(0, Math.min(100, parseInt(e.target.value) || 0)))}
-                      className="w-full px-4 py-3 bg-[var(--background-secondary)] border border-[var(--border)] rounded-xl text-center text-lg font-semibold focus:outline-none focus:border-[var(--brand-cyan)] focus:ring-1 focus:ring-[var(--brand-cyan)]"
-                    />
-                    <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[var(--brand-gray)]">%</span>
-                  </div>
-                  <p className="text-xs text-[var(--brand-gray)] mt-1 text-center">Ahorro e inversión</p>
-                </div>
-              </div>
-
-              {/* Visual bar */}
-              <div className="mt-4">
-                <div className="h-4 rounded-full overflow-hidden flex">
-                  <div
-                    className="bg-[var(--brand-cyan)] transition-all"
-                    style={{ width: `${ruleNeeds}%` }}
-                  />
-                  <div
-                    className="bg-[var(--brand-purple)] transition-all"
-                    style={{ width: `${ruleWants}%` }}
-                  />
-                  <div
-                    className="bg-[var(--success)] transition-all"
-                    style={{ width: `${ruleSavings}%` }}
-                  />
-                </div>
-                <div className="flex justify-between mt-2 text-sm">
-                  <span className={isRuleValid ? "text-[var(--success)]" : "text-[var(--danger)]"}>
-                    Total: {ruleTotal}%
-                  </span>
-                  {!isRuleValid && (
-                    <span className="text-[var(--danger)]">
-                      {ruleTotal > 100 ? `Sobra ${ruleTotal - 100}%` : `Falta ${100 - ruleTotal}%`}
-                    </span>
-                  )}
                 </div>
               </div>
             </div>
@@ -875,7 +599,7 @@ export default function PerfilPage() {
         <div className="fixed bottom-6 right-6 z-40 animate-in slide-in-from-bottom-4 fade-in duration-300">
           <button
             onClick={handleSaveProfile}
-            disabled={saving || !isRuleValid}
+            disabled={saving}
             className="flex items-center gap-2 px-6 py-3 rounded-xl gradient-brand text-white font-medium shadow-lg hover:opacity-90 transition-all disabled:opacity-50"
           >
             <Save className="w-5 h-5" />

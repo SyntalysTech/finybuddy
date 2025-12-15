@@ -85,7 +85,7 @@ interface DebtsSummary {
 
 interface RecentOperation {
   id: string;
-  type: "income" | "expense" | "transfer";
+  type: "income" | "expense" | "savings";
   amount: number;
   concept: string;
   operation_date: string;
@@ -290,7 +290,7 @@ export default function DashboardPage() {
   const typeConfig = {
     income: { label: "Ingreso", icon: TrendingUp, color: "text-[var(--success)]", bg: "bg-[var(--success)]/10" },
     expense: { label: "Gasto", icon: TrendingDown, color: "text-[var(--danger)]", bg: "bg-[var(--danger)]/10" },
-    transfer: { label: "Transferencia", icon: Wallet, color: "text-[var(--brand-cyan)]", bg: "bg-[var(--brand-cyan)]/10" },
+    savings: { label: "Ahorro", icon: Wallet, color: "text-[var(--brand-cyan)]", bg: "bg-[var(--brand-cyan)]/10" },
   };
 
   return (
@@ -373,17 +373,17 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          {/* Balance */}
+          {/* Ahorro */}
           <div className="kpi-card">
             <div className="flex items-start justify-between">
               <div>
                 <p className="text-sm text-[var(--brand-gray)] mb-1">Ahorro del mes</p>
-                <p className={`text-2xl font-bold ${(monthlySummary?.balance || 0) >= 0 ? "text-[var(--brand-cyan)]" : "text-[var(--danger)]"}`}>
-                  {loading ? "..." : formatCurrency(monthlySummary?.balance || 0)}
+                <p className="text-2xl font-bold text-[var(--brand-cyan)]">
+                  {loading ? "..." : formatCurrency(monthlySummary?.total_savings || 0)}
                 </p>
               </div>
               <div className="p-3 rounded-xl bg-[var(--brand-cyan)]/10">
-                <Wallet className="w-6 h-6 text-[var(--brand-cyan)]" />
+                <PiggyBank className="w-6 h-6 text-[var(--brand-cyan)]" />
               </div>
             </div>
           </div>

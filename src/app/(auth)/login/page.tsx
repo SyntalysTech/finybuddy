@@ -21,7 +21,7 @@ export default function LoginPage() {
     setLoading(true);
 
     const supabase = createClient();
-    const { error } = await supabase.auth.signInWithPassword({
+    const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
@@ -30,7 +30,20 @@ export default function LoginPage() {
       setError(error.message);
       setLoading(false);
     } else {
-      router.push("/dashboard");
+      // Get user's preferred start page
+      let startPage = "/dashboard";
+      if (data.user) {
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("start_page")
+          .eq("id", data.user.id)
+          .single();
+
+        if (profile?.start_page) {
+          startPage = `/${profile.start_page}`;
+        }
+      }
+      router.push(startPage);
     }
   };
 
@@ -121,16 +134,6 @@ export default function LoginPage() {
                   )}
                 </button>
               </div>
-            </div>
-
-            {/* Forgot Password */}
-            <div className="text-right">
-              <Link
-                href="/forgot-password"
-                className="text-sm text-[var(--brand-cyan)] hover:underline"
-              >
-                ¿Olvidaste tu contraseña?
-              </Link>
             </div>
 
             {/* Submit Button */}

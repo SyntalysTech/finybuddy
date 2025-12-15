@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import Link from "next/link";
 import Header from "@/components/layout/Header";
 import { createClient } from "@/lib/supabase/client";
 import {
@@ -16,7 +17,9 @@ import {
   X,
   AlertCircle,
   CheckCircle,
-  Search
+  Search,
+  Settings,
+  Info
 } from "lucide-react";
 import DeleteConfirmModal from "@/components/operations/DeleteConfirmModal";
 
@@ -46,10 +49,28 @@ const SEGMENTS = [
 ];
 
 const ICON_OPTIONS = [
-  "🏠", "🍽️", "🚗", "🚌", "⛽", "🛒", "💡", "📱", "💻", "🎮",
-  "👕", "👟", "💊", "🏥", "🎬", "🎵", "📚", "✈️", "🏖️", "🎁",
-  "💰", "💳", "🏦", "📈", "💼", "🎓", "👶", "🐕", "🏋️", "💇",
-  "🍕", "☕", "🍺", "🛍️", "💄", "🎨", "🔧", "🏡", "📦", "🎯"
+  // Hogar y vivienda
+  "🏠", "🏡", "🏢", "🛋️", "🛏️", "🚿", "🧹", "🧺", "💡", "🔑",
+  // Comida y bebida
+  "🍽️", "🍕", "🍔", "🥗", "🍜", "🍣", "🥐", "☕", "🍺", "🍷",
+  // Transporte
+  "🚗", "🚌", "🚇", "🚲", "✈️", "⛽", "🚕", "🛵", "🚂", "⛵",
+  // Compras y moda
+  "🛒", "🛍️", "👕", "👗", "👟", "👜", "💄", "💍", "🕶️", "👔",
+  // Tecnología y entretenimiento
+  "📱", "💻", "🎮", "🎬", "🎵", "📺", "🎧", "📷", "🖥️", "⌚",
+  // Salud y bienestar
+  "💊", "🏥", "🏋️", "🧘", "💇", "🦷", "👁️", "💉", "🩺", "🧴",
+  // Educación y trabajo
+  "📚", "🎓", "💼", "📝", "🖊️", "📊", "💡", "🗂️", "📌", "🎯",
+  // Finanzas
+  "💰", "💳", "🏦", "📈", "📉", "💵", "🪙", "💎", "🧾", "📑",
+  // Ocio y viajes
+  "🏖️", "⛷️", "🎪", "🎡", "🏕️", "🗺️", "🎢", "🎭", "🎨", "🎸",
+  // Familia y mascotas
+  "👶", "👨‍👩‍👧", "🐕", "🐈", "🎁", "🎂", "💐", "🧸", "👪", "❤️",
+  // Servicios y otros
+  "📦", "🔧", "🔌", "📡", "🗑️", "♻️", "📬", "🏷️", "⚡", "💧"
 ];
 
 const COLOR_OPTIONS = [
@@ -57,6 +78,12 @@ const COLOR_OPTIONS = [
   "#EC4899", "#8B5CF6", "#06B6D4", "#10B981", "#F59E0B",
   "#6366F1", "#84CC16", "#F43F5E", "#0EA5E9", "#A855F7"
 ];
+
+interface FinancialRule {
+  needs: number;
+  wants: number;
+  savings: number;
+}
 
 export default function CategoriasPage() {
   const [categories, setCategories] = useState<Category[]>([]);
@@ -68,6 +95,7 @@ export default function CategoriasPage() {
   const [filter, setFilter] = useState<"all" | "expense" | "income" | "savings">("all");
   const [showInactive, setShowInactive] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [financialRule, setFinancialRule] = useState<FinancialRule>({ needs: 50, wants: 30, savings: 20 });
 
   const supabase = createClient();
 
@@ -76,6 +104,21 @@ export default function CategoriasPage() {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
+
+      // Get user's financial rule
+      const { data: profileData } = await supabase
+        .from("profiles")
+        .select("rule_needs_percent, rule_wants_percent, rule_savings_percent")
+        .eq("id", user.id)
+        .single();
+
+      if (profileData) {
+        setFinancialRule({
+          needs: profileData.rule_needs_percent || 50,
+          wants: profileData.rule_wants_percent || 30,
+          savings: profileData.rule_savings_percent || 20,
+        });
+      }
 
       // Get categories with operation count
       const { data: categoriesData } = await supabase
@@ -191,6 +234,7 @@ export default function CategoriasPage() {
   const activeCategories = categories.filter((c) => c.is_active).length;
   const expenseCategories = categories.filter((c) => c.type === "expense").length;
   const incomeCategories = categories.filter((c) => c.type === "income").length;
+  const savingsCategories = categories.filter((c) => c.type === "savings").length;
 
   const renderCategoryCard = (category: Category) => {
     const typeInfo = getTypeInfo(category.type);
@@ -199,17 +243,18 @@ export default function CategoriasPage() {
     return (
       <div
         key={category.id}
-        className={`p-4 rounded-xl border transition-all ${
+        className={`p-4 rounded-xl border-l-4 border transition-all ${
           category.is_active
             ? "bg-[var(--background)] border-[var(--border)] hover:border-[var(--brand-gray)]"
             : "bg-[var(--background-secondary)]/50 border-[var(--border)] opacity-60"
         }`}
+        style={{ borderLeftColor: category.color }}
       >
         <div className="flex items-start gap-3">
           {/* Icon */}
           <div
             className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl shrink-0"
-            style={{ backgroundColor: `${category.color}20` }}
+            style={{ backgroundColor: `${category.color}30` }}
           >
             {category.icon}
           </div>
@@ -319,14 +364,14 @@ export default function CategoriasPage() {
 
       <div className="p-6 space-y-6">
         {/* Summary Cards */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
           <div className="card p-4">
             <div className="flex items-center gap-3">
               <div className="p-2 rounded-lg bg-[var(--brand-purple)]/10">
                 <Tag className="w-5 h-5 text-[var(--brand-purple)]" />
               </div>
               <div>
-                <p className="text-sm text-[var(--brand-gray)]">Total categorías</p>
+                <p className="text-sm text-[var(--brand-gray)]">Total</p>
                 <p className="text-xl font-bold">{totalCategories}</p>
               </div>
             </div>
@@ -350,7 +395,7 @@ export default function CategoriasPage() {
                 <TrendingDown className="w-5 h-5 text-[var(--danger)]" />
               </div>
               <div>
-                <p className="text-sm text-[var(--brand-gray)]">De gastos</p>
+                <p className="text-sm text-[var(--brand-gray)]">Gastos</p>
                 <p className="text-xl font-bold">{expenseCategories}</p>
               </div>
             </div>
@@ -362,9 +407,103 @@ export default function CategoriasPage() {
                 <TrendingUp className="w-5 h-5 text-[var(--success)]" />
               </div>
               <div>
-                <p className="text-sm text-[var(--brand-gray)]">De ingresos</p>
+                <p className="text-sm text-[var(--brand-gray)]">Ingresos</p>
                 <p className="text-xl font-bold">{incomeCategories}</p>
               </div>
+            </div>
+          </div>
+
+          <div className="card p-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-[var(--brand-cyan)]/10">
+                <PiggyBank className="w-5 h-5 text-[var(--brand-cyan)]" />
+              </div>
+              <div>
+                <p className="text-sm text-[var(--brand-gray)]">Ahorro</p>
+                <p className="text-xl font-bold">{savingsCategories}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Financial Rule Info */}
+        <div className="card p-5">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="font-semibold flex items-center gap-2">
+              <Info className="w-5 h-5 text-[var(--brand-purple)]" />
+              Tu regla financiera
+            </h3>
+            <Link
+              href="/regla-financiera"
+              className="flex items-center gap-1.5 text-sm text-[var(--brand-cyan)] hover:underline"
+            >
+              <Settings className="w-4 h-4" />
+              Configurar
+            </Link>
+          </div>
+
+          <p className="text-sm text-[var(--brand-gray)] mb-4">
+            Asigna un segmento a tus categorías de gastos para distribuir tu presupuesto según tu regla financiera personalizada.
+          </p>
+
+          {/* Visual bar */}
+          <div className="h-3 rounded-full overflow-hidden flex mb-4">
+            <div
+              className="transition-all"
+              style={{ width: `${financialRule.needs}%`, backgroundColor: "#02EAFF" }}
+            />
+            <div
+              className="transition-all"
+              style={{ width: `${financialRule.wants}%`, backgroundColor: "#9945FF" }}
+            />
+            <div
+              className="transition-all"
+              style={{ width: `${financialRule.savings}%`, backgroundColor: "#14F195" }}
+            />
+          </div>
+
+          <div className="grid sm:grid-cols-3 gap-4">
+            <div
+              className="p-4 rounded-xl"
+              style={{ backgroundColor: "#02EAFF10" }}
+            >
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-lg font-bold" style={{ color: "#02EAFF" }}>
+                  Necesidades
+                </span>
+                <span className="text-lg font-bold" style={{ color: "#02EAFF" }}>
+                  {financialRule.needs}%
+                </span>
+              </div>
+              <p className="text-sm text-[var(--brand-gray)]">Gastos esenciales</p>
+            </div>
+            <div
+              className="p-4 rounded-xl"
+              style={{ backgroundColor: "#9945FF10" }}
+            >
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-lg font-bold" style={{ color: "#9945FF" }}>
+                  Deseos
+                </span>
+                <span className="text-lg font-bold" style={{ color: "#9945FF" }}>
+                  {financialRule.wants}%
+                </span>
+              </div>
+              <p className="text-sm text-[var(--brand-gray)]">Gastos opcionales</p>
+            </div>
+            <div
+              className="p-4 rounded-xl"
+              style={{ backgroundColor: "#14F19510" }}
+            >
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-lg font-bold" style={{ color: "#14F195" }}>
+                  Ahorro
+                </span>
+                <span className="text-lg font-bold" style={{ color: "#14F195" }}>
+                  {financialRule.savings}%
+                </span>
+              </div>
+              <p className="text-sm text-[var(--brand-gray)]">Ahorro e inversión</p>
             </div>
           </div>
         </div>
@@ -375,8 +514,8 @@ export default function CategoriasPage() {
           <div className="flex items-center gap-2">
             {[
               { value: "all", label: "Todas" },
-              { value: "expense", label: "Gastos" },
               { value: "income", label: "Ingresos" },
+              { value: "expense", label: "Gastos" },
               { value: "savings", label: "Ahorro" },
             ].map((tab) => (
               <button
@@ -499,31 +638,6 @@ export default function CategoriasPage() {
             </div>
           </div>
         )}
-
-        {/* 50/30/20 Info */}
-        <div className="card p-5">
-          <h3 className="font-semibold mb-3">Regla 50/30/20</h3>
-          <p className="text-sm text-[var(--brand-gray)] mb-4">
-            Asigna un segmento a tus categorías de gastos para seguir la regla 50/30/20
-          </p>
-          <div className="grid sm:grid-cols-3 gap-4">
-            {SEGMENTS.map((segment) => (
-              <div
-                key={segment.value}
-                className="p-4 rounded-xl"
-                style={{ backgroundColor: `${segment.color}10` }}
-              >
-                <div
-                  className="text-lg font-bold mb-1"
-                  style={{ color: segment.color }}
-                >
-                  {segment.label}
-                </div>
-                <p className="text-sm text-[var(--brand-gray)]">{segment.description}</p>
-              </div>
-            ))}
-          </div>
-        </div>
       </div>
 
       {/* Category Modal */}
@@ -745,11 +859,15 @@ function CategoryModal({
                   key={c}
                   type="button"
                   onClick={() => setColor(c)}
-                  className={`w-10 h-10 rounded-lg border-2 transition-all ${
-                    color === c ? "border-white scale-110" : "border-transparent"
+                  className={`w-10 h-10 rounded-lg border-2 transition-all relative ${
+                    color === c ? "border-white scale-110 ring-2 ring-offset-2 ring-offset-[var(--background)] ring-white" : "border-transparent hover:scale-105"
                   }`}
                   style={{ backgroundColor: c }}
-                />
+                >
+                  {color === c && (
+                    <CheckCircle className="w-5 h-5 text-white absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 drop-shadow-md" />
+                  )}
+                </button>
               ))}
             </div>
           </div>

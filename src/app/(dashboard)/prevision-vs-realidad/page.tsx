@@ -11,8 +11,6 @@ import {
   TrendingUp,
   TrendingDown,
   PiggyBank,
-  AlertCircle,
-  CheckCircle,
   ArrowUp,
   ArrowDown,
   Minus,
@@ -25,12 +23,6 @@ import {
   Cell,
   ResponsiveContainer,
   Tooltip,
-  Legend,
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
 } from "recharts";
 
 interface Category {
@@ -61,6 +53,10 @@ export default function PrevisionVsRealidadPage() {
   const [data, setData] = useState<BudgetVsActual[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // Ahorro: previsto (desde planned_savings) y real (desde operaciones tipo "savings")
+  const [plannedSavings, setPlannedSavings] = useState(0);
+  const [actualSavingsFromOps, setActualSavingsFromOps] = useState(0);
+
   const supabase = createClient();
   const selectedYear = selectedDate.getFullYear();
   const selectedMonth = selectedDate.getMonth() + 1;
@@ -82,6 +78,17 @@ export default function PrevisionVsRealidadPage() {
       .eq("year", selectedYear)
       .eq("month", selectedMonth);
 
+    // Get planned savings for the month
+    const { data: plannedSavingsData } = await supabase
+      .from("planned_savings")
+      .select("amount")
+      .eq("user_id", user.id)
+      .eq("year", selectedYear)
+      .eq("month", selectedMonth)
+      .single();
+
+    setPlannedSavings(plannedSavingsData?.amount || 0);
+
     // Get actual operations for the month
     const startDate = `${selectedYear}-${String(selectedMonth).padStart(2, "0")}-01`;
     const endDate = new Date(selectedYear, selectedMonth, 0).toISOString().split("T")[0];
@@ -98,10 +105,15 @@ export default function PrevisionVsRealidadPage() {
       .gte("operation_date", startDate)
       .lte("operation_date", endDate);
 
-    // Aggregate operations by category
+    // Calculate actual savings from operations with type "savings"
+    const savingsOps = operationsData?.filter(op => op.type === "savings") || [];
+    const totalActualSavings = savingsOps.reduce((sum, op) => sum + op.amount, 0);
+    setActualSavingsFromOps(totalActualSavings);
+
+    // Aggregate operations by category (excluding savings type for category breakdown)
     const actualByCategory: Record<string, number> = {};
     operationsData?.forEach(op => {
-      if (op.category_id) {
+      if (op.category_id && op.type !== "savings") {
         actualByCategory[op.category_id] = (actualByCategory[op.category_id] || 0) + op.amount;
       }
     });
@@ -138,7 +150,7 @@ export default function PrevisionVsRealidadPage() {
 
     // Add categories with actual spending but no budget
     for (const categoryId of Object.keys(actualByCategory)) {
-      const op = operationsData?.find(o => o.category_id === categoryId);
+      const op = operationsData?.find(o => o.category_id === categoryId && o.type !== "savings");
       if (op?.category) {
         const cat = (Array.isArray(op.category) ? op.category[0] : op.category) as Category;
         comparisonData.push({
@@ -164,12 +176,14 @@ export default function PrevisionVsRealidadPage() {
     fetchData();
   }, [fetchData]);
 
+  const showDecimals = profile?.show_decimals ?? true;
+
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("es-ES", {
       style: "currency",
       currency: profile?.currency || "EUR",
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
+      minimumFractionDigits: showDecimals ? 2 : 0,
+      maximumFractionDigits: showDecimals ? 2 : 0,
     }).format(amount);
   };
 
@@ -194,8 +208,9 @@ export default function PrevisionVsRealidadPage() {
   const totalBudgetedExpenses = expenseData.reduce((sum, d) => sum + d.budgeted, 0);
   const totalActualExpenses = expenseData.reduce((sum, d) => sum + d.actual, 0);
 
-  const budgetedSavings = totalBudgetedIncome - totalBudgetedExpenses;
-  const actualSavings = totalActualIncome - totalActualExpenses;
+  // Ahorro: usar planned_savings para previsto y operaciones tipo "savings" para real
+  const budgetedSavings = plannedSavings;
+  const actualSavings = actualSavingsFromOps;
 
   // Calculate by segment
   const needsData = expenseData.filter(d => d.segment === "needs");
@@ -208,11 +223,6 @@ export default function PrevisionVsRealidadPage() {
   const wantsActual = wantsData.reduce((sum, d) => sum + d.actual, 0);
   const savingsSegmentBudgeted = savingsSegmentData.reduce((sum, d) => sum + d.budgeted, 0);
   const savingsSegmentActual = savingsSegmentData.reduce((sum, d) => sum + d.actual, 0);
-
-  // Calculate percentages based on actual income
-  const needsPercent = totalActualIncome > 0 ? Math.round((needsActual / totalActualIncome) * 100) : 0;
-  const wantsPercent = totalActualIncome > 0 ? Math.round((wantsActual / totalActualIncome) * 100) : 0;
-  const savingsPercent = totalActualIncome > 0 ? Math.round((actualSavings / totalActualIncome) * 100) : 0;
 
   const ruleNeeds = profile?.rule_needs_percent || 50;
   const ruleWants = profile?.rule_wants_percent || 30;
@@ -232,12 +242,35 @@ export default function PrevisionVsRealidadPage() {
     { name: "Ahorro", value: actualSavings > 0 ? actualSavings : 0, color: "#8b5cf6" },
   ].filter(d => d.value > 0);
 
-  // Bar chart data for comparison
-  const barChartData = [
-    { name: "Ingresos", Previsto: totalBudgetedIncome, Real: totalActualIncome },
-    { name: "Gastos", Previsto: totalBudgetedExpenses, Real: totalActualExpenses },
-    { name: "Ahorro", Previsto: budgetedSavings, Real: actualSavings },
-  ];
+  // Calcular desviaciones para los mensajes interpretativos
+  const incomeDeviation = totalActualIncome - totalBudgetedIncome;
+  const expenseDeviation = totalActualExpenses - totalBudgetedExpenses;
+  const savingsDeviation = actualSavings - budgetedSavings;
+
+  // Generar mensaje interpretativo para cada card
+  const getIncomeMessage = () => {
+    if (totalBudgetedIncome === 0 && totalActualIncome === 0) return null;
+    if (totalBudgetedIncome === 0) return `Has ingresado ${formatCurrency(totalActualIncome)} sin previsión`;
+    if (incomeDeviation === 0) return "Exactamente lo previsto";
+    if (incomeDeviation > 0) return `Has ingresado ${formatCurrency(Math.abs(incomeDeviation))} más de lo previsto`;
+    return `Has ingresado ${formatCurrency(Math.abs(incomeDeviation))} menos de lo previsto`;
+  };
+
+  const getExpenseMessage = () => {
+    if (totalBudgetedExpenses === 0 && totalActualExpenses === 0) return null;
+    if (totalBudgetedExpenses === 0) return `Has gastado ${formatCurrency(totalActualExpenses)} sin previsión`;
+    if (expenseDeviation === 0) return "Exactamente lo previsto";
+    if (expenseDeviation > 0) return `Has gastado ${formatCurrency(Math.abs(expenseDeviation))} más de lo previsto`;
+    return `Has gastado ${formatCurrency(Math.abs(expenseDeviation))} menos de lo previsto`;
+  };
+
+  const getSavingsMessage = () => {
+    if (budgetedSavings === 0 && actualSavings === 0) return null;
+    if (budgetedSavings === 0) return `Has ahorrado ${formatCurrency(actualSavings)} sin previsión`;
+    if (savingsDeviation === 0) return "Exactamente lo previsto";
+    if (savingsDeviation > 0) return `Has ahorrado ${formatCurrency(Math.abs(savingsDeviation))} más de lo previsto`;
+    return `Has ahorrado ${formatCurrency(Math.abs(savingsDeviation))} menos de lo previsto`;
+  };
 
   // Get variance icon
   const getVarianceIcon = (budgeted: number, actual: number, isExpense: boolean) => {
@@ -338,7 +371,7 @@ export default function PrevisionVsRealidadPage() {
     <>
       <Header
         title="Previsión vs Realidad"
-        subtitle="Compara tus presupuestos con los gastos reales"
+        subtitle="Revisa cómo van tus finanzas respecto a lo que planificaste"
         actions={
           <div className="flex items-center gap-2">
             <button
@@ -368,104 +401,96 @@ export default function PrevisionVsRealidadPage() {
         {/* Summary Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {/* Income */}
-          <div className="card p-4">
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-2">
-                <div className="p-2 rounded-lg bg-[var(--success)]/10">
-                  <TrendingUp className="w-5 h-5 text-[var(--success)]" />
-                </div>
-                <span className="font-medium">Ingresos</span>
+          <div className="card p-5">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="p-2.5 rounded-xl bg-[var(--success)]/10">
+                <TrendingUp className="w-6 h-6 text-[var(--success)]" />
               </div>
-              {totalActualIncome >= totalBudgetedIncome ? (
-                <CheckCircle className="w-5 h-5 text-[var(--success)]" />
-              ) : (
-                <AlertCircle className="w-5 h-5 text-[var(--warning)]" />
-              )}
+              <span className="text-lg font-semibold">Ingresos</span>
             </div>
-            <div className="space-y-1">
-              <div className="flex justify-between text-sm">
-                <span className="text-[var(--brand-gray)]">Previsto</span>
-                <span>{formatCurrency(totalBudgetedIncome)}</span>
+            <div className="grid grid-cols-3 gap-3 mb-4">
+              <div className="text-center p-3 rounded-lg bg-[var(--background-secondary)]">
+                <p className="text-xs text-[var(--brand-gray)] mb-1">Previsto</p>
+                <p className="text-lg font-bold">{formatCurrency(totalBudgetedIncome)}</p>
               </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-[var(--brand-gray)]">Real</span>
-                <span className="font-semibold text-[var(--success)]">{formatCurrency(totalActualIncome)}</span>
+              <div className="text-center p-3 rounded-lg bg-[var(--background-secondary)]">
+                <p className="text-xs text-[var(--brand-gray)] mb-1">Real</p>
+                <p className="text-lg font-bold text-[var(--success)]">{formatCurrency(totalActualIncome)}</p>
               </div>
-              <div className="flex justify-between text-sm pt-1 border-t border-[var(--border)]">
-                <span className="text-[var(--brand-gray)]">Diferencia</span>
-                <span className={totalActualIncome >= totalBudgetedIncome ? "text-[var(--success)]" : "text-[var(--danger)]"}>
-                  {totalActualIncome >= totalBudgetedIncome ? "+" : ""}{formatCurrency(totalActualIncome - totalBudgetedIncome)}
-                </span>
+              <div className="text-center p-3 rounded-lg bg-[var(--background-secondary)]">
+                <p className="text-xs text-[var(--brand-gray)] mb-1">Desviación</p>
+                <p className={`text-lg font-bold ${incomeDeviation >= 0 ? "text-[var(--success)]" : "text-[var(--danger)]"}`}>
+                  {incomeDeviation >= 0 ? "+" : ""}{formatCurrency(incomeDeviation)}
+                </p>
               </div>
             </div>
+            {getIncomeMessage() && (
+              <div className={`p-3 rounded-lg text-sm ${incomeDeviation >= 0 ? "bg-[var(--success)]/10 text-[var(--success)]" : "bg-[var(--warning)]/10 text-[var(--warning)]"}`}>
+                {getIncomeMessage()}
+              </div>
+            )}
           </div>
 
           {/* Expenses */}
-          <div className="card p-4">
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-2">
-                <div className="p-2 rounded-lg bg-[var(--danger)]/10">
-                  <TrendingDown className="w-5 h-5 text-[var(--danger)]" />
-                </div>
-                <span className="font-medium">Gastos</span>
+          <div className="card p-5">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="p-2.5 rounded-xl bg-[var(--danger)]/10">
+                <TrendingDown className="w-6 h-6 text-[var(--danger)]" />
               </div>
-              {totalActualExpenses <= totalBudgetedExpenses ? (
-                <CheckCircle className="w-5 h-5 text-[var(--success)]" />
-              ) : (
-                <AlertCircle className="w-5 h-5 text-[var(--danger)]" />
-              )}
+              <span className="text-lg font-semibold">Gastos</span>
             </div>
-            <div className="space-y-1">
-              <div className="flex justify-between text-sm">
-                <span className="text-[var(--brand-gray)]">Previsto</span>
-                <span>{formatCurrency(totalBudgetedExpenses)}</span>
+            <div className="grid grid-cols-3 gap-3 mb-4">
+              <div className="text-center p-3 rounded-lg bg-[var(--background-secondary)]">
+                <p className="text-xs text-[var(--brand-gray)] mb-1">Previsto</p>
+                <p className="text-lg font-bold">{formatCurrency(totalBudgetedExpenses)}</p>
               </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-[var(--brand-gray)]">Real</span>
-                <span className="font-semibold text-[var(--danger)]">{formatCurrency(totalActualExpenses)}</span>
+              <div className="text-center p-3 rounded-lg bg-[var(--background-secondary)]">
+                <p className="text-xs text-[var(--brand-gray)] mb-1">Real</p>
+                <p className="text-lg font-bold text-[var(--danger)]">{formatCurrency(totalActualExpenses)}</p>
               </div>
-              <div className="flex justify-between text-sm pt-1 border-t border-[var(--border)]">
-                <span className="text-[var(--brand-gray)]">Diferencia</span>
-                <span className={totalActualExpenses <= totalBudgetedExpenses ? "text-[var(--success)]" : "text-[var(--danger)]"}>
-                  {totalBudgetedExpenses - totalActualExpenses >= 0 ? "+" : ""}{formatCurrency(totalBudgetedExpenses - totalActualExpenses)}
-                </span>
+              <div className="text-center p-3 rounded-lg bg-[var(--background-secondary)]">
+                <p className="text-xs text-[var(--brand-gray)] mb-1">Desviación</p>
+                <p className={`text-lg font-bold ${expenseDeviation <= 0 ? "text-[var(--success)]" : "text-[var(--danger)]"}`}>
+                  {expenseDeviation > 0 ? "+" : ""}{formatCurrency(expenseDeviation)}
+                </p>
               </div>
             </div>
+            {getExpenseMessage() && (
+              <div className={`p-3 rounded-lg text-sm ${expenseDeviation <= 0 ? "bg-[var(--success)]/10 text-[var(--success)]" : "bg-[var(--danger)]/10 text-[var(--danger)]"}`}>
+                {getExpenseMessage()}
+              </div>
+            )}
           </div>
 
           {/* Savings */}
-          <div className="card p-4">
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-2">
-                <div className="p-2 rounded-lg bg-[var(--brand-purple)]/10">
-                  <PiggyBank className="w-5 h-5 text-[var(--brand-purple)]" />
-                </div>
-                <span className="font-medium">Ahorro</span>
+          <div className="card p-5">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="p-2.5 rounded-xl bg-[var(--brand-purple)]/10">
+                <PiggyBank className="w-6 h-6 text-[var(--brand-purple)]" />
               </div>
-              {actualSavings >= budgetedSavings ? (
-                <CheckCircle className="w-5 h-5 text-[var(--success)]" />
-              ) : (
-                <AlertCircle className="w-5 h-5 text-[var(--warning)]" />
-              )}
+              <span className="text-lg font-semibold">Ahorro</span>
             </div>
-            <div className="space-y-1">
-              <div className="flex justify-between text-sm">
-                <span className="text-[var(--brand-gray)]">Previsto</span>
-                <span>{formatCurrency(budgetedSavings)}</span>
+            <div className="grid grid-cols-3 gap-3 mb-4">
+              <div className="text-center p-3 rounded-lg bg-[var(--background-secondary)]">
+                <p className="text-xs text-[var(--brand-gray)] mb-1">Previsto</p>
+                <p className="text-lg font-bold">{formatCurrency(budgetedSavings)}</p>
               </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-[var(--brand-gray)]">Real</span>
-                <span className={`font-semibold ${actualSavings >= 0 ? "text-[var(--brand-purple)]" : "text-[var(--danger)]"}`}>
-                  {formatCurrency(actualSavings)}
-                </span>
+              <div className="text-center p-3 rounded-lg bg-[var(--background-secondary)]">
+                <p className="text-xs text-[var(--brand-gray)] mb-1">Real</p>
+                <p className="text-lg font-bold text-[var(--brand-purple)]">{formatCurrency(actualSavings)}</p>
               </div>
-              <div className="flex justify-between text-sm pt-1 border-t border-[var(--border)]">
-                <span className="text-[var(--brand-gray)]">Diferencia</span>
-                <span className={actualSavings >= budgetedSavings ? "text-[var(--success)]" : "text-[var(--danger)]"}>
-                  {actualSavings >= budgetedSavings ? "+" : ""}{formatCurrency(actualSavings - budgetedSavings)}
-                </span>
+              <div className="text-center p-3 rounded-lg bg-[var(--background-secondary)]">
+                <p className="text-xs text-[var(--brand-gray)] mb-1">Desviación</p>
+                <p className={`text-lg font-bold ${savingsDeviation >= 0 ? "text-[var(--success)]" : "text-[var(--danger)]"}`}>
+                  {savingsDeviation >= 0 ? "+" : ""}{formatCurrency(savingsDeviation)}
+                </p>
               </div>
             </div>
+            {getSavingsMessage() && (
+              <div className={`p-3 rounded-lg text-sm ${savingsDeviation >= 0 ? "bg-[var(--success)]/10 text-[var(--success)]" : "bg-[var(--warning)]/10 text-[var(--warning)]"}`}>
+                {getSavingsMessage()}
+              </div>
+            )}
           </div>
         </div>
 
@@ -571,91 +596,90 @@ export default function PrevisionVsRealidadPage() {
             </div>
           </div>
 
-          {/* Bar Chart Comparison */}
+          {/* Simple Bar Comparison */}
           <div className="card p-6">
-            <h3 className="font-semibold mb-4">Comparativa General</h3>
-            <div className="h-64">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={barChartData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
-                  <XAxis dataKey="name" stroke="var(--brand-gray)" />
-                  <YAxis stroke="var(--brand-gray)" tickFormatter={(value) => `${value / 1000}k`} />
-                  <Tooltip
-                    formatter={(value: number) => formatCurrency(value)}
-                    contentStyle={{
-                      backgroundColor: "var(--background)",
-                      border: "1px solid var(--border)",
-                      borderRadius: "8px",
-                    }}
+            <h3 className="font-semibold mb-6">Comparativa General</h3>
+            <div className="space-y-6">
+              {/* Ingresos */}
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-medium">Ingresos</span>
+                  <div className="flex items-center gap-4 text-sm">
+                    <span className="text-[var(--brand-gray)]">Previsto: {formatCurrency(totalBudgetedIncome)}</span>
+                    <span className="text-[var(--success)] font-medium">Real: {formatCurrency(totalActualIncome)}</span>
+                  </div>
+                </div>
+                <div className="relative h-8 bg-[var(--background-secondary)] rounded-lg overflow-hidden">
+                  {totalBudgetedIncome > 0 && (
+                    <div
+                      className="absolute top-0 left-0 h-full bg-gray-400/30 rounded-lg"
+                      style={{ width: `${Math.min((totalBudgetedIncome / Math.max(totalBudgetedIncome, totalActualIncome)) * 100, 100)}%` }}
+                    />
+                  )}
+                  <div
+                    className="absolute top-0 left-0 h-full bg-[var(--success)] rounded-lg"
+                    style={{ width: `${totalBudgetedIncome > 0 || totalActualIncome > 0 ? Math.min((totalActualIncome / Math.max(totalBudgetedIncome, totalActualIncome)) * 100, 100) : 0}%` }}
                   />
-                  <Legend />
-                  <Bar dataKey="Previsto" fill="#6b7280" radius={[4, 4, 0, 0]} />
-                  <Bar dataKey="Real" fill="#06b6d4" radius={[4, 4, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-        </div>
+                </div>
+              </div>
 
-        {/* Rule Compliance */}
-        <div className="card p-6">
-          <h3 className="font-semibold mb-4">Cumplimiento de tu Regla {ruleNeeds}/{ruleWants}/{ruleSavings}</h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {/* Needs */}
-            <div className={`p-4 rounded-lg ${needsPercent <= ruleNeeds ? "bg-[var(--success)]/10" : "bg-[var(--danger)]/10"}`}>
-              <div className="flex items-center justify-between mb-2">
-                <span className="font-medium">Necesidades</span>
-                {needsPercent <= ruleNeeds ? (
-                  <CheckCircle className="w-5 h-5 text-[var(--success)]" />
-                ) : (
-                  <AlertCircle className="w-5 h-5 text-[var(--danger)]" />
-                )}
+              {/* Gastos */}
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-medium">Gastos</span>
+                  <div className="flex items-center gap-4 text-sm">
+                    <span className="text-[var(--brand-gray)]">Previsto: {formatCurrency(totalBudgetedExpenses)}</span>
+                    <span className="text-[var(--danger)] font-medium">Real: {formatCurrency(totalActualExpenses)}</span>
+                  </div>
+                </div>
+                <div className="relative h-8 bg-[var(--background-secondary)] rounded-lg overflow-hidden">
+                  {totalBudgetedExpenses > 0 && (
+                    <div
+                      className="absolute top-0 left-0 h-full bg-gray-400/30 rounded-lg"
+                      style={{ width: `${Math.min((totalBudgetedExpenses / Math.max(totalBudgetedExpenses, totalActualExpenses)) * 100, 100)}%` }}
+                    />
+                  )}
+                  <div
+                    className="absolute top-0 left-0 h-full bg-[var(--danger)] rounded-lg"
+                    style={{ width: `${totalBudgetedExpenses > 0 || totalActualExpenses > 0 ? Math.min((totalActualExpenses / Math.max(totalBudgetedExpenses, totalActualExpenses)) * 100, 100) : 0}%` }}
+                  />
+                </div>
               </div>
-              <div className="flex items-end gap-2">
-                <span className="text-3xl font-bold">{needsPercent}%</span>
-                <span className="text-sm text-[var(--brand-gray)] mb-1">/ {ruleNeeds}%</span>
-              </div>
-              <p className="text-sm text-[var(--brand-gray)] mt-1">
-                {formatCurrency(needsActual)} de {formatCurrency(totalActualIncome)}
-              </p>
-            </div>
 
-            {/* Wants */}
-            <div className={`p-4 rounded-lg ${wantsPercent <= ruleWants ? "bg-[var(--success)]/10" : "bg-[var(--danger)]/10"}`}>
-              <div className="flex items-center justify-between mb-2">
-                <span className="font-medium">Deseos</span>
-                {wantsPercent <= ruleWants ? (
-                  <CheckCircle className="w-5 h-5 text-[var(--success)]" />
-                ) : (
-                  <AlertCircle className="w-5 h-5 text-[var(--danger)]" />
-                )}
+              {/* Ahorro */}
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-medium">Ahorro</span>
+                  <div className="flex items-center gap-4 text-sm">
+                    <span className="text-[var(--brand-gray)]">Previsto: {formatCurrency(budgetedSavings)}</span>
+                    <span className="text-[var(--brand-purple)] font-medium">Real: {formatCurrency(actualSavings)}</span>
+                  </div>
+                </div>
+                <div className="relative h-8 bg-[var(--background-secondary)] rounded-lg overflow-hidden">
+                  {budgetedSavings > 0 && (
+                    <div
+                      className="absolute top-0 left-0 h-full bg-gray-400/30 rounded-lg"
+                      style={{ width: `${Math.min((budgetedSavings / Math.max(budgetedSavings, actualSavings)) * 100, 100)}%` }}
+                    />
+                  )}
+                  <div
+                    className="absolute top-0 left-0 h-full bg-[var(--brand-purple)] rounded-lg"
+                    style={{ width: `${budgetedSavings > 0 || actualSavings > 0 ? Math.min((actualSavings / Math.max(budgetedSavings, actualSavings)) * 100, 100) : 0}%` }}
+                  />
+                </div>
               </div>
-              <div className="flex items-end gap-2">
-                <span className="text-3xl font-bold">{wantsPercent}%</span>
-                <span className="text-sm text-[var(--brand-gray)] mb-1">/ {ruleWants}%</span>
-              </div>
-              <p className="text-sm text-[var(--brand-gray)] mt-1">
-                {formatCurrency(wantsActual)} de {formatCurrency(totalActualIncome)}
-              </p>
-            </div>
 
-            {/* Savings */}
-            <div className={`p-4 rounded-lg ${savingsPercent >= ruleSavings ? "bg-[var(--success)]/10" : "bg-[var(--warning)]/10"}`}>
-              <div className="flex items-center justify-between mb-2">
-                <span className="font-medium">Ahorro</span>
-                {savingsPercent >= ruleSavings ? (
-                  <CheckCircle className="w-5 h-5 text-[var(--success)]" />
-                ) : (
-                  <AlertCircle className="w-5 h-5 text-[var(--warning)]" />
-                )}
+              {/* Leyenda */}
+              <div className="flex items-center justify-center gap-6 pt-2 border-t border-[var(--border)]">
+                <div className="flex items-center gap-2">
+                  <div className="w-4 h-3 rounded bg-gray-400/30" />
+                  <span className="text-xs text-[var(--brand-gray)]">Previsto</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-4 h-3 rounded bg-[var(--brand-cyan)]" />
+                  <span className="text-xs text-[var(--brand-gray)]">Real</span>
+                </div>
               </div>
-              <div className="flex items-end gap-2">
-                <span className="text-3xl font-bold">{savingsPercent}%</span>
-                <span className="text-sm text-[var(--brand-gray)] mb-1">/ {ruleSavings}%</span>
-              </div>
-              <p className="text-sm text-[var(--brand-gray)] mt-1">
-                {formatCurrency(actualSavings)} de {formatCurrency(totalActualIncome)}
-              </p>
             </div>
           </div>
         </div>

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { X, TrendingUp, TrendingDown, ArrowLeftRight, Calendar, Tag, FileText, Euro, AlertTriangle } from "lucide-react";
+import { X, TrendingUp, TrendingDown, PiggyBank, Calendar, Tag, FileText, Euro, AlertTriangle } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { format } from "date-fns";
 
@@ -16,7 +16,7 @@ interface Category {
 
 interface Operation {
   id: string;
-  type: "income" | "expense" | "transfer";
+  type: "income" | "expense" | "savings";
   amount: number;
   concept: string;
   description: string | null;
@@ -36,13 +36,13 @@ interface OperationModalProps {
 const operationTypes = [
   { value: "income", label: "Ingreso", icon: TrendingUp, color: "text-[var(--success)]", bg: "bg-[var(--success)]/10" },
   { value: "expense", label: "Gasto", icon: TrendingDown, color: "text-[var(--danger)]", bg: "bg-[var(--danger)]/10" },
-  { value: "transfer", label: "Transferencia", icon: ArrowLeftRight, color: "text-[var(--brand-cyan)]", bg: "bg-[var(--brand-cyan)]/10" },
+  { value: "savings", label: "Ahorro", icon: PiggyBank, color: "text-[var(--brand-cyan)]", bg: "bg-[var(--brand-cyan)]/10" },
 ];
 
 const STORAGE_KEY_LAST_DATE = "finybuddy_last_operation_date";
 
 export default function OperationModal({ isOpen, onClose, onSave, operation, preselectedDate }: OperationModalProps) {
-  const [type, setType] = useState<"income" | "expense" | "transfer">("expense");
+  const [type, setType] = useState<"income" | "expense" | "savings">("expense");
   const [amount, setAmount] = useState("");
   const [concept, setConcept] = useState("");
   const [description, setDescription] = useState("");
@@ -155,7 +155,7 @@ export default function OperationModal({ isOpen, onClose, onSave, operation, pre
   const filteredCategories = categories.filter((cat) => {
     if (type === "income") return cat.type === "income";
     if (type === "expense") return cat.type === "expense";
-    return cat.type === "savings"; // transfer
+    return cat.type === "savings"; // savings
   });
 
   const handleClose = () => {
@@ -284,7 +284,7 @@ export default function OperationModal({ isOpen, onClose, onSave, operation, pre
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="p-6 space-y-5">
-          {/* Tipo de operación */}
+          {/* Tipo de operación - Siempre ocupa todo el ancho */}
           <div>
             <label className="block text-sm font-medium mb-2">Tipo de operación</label>
             <div className="grid grid-cols-3 gap-2">
@@ -296,7 +296,7 @@ export default function OperationModal({ isOpen, onClose, onSave, operation, pre
                     key={op.value}
                     type="button"
                     onClick={() => {
-                      setType(op.value as "income" | "expense" | "transfer");
+                      setType(op.value as "income" | "expense" | "savings");
                       setCategoryId("");
                     }}
                     className={`flex flex-col items-center gap-1 p-3 rounded-xl border-2 transition-all ${
@@ -315,76 +315,79 @@ export default function OperationModal({ isOpen, onClose, onSave, operation, pre
             </div>
           </div>
 
-          {/* Categoría - Movido arriba según requisitos */}
-          <div>
-            <label className="block text-sm font-medium mb-2">Categoría</label>
-            <div className="relative">
-              <Tag className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[var(--brand-gray)]" />
-              <select
-                value={categoryId}
-                onChange={(e) => setCategoryId(e.target.value)}
-                className="w-full pl-10 pr-4 py-3 bg-[var(--background-secondary)] border border-[var(--border)] rounded-xl focus:outline-none focus:border-[var(--brand-cyan)] focus:ring-1 focus:ring-[var(--brand-cyan)] appearance-none"
-              >
-                <option value="">Sin categoría</option>
-                {filteredCategories.map((cat) => (
-                  <option key={cat.id} value={cat.id}>
-                    {cat.icon} {cat.name}
-                  </option>
-                ))}
-              </select>
+          {/* Grid de 2 columnas para pantallas medianas y grandes */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Categoría */}
+            <div>
+              <label className="block text-sm font-medium mb-2">Categoría</label>
+              <div className="relative">
+                <Tag className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[var(--brand-gray)]" />
+                <select
+                  value={categoryId}
+                  onChange={(e) => setCategoryId(e.target.value)}
+                  className="w-full pl-10 pr-4 py-3 bg-[var(--background-secondary)] border border-[var(--border)] rounded-xl focus:outline-none focus:border-[var(--brand-cyan)] focus:ring-1 focus:ring-[var(--brand-cyan)] appearance-none"
+                >
+                  <option value="">Sin categoría</option>
+                  {filteredCategories.map((cat) => (
+                    <option key={cat.id} value={cat.id}>
+                      {cat.icon} {cat.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            {/* Concepto */}
+            <div>
+              <label className="block text-sm font-medium mb-2">Concepto</label>
+              <div className="relative">
+                <FileText className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[var(--brand-gray)]" />
+                <input
+                  type="text"
+                  value={concept}
+                  onChange={(e) => setConcept(e.target.value)}
+                  placeholder="Ej: Compra supermercado"
+                  className="w-full pl-10 pr-4 py-3 bg-[var(--background-secondary)] border border-[var(--border)] rounded-xl focus:outline-none focus:border-[var(--brand-cyan)] focus:ring-1 focus:ring-[var(--brand-cyan)]"
+                />
+              </div>
+            </div>
+
+            {/* Importe */}
+            <div>
+              <label className="block text-sm font-medium mb-2">Importe</label>
+              <div className="relative">
+                <Euro className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[var(--brand-gray)]" />
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={amount}
+                  onChange={(e) => setAmount(e.target.value)}
+                  placeholder="0.00"
+                  className="w-full pl-10 pr-4 py-3 bg-[var(--background-secondary)] border border-[var(--border)] rounded-xl text-lg font-semibold focus:outline-none focus:border-[var(--brand-cyan)] focus:ring-1 focus:ring-[var(--brand-cyan)]"
+                />
+              </div>
+            </div>
+
+            {/* Fecha */}
+            <div>
+              <label className="block text-sm font-medium mb-2">Fecha</label>
+              <div className="relative">
+                <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[var(--brand-gray)]" />
+                <input
+                  type="date"
+                  value={operationDate}
+                  onChange={(e) => setOperationDate(e.target.value)}
+                  className="w-full pl-10 pr-4 py-3 bg-[var(--background-secondary)] border border-[var(--border)] rounded-xl focus:outline-none focus:border-[var(--brand-cyan)] focus:ring-1 focus:ring-[var(--brand-cyan)]"
+                />
+              </div>
+              <p className="text-xs text-[var(--brand-gray)] mt-1">
+                La fecha se recordará para la próxima operación
+              </p>
             </div>
           </div>
 
-          {/* Concepto */}
-          <div>
-            <label className="block text-sm font-medium mb-2">Concepto</label>
-            <div className="relative">
-              <FileText className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[var(--brand-gray)]" />
-              <input
-                type="text"
-                value={concept}
-                onChange={(e) => setConcept(e.target.value)}
-                placeholder="Ej: Compra supermercado"
-                className="w-full pl-10 pr-4 py-3 bg-[var(--background-secondary)] border border-[var(--border)] rounded-xl focus:outline-none focus:border-[var(--brand-cyan)] focus:ring-1 focus:ring-[var(--brand-cyan)]"
-              />
-            </div>
-          </div>
-
-          {/* Importe */}
-          <div>
-            <label className="block text-sm font-medium mb-2">Importe</label>
-            <div className="relative">
-              <Euro className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[var(--brand-gray)]" />
-              <input
-                type="number"
-                step="0.01"
-                min="0"
-                value={amount}
-                onChange={(e) => setAmount(e.target.value)}
-                placeholder="0.00"
-                className="w-full pl-10 pr-4 py-3 bg-[var(--background-secondary)] border border-[var(--border)] rounded-xl text-lg font-semibold focus:outline-none focus:border-[var(--brand-cyan)] focus:ring-1 focus:ring-[var(--brand-cyan)]"
-              />
-            </div>
-          </div>
-
-          {/* Fecha */}
-          <div>
-            <label className="block text-sm font-medium mb-2">Fecha</label>
-            <div className="relative">
-              <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[var(--brand-gray)]" />
-              <input
-                type="date"
-                value={operationDate}
-                onChange={(e) => setOperationDate(e.target.value)}
-                className="w-full pl-10 pr-4 py-3 bg-[var(--background-secondary)] border border-[var(--border)] rounded-xl focus:outline-none focus:border-[var(--brand-cyan)] focus:ring-1 focus:ring-[var(--brand-cyan)]"
-              />
-            </div>
-            <p className="text-xs text-[var(--brand-gray)] mt-1">
-              La fecha se recordará para la próxima operación
-            </p>
-          </div>
-
-          {/* Descripción */}
+          {/* Descripción - Siempre ocupa todo el ancho */}
           <div>
             <label className="block text-sm font-medium mb-2">
               Descripción <span className="text-[var(--brand-gray)] font-normal">(opcional)</span>

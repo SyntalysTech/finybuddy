@@ -229,24 +229,24 @@ export default function AhorroPage() {
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           <div className="card p-4">
             <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-[var(--success)]/10">
-                <PiggyBank className="w-5 h-5 text-[var(--success)]" />
-              </div>
-              <div>
-                <p className="text-sm text-[var(--brand-gray)]">Total ahorrado</p>
-                <p className="text-xl font-bold text-[var(--success)]">{formatCurrency(totalSaved)}</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="card p-4">
-            <div className="flex items-center gap-3">
               <div className="p-2 rounded-lg bg-[var(--brand-cyan)]/10">
                 <Target className="w-5 h-5 text-[var(--brand-cyan)]" />
               </div>
               <div>
                 <p className="text-sm text-[var(--brand-gray)]">Objetivo total</p>
                 <p className="text-xl font-bold">{formatCurrency(totalTarget)}</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="card p-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-[var(--success)]/10">
+                <PiggyBank className="w-5 h-5 text-[var(--success)]" />
+              </div>
+              <div>
+                <p className="text-sm text-[var(--brand-gray)]">Total ahorrado</p>
+                <p className="text-xl font-bold text-[var(--success)]">{formatCurrency(totalSaved)}</p>
               </div>
             </div>
           </div>
@@ -777,11 +777,15 @@ function GoalModal({
                     key={c}
                     type="button"
                     onClick={() => setColor(c)}
-                    className={`w-10 h-10 rounded-lg border-2 transition-all ${
-                      color === c ? "border-white scale-110" : "border-transparent"
+                    className={`w-10 h-10 rounded-lg border-2 transition-all relative ${
+                      color === c ? "border-white scale-110 ring-2 ring-offset-2 ring-offset-[var(--background)] ring-white" : "border-transparent hover:scale-105"
                     }`}
                     style={{ backgroundColor: c }}
-                  />
+                  >
+                    {color === c && (
+                      <CheckCircle className="w-5 h-5 text-white absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 drop-shadow-md" />
+                    )}
+                  </button>
                 ))}
               </div>
             </div>
@@ -932,6 +936,7 @@ function ContributionModal({
       const { error: insertError } = await supabase
         .from("savings_contributions")
         .insert({
+          user_id: user.id,
           savings_goal_id: goal.id,
           amount: parseFloat(amount),
           notes: note.trim() || null,

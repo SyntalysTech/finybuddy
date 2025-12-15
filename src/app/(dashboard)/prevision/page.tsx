@@ -19,6 +19,8 @@ import {
   AlertCircle,
   CheckCircle,
   Sparkles,
+  AlertTriangle,
+  X,
 } from "lucide-react";
 import { format, subMonths, addMonths } from "date-fns";
 import { es } from "date-fns/locale";
@@ -58,9 +60,20 @@ export default function PrevisionPage() {
   const [hasChanges, setHasChanges] = useState(false);
   const [hasBudget, setHasBudget] = useState(false);
 
+  // Planned savings state
+  const [plannedSavings, setPlannedSavings] = useState<number>(0);
+  const [editingPlannedSavings, setEditingPlannedSavings] = useState(false);
+  const [plannedSavingsValue, setPlannedSavingsValue] = useState<string>("");
+
+  // Delete confirmation modal
+  const [showDeleteBudgetModal, setShowDeleteBudgetModal] = useState(false);
+
   const supabase = createClient();
   const selectedYear = selectedDate.getFullYear();
   const selectedMonth = selectedDate.getMonth() + 1;
+
+  // Get decimals preference from profile
+  const showDecimals = profile?.show_decimals ?? true;
 
   // Fetch categories and budgets
   const fetchData = useCallback(async () => {
@@ -93,6 +106,21 @@ export default function PrevisionPage() {
       .eq("year", selectedYear)
       .eq("month", selectedMonth);
 
+    // Fetch planned savings for selected month
+    const { data: plannedSavingsData } = await supabase
+      .from("planned_savings")
+      .select("amount")
+      .eq("user_id", user.id)
+      .eq("year", selectedYear)
+      .eq("month", selectedMonth)
+      .single();
+
+    if (plannedSavingsData) {
+      setPlannedSavings(plannedSavingsData.amount);
+    } else {
+      setPlannedSavings(0);
+    }
+
     if (budgetsData && budgetsData.length > 0) {
       setBudgets(budgetsData as BudgetWithCategory[]);
       setHasBudget(true);
@@ -113,8 +141,8 @@ export default function PrevisionPage() {
     return new Intl.NumberFormat("es-ES", {
       style: "currency",
       currency: profile?.currency || "EUR",
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
+      minimumFractionDigits: showDecimals ? 2 : 0,
+      maximumFractionDigits: showDecimals ? 2 : 0,
     }).format(amount);
   };
 
@@ -132,7 +160,10 @@ export default function PrevisionPage() {
 
   const totalIncome = incomeBudgets.reduce((sum, b) => sum + b.amount, 0);
   const totalExpenses = expenseBudgets.reduce((sum, b) => sum + b.amount, 0);
-  const totalSavings = totalIncome - totalExpenses;
+  // Use plannedSavings configured by user instead of calculating from difference
+  const totalSavings = plannedSavings;
+  // Calculate available balance (what's left after expenses and planned savings)
+  const availableBalance = totalIncome - totalExpenses - plannedSavings;
 
   // Calculate by segment
   const needsBudgets = expenseBudgets.filter(b => b.category?.segment === "needs");
@@ -146,11 +177,65 @@ export default function PrevisionPage() {
   // Calculate percentages vs rule
   const needsPercent = totalIncome > 0 ? Math.round((needsTotal / totalIncome) * 100) : 0;
   const wantsPercent = totalIncome > 0 ? Math.round((wantsTotal / totalIncome) * 100) : 0;
-  const savingsPercent = totalIncome > 0 ? Math.round((totalSavings / totalIncome) * 100) : 0;
+  const savingsPercent = totalIncome > 0 ? Math.round((plannedSavings / totalIncome) * 100) : 0;
 
+  // Calculate deviation in euros
   const ruleNeeds = profile?.rule_needs_percent || 50;
   const ruleWants = profile?.rule_wants_percent || 30;
   const ruleSavings = profile?.rule_savings_percent || 20;
+
+  const needsTarget = totalIncome * ruleNeeds / 100;
+  const wantsTarget = totalIncome * ruleWants / 100;
+  const savingsTarget = totalIncome * ruleSavings / 100;
+
+  const needsDeviation = needsTotal - needsTarget;
+  const wantsDeviation = wantsTotal - wantsTarget;
+  const savingsDeviation = plannedSavings - savingsTarget;
+
+  // Start editing planned savings
+  const startEditingPlannedSavings = () => {
+    setPlannedSavingsValue(plannedSavings.toString());
+    setEditingPlannedSavings(true);
+  };
+
+  // Save planned savings edit
+  const savePlannedSavingsEdit = () => {
+    const newAmount = parseFloat(plannedSavingsValue) || 0;
+    setPlannedSavings(newAmount);
+    setEditingPlannedSavings(false);
+    setHasChanges(true);
+  };
+
+  // Delete entire budget
+  const deleteEntireBudget = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    // Delete all budgets for this month
+    await supabase
+      .from("budgets")
+      .delete()
+      .eq("user_id", user.id)
+      .eq("year", selectedYear)
+      .eq("month", selectedMonth);
+
+    // Delete planned savings for this month
+    await supabase
+      .from("planned_savings")
+      .delete()
+      .eq("user_id", user.id)
+      .eq("year", selectedYear)
+      .eq("month", selectedMonth);
+
+    setShowDeleteBudgetModal(false);
+    setBudgets([]);
+    setPlannedSavings(0);
+    setHasBudget(false);
+    setHasChanges(false);
+  };
+
+  // Check if budget is effectively empty
+  const isBudgetEmpty = budgets.length === 0 && plannedSavings === 0;
 
   // Copy from previous month
   const copyFromPreviousMonth = async () => {
@@ -168,14 +253,28 @@ export default function PrevisionPage() {
       .eq("year", prevYear)
       .eq("month", prevMonth);
 
-    if (prevBudgets && prevBudgets.length > 0) {
-      const newBudgets = prevBudgets.map(b => ({
-        ...b,
-        id: undefined,
-        year: selectedYear,
-        month: selectedMonth,
-      }));
-      setBudgets(newBudgets as BudgetWithCategory[]);
+    // Also copy planned savings
+    const { data: prevPlannedSavings } = await supabase
+      .from("planned_savings")
+      .select("amount")
+      .eq("user_id", user.id)
+      .eq("year", prevYear)
+      .eq("month", prevMonth)
+      .single();
+
+    if ((prevBudgets && prevBudgets.length > 0) || prevPlannedSavings) {
+      if (prevBudgets && prevBudgets.length > 0) {
+        const newBudgets = prevBudgets.map(b => ({
+          ...b,
+          id: undefined,
+          year: selectedYear,
+          month: selectedMonth,
+        }));
+        setBudgets(newBudgets as BudgetWithCategory[]);
+      }
+      if (prevPlannedSavings) {
+        setPlannedSavings(prevPlannedSavings.amount);
+      }
       setHasChanges(true);
       setHasBudget(true);
     } else {
@@ -242,6 +341,12 @@ export default function PrevisionPage() {
 
   // Save all budgets
   const saveAllBudgets = async () => {
+    // Check if budget is empty - if so, return to empty state
+    if (isBudgetEmpty) {
+      await deleteEntireBudget();
+      return;
+    }
+
     setSaving(true);
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
@@ -249,6 +354,14 @@ export default function PrevisionPage() {
     // Delete existing budgets for this month
     await supabase
       .from("budgets")
+      .delete()
+      .eq("user_id", user.id)
+      .eq("year", selectedYear)
+      .eq("month", selectedMonth);
+
+    // Delete existing planned savings for this month
+    await supabase
+      .from("planned_savings")
       .delete()
       .eq("user_id", user.id)
       .eq("year", selectedYear)
@@ -263,6 +376,8 @@ export default function PrevisionPage() {
       year: selectedYear,
     }));
 
+    let hasError = false;
+
     if (budgetsToInsert.length > 0) {
       const { error } = await supabase
         .from("budgets")
@@ -270,11 +385,32 @@ export default function PrevisionPage() {
 
       if (error) {
         console.error("Error saving budgets:", error);
-        alert("Error al guardar el presupuesto");
-      } else {
-        setHasChanges(false);
-        fetchData();
+        hasError = true;
       }
+    }
+
+    // Insert planned savings
+    if (plannedSavings > 0) {
+      const { error } = await supabase
+        .from("planned_savings")
+        .insert({
+          user_id: user.id,
+          amount: plannedSavings,
+          month: selectedMonth,
+          year: selectedYear,
+        });
+
+      if (error) {
+        console.error("Error saving planned savings:", error);
+        hasError = true;
+      }
+    }
+
+    if (hasError) {
+      alert("Error al guardar el presupuesto");
+    } else {
+      setHasChanges(false);
+      fetchData();
     }
 
     setSaving(false);
@@ -423,9 +559,14 @@ export default function PrevisionPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-[var(--brand-gray)]">Ahorro previsto</p>
-                <p className={`text-xl font-bold ${totalSavings >= 0 ? "text-[var(--brand-purple)]" : "text-[var(--danger)]"}`}>
-                  {formatCurrency(totalSavings)}
+                <p className={`text-xl font-bold ${plannedSavings >= 0 ? "text-[var(--brand-purple)]" : "text-[var(--danger)]"}`}>
+                  {formatCurrency(plannedSavings)}
                 </p>
+                {hasBudget && totalIncome > 0 && (
+                  <p className="text-xs text-[var(--brand-gray)] mt-1">
+                    {savingsPercent}% de tus ingresos
+                  </p>
+                )}
               </div>
               <div className="p-2 rounded-lg bg-[var(--brand-purple)]/10">
                 <PiggyBank className="w-5 h-5 text-[var(--brand-purple)]" />
@@ -433,6 +574,19 @@ export default function PrevisionPage() {
             </div>
           </div>
         </div>
+
+        {/* Balance warning if negative */}
+        {hasBudget && availableBalance < 0 && (
+          <div className="p-4 rounded-xl bg-[var(--danger)]/10 border border-[var(--danger)]/20 flex items-start gap-3">
+            <AlertTriangle className="w-5 h-5 text-[var(--danger)] shrink-0 mt-0.5" />
+            <div>
+              <p className="font-medium text-[var(--danger)]">Tu presupuesto no cuadra</p>
+              <p className="text-sm text-[var(--foreground)]">
+                Tus gastos previstos ({formatCurrency(totalExpenses)}) + ahorro previsto ({formatCurrency(plannedSavings)}) superan tus ingresos previstos ({formatCurrency(totalIncome)}) en <strong>{formatCurrency(Math.abs(availableBalance))}</strong>.
+              </p>
+            </div>
+          </div>
+        )}
 
         {/* Action buttons */}
         {!hasBudget && !loading && (
@@ -540,16 +694,91 @@ export default function PrevisionPage() {
                 </div>
               </div>
 
+              {/* Planned Savings Panel - User defined savings */}
+              <div className="card overflow-hidden">
+                <div className="px-6 py-4 border-b border-[var(--border)] bg-[var(--brand-purple)]/5">
+                  <div className="flex items-center justify-between">
+                    <h3 className="font-semibold flex items-center gap-2">
+                      <PiggyBank className="w-5 h-5 text-[var(--brand-purple)]" />
+                      Ahorro previsto ({ruleSavings}%)
+                    </h3>
+                    <div className="text-right">
+                      <span className="text-lg font-bold text-[var(--brand-purple)]">
+                        {formatCurrency(plannedSavings)}
+                      </span>
+                      {totalIncome > 0 && (
+                        <span className={`text-sm ml-2 ${savingsPercent >= ruleSavings ? "text-[var(--success)]" : "text-[var(--warning)]"}`}>
+                          ({savingsPercent}%)
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+                <div className="p-4">
+                  {editingPlannedSavings ? (
+                    <div className="flex items-center gap-3">
+                      <div className="flex-1">
+                        <label className="block text-sm text-[var(--brand-gray)] mb-2">
+                          Importe de ahorro mensual previsto
+                        </label>
+                        <input
+                          type="number"
+                          value={plannedSavingsValue}
+                          onChange={(e) => setPlannedSavingsValue(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") savePlannedSavingsEdit();
+                            if (e.key === "Escape") setEditingPlannedSavings(false);
+                          }}
+                          className="w-full px-4 py-3 bg-[var(--background-secondary)] border border-[var(--brand-cyan)] rounded-lg text-lg font-semibold focus:outline-none"
+                          autoFocus
+                          step="0.01"
+                          min="0"
+                        />
+                      </div>
+                      <button
+                        onClick={savePlannedSavingsEdit}
+                        className="p-3 rounded-lg bg-[var(--success)]/10 text-[var(--success)] hover:bg-[var(--success)]/20 transition-colors"
+                      >
+                        <CheckCircle className="w-5 h-5" />
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm text-[var(--brand-gray)]">
+                          Define cuánto quieres ahorrar este mes
+                        </p>
+                        {totalIncome > 0 && (
+                          <p className="text-xs text-[var(--brand-gray)] mt-1">
+                            Objetivo según tu regla: {formatCurrency(savingsTarget)} ({ruleSavings}% de {formatCurrency(totalIncome)})
+                          </p>
+                        )}
+                      </div>
+                      <button
+                        onClick={startEditingPlannedSavings}
+                        className="flex items-center gap-2 px-4 py-2 rounded-lg bg-[var(--brand-purple)]/10 text-[var(--brand-purple)] hover:bg-[var(--brand-purple)]/20 transition-colors"
+                      >
+                        <Edit2 className="w-4 h-4" />
+                        Editar
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+
               {/* Savings segment (if any expense categories are marked as savings) */}
               {savingsBudgets.length > 0 && (
                 <div className="card overflow-hidden">
-                  <div className="px-6 py-4 border-b border-[var(--border)] bg-[var(--brand-purple)]/5">
+                  <div className="px-6 py-4 border-b border-[var(--border)] bg-[var(--brand-cyan)]/5">
                     <div className="flex items-center justify-between">
-                      <h3 className="font-semibold">Ahorro planificado</h3>
-                      <span className="text-lg font-bold text-[var(--brand-purple)]">
+                      <h3 className="font-semibold">Gastos de ahorro</h3>
+                      <span className="text-lg font-bold text-[var(--brand-cyan)]">
                         {formatCurrency(savingsTotal)}
                       </span>
                     </div>
+                    <p className="text-xs text-[var(--brand-gray)] mt-1">
+                      Categorías de gasto etiquetadas como ahorro
+                    </p>
                   </div>
                   <div className="divide-y divide-[var(--border)]">
                     {savingsBudgets.map(renderBudgetRow)}
@@ -623,16 +852,22 @@ export default function PrevisionPage() {
                   )}
                 </div>
                 <p className="text-sm text-[var(--brand-gray)]">
-                  Objetivo: {formatCurrency(totalIncome * ruleNeeds / 100)}
+                  Objetivo: {formatCurrency(needsTarget)} ({ruleNeeds}%)
                 </p>
                 <p className="text-sm">
-                  Previsto: <span className="font-semibold">{formatCurrency(needsTotal)}</span>
+                  Previsto: <span className="font-semibold">{formatCurrency(needsTotal)}</span> ({needsPercent}%)
                 </p>
-                <p className={`text-xs mt-1 ${needsPercent <= ruleNeeds ? "text-[var(--success)]" : "text-[var(--danger)]"}`}>
-                  {needsPercent <= ruleNeeds
-                    ? `${ruleNeeds - needsPercent} puntos por debajo`
-                    : `${needsPercent - ruleNeeds} puntos por encima`
-                  }
+                <p className={`text-sm font-semibold mt-2 ${needsPercent <= ruleNeeds ? "text-[var(--success)]" : "text-[var(--danger)]"}`}>
+                  {needsDeviation === 0 ? (
+                    "En el objetivo"
+                  ) : needsDeviation < 0 ? (
+                    <>-{Math.abs(needsPercent - ruleNeeds)}% / {formatCurrency(Math.abs(needsDeviation))}</>
+                  ) : (
+                    <>+{needsPercent - ruleNeeds}% / +{formatCurrency(needsDeviation)}</>
+                  )}
+                </p>
+                <p className="text-xs text-[var(--brand-gray)] mt-1">
+                  {needsPercent <= ruleNeeds ? "Por debajo del objetivo" : "Por encima del objetivo"}
                 </p>
               </div>
 
@@ -647,16 +882,22 @@ export default function PrevisionPage() {
                   )}
                 </div>
                 <p className="text-sm text-[var(--brand-gray)]">
-                  Objetivo: {formatCurrency(totalIncome * ruleWants / 100)}
+                  Objetivo: {formatCurrency(wantsTarget)} ({ruleWants}%)
                 </p>
                 <p className="text-sm">
-                  Previsto: <span className="font-semibold">{formatCurrency(wantsTotal)}</span>
+                  Previsto: <span className="font-semibold">{formatCurrency(wantsTotal)}</span> ({wantsPercent}%)
                 </p>
-                <p className={`text-xs mt-1 ${wantsPercent <= ruleWants ? "text-[var(--success)]" : "text-[var(--danger)]"}`}>
-                  {wantsPercent <= ruleWants
-                    ? `${ruleWants - wantsPercent} puntos por debajo`
-                    : `${wantsPercent - ruleWants} puntos por encima`
-                  }
+                <p className={`text-sm font-semibold mt-2 ${wantsPercent <= ruleWants ? "text-[var(--success)]" : "text-[var(--danger)]"}`}>
+                  {wantsDeviation === 0 ? (
+                    "En el objetivo"
+                  ) : wantsDeviation < 0 ? (
+                    <>-{Math.abs(wantsPercent - ruleWants)}% / {formatCurrency(Math.abs(wantsDeviation))}</>
+                  ) : (
+                    <>+{wantsPercent - ruleWants}% / +{formatCurrency(wantsDeviation)}</>
+                  )}
+                </p>
+                <p className="text-xs text-[var(--brand-gray)] mt-1">
+                  {wantsPercent <= ruleWants ? "Por debajo del objetivo" : "Por encima del objetivo"}
                 </p>
               </div>
 
@@ -671,16 +912,22 @@ export default function PrevisionPage() {
                   )}
                 </div>
                 <p className="text-sm text-[var(--brand-gray)]">
-                  Objetivo: {formatCurrency(totalIncome * ruleSavings / 100)}
+                  Objetivo: {formatCurrency(savingsTarget)} ({ruleSavings}%)
                 </p>
                 <p className="text-sm">
-                  Previsto: <span className="font-semibold">{formatCurrency(totalSavings)}</span>
+                  Previsto: <span className="font-semibold">{formatCurrency(plannedSavings)}</span> ({savingsPercent}%)
                 </p>
-                <p className={`text-xs mt-1 ${savingsPercent >= ruleSavings ? "text-[var(--success)]" : "text-[var(--warning)]"}`}>
-                  {savingsPercent >= ruleSavings
-                    ? `${savingsPercent - ruleSavings} puntos por encima`
-                    : `${ruleSavings - savingsPercent} puntos por debajo`
-                  }
+                <p className={`text-sm font-semibold mt-2 ${savingsPercent >= ruleSavings ? "text-[var(--success)]" : "text-[var(--warning)]"}`}>
+                  {savingsDeviation === 0 ? (
+                    "En el objetivo"
+                  ) : savingsDeviation > 0 ? (
+                    <>+{savingsPercent - ruleSavings}% / +{formatCurrency(savingsDeviation)}</>
+                  ) : (
+                    <>-{Math.abs(savingsPercent - ruleSavings)}% / {formatCurrency(Math.abs(savingsDeviation))}</>
+                  )}
+                </p>
+                <p className="text-xs text-[var(--brand-gray)] mt-1">
+                  {savingsPercent >= ruleSavings ? "Por encima del objetivo" : "Por debajo del objetivo"}
                 </p>
               </div>
             </div>
@@ -689,14 +936,33 @@ export default function PrevisionPage() {
             {(needsPercent > ruleNeeds || wantsPercent > ruleWants || savingsPercent < ruleSavings) && (
               <div className="mt-4 p-4 rounded-lg bg-[var(--brand-purple)]/5 border border-[var(--brand-purple)]/20">
                 <p className="text-sm text-[var(--foreground)]">
-                  <strong className="text-[var(--brand-purple)]">Mensaje personalizado:</strong>{" "}
-                  {needsPercent > ruleNeeds && `Tu presupuesto de necesidades está ${needsPercent - ruleNeeds} puntos por encima de tu regla. `}
-                  {wantsPercent > ruleWants && `Tu presupuesto de deseos está ${wantsPercent - ruleWants} puntos por encima. `}
-                  {savingsPercent < ruleSavings && `Tu ahorro previsto está ${ruleSavings - savingsPercent} puntos por debajo de tu objetivo. `}
-                  No pasa nada si es algo puntual, pero si se repite varios meses puede afectar a tus objetivos de ahorro a largo plazo.
+                  <strong className="text-[var(--brand-purple)]">Consejo:</strong>{" "}
+                  {needsPercent > ruleNeeds && (
+                    <>Tus necesidades superan tu objetivo en {formatCurrency(needsDeviation)} (+{needsPercent - ruleNeeds}%). </>
+                  )}
+                  {wantsPercent > ruleWants && (
+                    <>Tus deseos superan tu objetivo en {formatCurrency(wantsDeviation)} (+{wantsPercent - ruleWants}%). </>
+                  )}
+                  {savingsPercent < ruleSavings && (
+                    <>Tu ahorro está {formatCurrency(Math.abs(savingsDeviation))} por debajo de tu meta (-{ruleSavings - savingsPercent}%). </>
+                  )}
+                  Si esto se repite varios meses, puede afectar tus objetivos de ahorro a largo plazo. Revisa si puedes ajustar alguna categoría.
                 </p>
               </div>
             )}
+          </div>
+        )}
+
+        {/* Delete budget button */}
+        {hasBudget && !hasChanges && (
+          <div className="flex justify-center">
+            <button
+              onClick={() => setShowDeleteBudgetModal(true)}
+              className="flex items-center gap-2 px-4 py-2 rounded-lg text-[var(--danger)] hover:bg-[var(--danger)]/10 transition-colors"
+            >
+              <Trash2 className="w-4 h-4" />
+              Eliminar presupuesto del mes
+            </button>
           </div>
         )}
 
@@ -705,15 +971,61 @@ export default function PrevisionPage() {
           <div className="sticky bottom-6">
             <button
               onClick={saveAllBudgets}
-              disabled={saving}
+              disabled={saving || isBudgetEmpty}
               className="w-full flex items-center justify-center gap-2 px-6 py-4 rounded-xl gradient-brand text-white font-medium text-lg shadow-lg hover:opacity-90 transition-opacity disabled:opacity-50"
             >
               <Save className="w-5 h-5" />
-              {saving ? "Guardando..." : "Guardar Previsión"}
+              {saving ? "Guardando..." : isBudgetEmpty ? "Sin datos para guardar" : "Guardar Previsión"}
             </button>
           </div>
         )}
       </div>
+
+      {/* Delete Budget Confirmation Modal */}
+      {showDeleteBudgetModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-[var(--background)] rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
+            <div className="px-6 py-4 border-b border-[var(--border)] flex items-center justify-between">
+              <h2 className="text-lg font-semibold text-[var(--danger)]">Eliminar presupuesto</h2>
+              <button
+                onClick={() => setShowDeleteBudgetModal(false)}
+                className="p-1 rounded-lg hover:bg-[var(--background-secondary)] transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="p-6">
+              <div className="flex items-start gap-4 mb-6">
+                <div className="p-3 rounded-full bg-[var(--danger)]/10">
+                  <AlertTriangle className="w-6 h-6 text-[var(--danger)]" />
+                </div>
+                <div>
+                  <p className="font-medium mb-2">
+                    ¿Eliminar el presupuesto de {format(selectedDate, "MMMM yyyy", { locale: es })}?
+                  </p>
+                  <p className="text-sm text-[var(--brand-gray)]">
+                    Se eliminarán todos los importes previstos de ingresos, gastos y ahorro para este mes. Esta acción no se puede deshacer.
+                  </p>
+                </div>
+              </div>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowDeleteBudgetModal(false)}
+                  className="flex-1 px-4 py-3 rounded-xl border border-[var(--border)] font-medium hover:bg-[var(--background-secondary)] transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={deleteEntireBudget}
+                  className="flex-1 px-4 py-3 rounded-xl bg-[var(--danger)] text-white font-medium hover:opacity-90 transition-opacity"
+                >
+                  Sí, eliminar
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }

@@ -9,12 +9,14 @@ import {
   Plus,
   TrendingUp,
   TrendingDown,
-  ArrowLeftRight,
   Calendar as CalendarIcon,
   X,
   Edit2,
   Trash2,
-  Euro
+  PiggyBank,
+  Bell,
+  Clock,
+  Repeat
 } from "lucide-react";
 import {
   format,
@@ -45,7 +47,7 @@ interface Category {
 
 interface Operation {
   id: string;
-  type: "income" | "expense" | "transfer";
+  type: "income" | "expense" | "savings";
   amount: number;
   concept: string;
   description: string | null;
@@ -54,11 +56,35 @@ interface Operation {
   category?: Category;
 }
 
+interface SavingsContribution {
+  id: string;
+  amount: number;
+  contribution_date: string;
+  savings_goal: {
+    name: string;
+    icon: string;
+    color: string;
+  };
+}
+
+interface Reminder {
+  id: string;
+  name: string;
+  description: string | null;
+  reminder_date: string;
+  amount: number | null;
+  recurrence: "none" | "monthly" | "quarterly" | "yearly" | null;
+  is_completed: boolean;
+}
+
 interface DayData {
   date: Date;
   operations: Operation[];
+  contributions: SavingsContribution[];
+  reminders: Reminder[];
   totalIncome: number;
   totalExpenses: number;
+  totalSavings: number;
 }
 
 const WEEKDAYS = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"];
@@ -69,9 +95,11 @@ export default function CalendarioPage() {
   const [selectedDay, setSelectedDay] = useState<DayData | null>(null);
   const [showDayModal, setShowDayModal] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [showDecimals, setShowDecimals] = useState(true);
   const [monthSummary, setMonthSummary] = useState({
     totalIncome: 0,
     totalExpenses: 0,
+    totalSavings: 0,
     operationCount: 0,
   });
 
@@ -84,7 +112,31 @@ export default function CalendarioPage() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deletingOperation, setDeletingOperation] = useState<Operation | null>(null);
 
+  // Reminder modal states
+  const [showReminderModal, setShowReminderModal] = useState(false);
+  const [editingReminder, setEditingReminder] = useState<Reminder | null>(null);
+  const [showDeleteReminderModal, setShowDeleteReminderModal] = useState(false);
+  const [deletingReminder, setDeletingReminder] = useState<Reminder | null>(null);
+
   const supabase = createClient();
+
+  // Fetch user preferences
+  useEffect(() => {
+    const fetchProfile = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("show_decimals")
+          .eq("id", user.id)
+          .single();
+        if (profile) {
+          setShowDecimals(profile.show_decimals ?? true);
+        }
+      }
+    };
+    fetchProfile();
+  }, [supabase]);
 
   const fetchMonthOperations = useCallback(async () => {
     setLoading(true);
@@ -111,6 +163,29 @@ export default function CalendarioPage() {
         .lte("operation_date", format(calendarEnd, "yyyy-MM-dd"))
         .order("operation_date", { ascending: true });
 
+      // Fetch savings contributions for the visible calendar range
+      const { data: contributions } = await supabase
+        .from("savings_contributions")
+        .select(`
+          id,
+          amount,
+          contribution_date,
+          savings_goal:savings_goals(name, icon, color)
+        `)
+        .eq("user_id", user.id)
+        .gte("contribution_date", format(calendarStart, "yyyy-MM-dd"))
+        .lte("contribution_date", format(calendarEnd, "yyyy-MM-dd"))
+        .order("contribution_date", { ascending: true });
+
+      // Fetch reminders for the visible calendar range
+      const { data: reminders } = await supabase
+        .from("calendar_reminders")
+        .select("*")
+        .eq("user_id", user.id)
+        .gte("reminder_date", format(calendarStart, "yyyy-MM-dd"))
+        .lte("reminder_date", format(calendarEnd, "yyyy-MM-dd"))
+        .order("reminder_date", { ascending: true });
+
       // Build calendar days array
       const days: DayData[] = [];
       let day = calendarStart;
@@ -119,6 +194,15 @@ export default function CalendarioPage() {
         const dayStr = format(day, "yyyy-MM-dd");
         const dayOperations = (operations || []).filter(
           (op) => op.operation_date === dayStr
+        );
+        const dayContributions = (contributions || []).filter(
+          (c) => c.contribution_date === dayStr
+        ).map(c => ({
+          ...c,
+          savings_goal: c.savings_goal as unknown as SavingsContribution["savings_goal"]
+        }));
+        const dayReminders = (reminders || []).filter(
+          (r) => r.reminder_date === dayStr
         );
 
         const totalIncome = dayOperations
@@ -129,11 +213,17 @@ export default function CalendarioPage() {
           .filter((op) => op.type === "expense")
           .reduce((sum, op) => sum + op.amount, 0);
 
+        const totalSavings = dayContributions
+          .reduce((sum, c) => sum + c.amount, 0);
+
         days.push({
           date: new Date(day),
           operations: dayOperations,
+          contributions: dayContributions,
+          reminders: dayReminders,
           totalIncome,
           totalExpenses,
+          totalSavings,
         });
 
         day = addDays(day, 1);
@@ -149,6 +239,13 @@ export default function CalendarioPage() {
         }
       );
 
+      const monthContributions = (contributions || []).filter(
+        (c) => {
+          const cDate = parseISO(c.contribution_date);
+          return isSameMonth(cDate, currentDate);
+        }
+      );
+
       const totalIncome = monthOperations
         .filter((op) => op.type === "income")
         .reduce((sum, op) => sum + op.amount, 0);
@@ -157,9 +254,13 @@ export default function CalendarioPage() {
         .filter((op) => op.type === "expense")
         .reduce((sum, op) => sum + op.amount, 0);
 
+      const totalSavings = monthContributions
+        .reduce((sum, c) => sum + c.amount, 0);
+
       setMonthSummary({
         totalIncome,
         totalExpenses,
+        totalSavings,
         operationCount: monthOperations.length,
       });
 
@@ -259,8 +360,8 @@ export default function CalendarioPage() {
         return <TrendingUp className="w-4 h-4 text-[var(--success)]" />;
       case "expense":
         return <TrendingDown className="w-4 h-4 text-[var(--danger)]" />;
-      case "transfer":
-        return <ArrowLeftRight className="w-4 h-4 text-[var(--brand-cyan)]" />;
+      case "savings":
+        return <PiggyBank className="w-4 h-4 text-[var(--brand-cyan)]" />;
       default:
         return null;
     }
@@ -270,7 +371,63 @@ export default function CalendarioPage() {
     return new Intl.NumberFormat("es-ES", {
       style: "currency",
       currency: "EUR",
+      minimumFractionDigits: showDecimals ? 2 : 0,
+      maximumFractionDigits: showDecimals ? 2 : 0,
     }).format(amount);
+  };
+
+  const handleAddReminder = (date?: Date) => {
+    if (date) {
+      setPreselectedDate(format(date, "yyyy-MM-dd"));
+    } else {
+      setPreselectedDate(null);
+    }
+    setEditingReminder(null);
+    setShowReminderModal(true);
+  };
+
+  const handleEditReminder = (reminder: Reminder) => {
+    setEditingReminder(reminder);
+    setPreselectedDate(null);
+    setShowReminderModal(true);
+  };
+
+  const handleDeleteReminder = (reminder: Reminder) => {
+    setDeletingReminder(reminder);
+    setShowDeleteReminderModal(true);
+  };
+
+  const confirmDeleteReminder = async () => {
+    if (!deletingReminder) return;
+
+    try {
+      const { error } = await supabase
+        .from("calendar_reminders")
+        .delete()
+        .eq("id", deletingReminder.id);
+
+      if (error) throw error;
+
+      setShowDeleteReminderModal(false);
+      setDeletingReminder(null);
+      fetchMonthOperations();
+    } catch (error) {
+      console.error("Error deleting reminder:", error);
+    }
+  };
+
+  const handleToggleReminderComplete = async (reminder: Reminder) => {
+    try {
+      const { error } = await supabase
+        .from("calendar_reminders")
+        .update({ is_completed: !reminder.is_completed })
+        .eq("id", reminder.id);
+
+      if (error) throw error;
+      fetchMonthOperations();
+    } catch (error) {
+      console.error("Error updating reminder:", error);
+    }
   };
 
   return (
@@ -279,13 +436,22 @@ export default function CalendarioPage() {
         title="Calendario"
         subtitle="Vista calendario de tus operaciones"
         actions={
-          <button
-            onClick={() => handleAddOperation()}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl gradient-brand text-white font-medium hover:opacity-90 transition-opacity"
-          >
-            <Plus className="w-4 h-4" />
-            <span className="hidden sm:inline">Nueva operación</span>
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => handleAddReminder()}
+              className="flex items-center gap-2 px-4 py-2 rounded-xl border border-[var(--border)] font-medium hover:bg-[var(--background-secondary)] transition-colors"
+            >
+              <Bell className="w-4 h-4" />
+              <span className="hidden sm:inline">Nuevo recordatorio</span>
+            </button>
+            <button
+              onClick={() => handleAddOperation()}
+              className="flex items-center gap-2 px-4 py-2 rounded-xl gradient-brand text-white font-medium hover:opacity-90 transition-opacity"
+            >
+              <Plus className="w-4 h-4" />
+              <span className="hidden sm:inline">Nueva operación</span>
+            </button>
+          </div>
         }
       />
 
@@ -325,7 +491,7 @@ export default function CalendarioPage() {
             </div>
 
             {/* Month Summary */}
-            <div className="flex items-center gap-6 text-sm">
+            <div className="flex items-center gap-6 text-sm flex-wrap">
               <div className="flex items-center gap-2">
                 <TrendingUp className="w-4 h-4 text-[var(--success)]" />
                 <span className="text-[var(--brand-gray)]">Ingresos:</span>
@@ -340,6 +506,15 @@ export default function CalendarioPage() {
                   {formatCurrency(monthSummary.totalExpenses)}
                 </span>
               </div>
+              {monthSummary.totalSavings > 0 && (
+                <div className="flex items-center gap-2">
+                  <PiggyBank className="w-4 h-4 text-[var(--brand-cyan)]" />
+                  <span className="text-[var(--brand-gray)]">Ahorro:</span>
+                  <span className="font-semibold text-[var(--brand-cyan)]">
+                    {formatCurrency(monthSummary.totalSavings)}
+                  </span>
+                </div>
+              )}
               <div className="flex items-center gap-2">
                 <span className="text-[var(--brand-gray)]">Operaciones:</span>
                 <span className="font-semibold">{monthSummary.operationCount}</span>
@@ -374,6 +549,9 @@ export default function CalendarioPage() {
                 const isCurrentMonth = isSameMonth(dayData.date, currentDate);
                 const isTodayDate = isToday(dayData.date);
                 const hasOperations = dayData.operations.length > 0;
+                const hasContributions = dayData.contributions.length > 0;
+                const hasReminders = dayData.reminders.length > 0;
+                const totalItems = dayData.operations.length + dayData.contributions.length + dayData.reminders.length;
 
                 return (
                   <div
@@ -401,15 +579,15 @@ export default function CalendarioPage() {
                       >
                         {format(dayData.date, "d")}
                       </span>
-                      {hasOperations && (
+                      {totalItems > 0 && (
                         <span className="text-xs text-[var(--brand-gray)]">
-                          {dayData.operations.length}
+                          {totalItems}
                         </span>
                       )}
                     </div>
 
                     {/* Day Totals */}
-                    {hasOperations && (
+                    {(hasOperations || hasContributions) && (
                       <div className="space-y-1">
                         {dayData.totalIncome > 0 && (
                           <div className="flex items-center gap-1 text-xs">
@@ -427,11 +605,41 @@ export default function CalendarioPage() {
                             </span>
                           </div>
                         )}
+                        {dayData.totalSavings > 0 && (
+                          <div className="flex items-center gap-1 text-xs">
+                            <PiggyBank className="w-3 h-3 text-[var(--brand-cyan)]" />
+                            <span className="text-[var(--brand-cyan)] font-medium truncate">
+                              {formatCurrency(dayData.totalSavings)}
+                            </span>
+                          </div>
+                        )}
                       </div>
                     )}
 
-                    {/* Operation dots/preview (max 3) */}
-                    {hasOperations && (
+                    {/* Reminders preview */}
+                    {hasReminders && (
+                      <div className="mt-1">
+                        {dayData.reminders.slice(0, 2).map((reminder) => (
+                          <div
+                            key={reminder.id}
+                            className={`text-[10px] px-1.5 py-0.5 rounded bg-[var(--warning)]/10 text-[var(--warning)] truncate mb-0.5 ${
+                              reminder.is_completed ? "line-through opacity-50" : ""
+                            }`}
+                            title={reminder.name}
+                          >
+                            {reminder.name}
+                          </div>
+                        ))}
+                        {dayData.reminders.length > 2 && (
+                          <span className="text-[10px] text-[var(--brand-gray)]">
+                            +{dayData.reminders.length - 2} más
+                          </span>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Operation/Contribution dots (max 3) */}
+                    {(hasOperations || hasContributions) && (
                       <div className="mt-1 flex flex-wrap gap-1">
                         {dayData.operations.slice(0, 3).map((op) => (
                           <div
@@ -440,14 +648,21 @@ export default function CalendarioPage() {
                               w-2 h-2 rounded-full
                               ${op.type === "income" ? "bg-[var(--success)]" : ""}
                               ${op.type === "expense" ? "bg-[var(--danger)]" : ""}
-                              ${op.type === "transfer" ? "bg-[var(--brand-cyan)]" : ""}
+                              ${op.type === "savings" ? "bg-[var(--brand-cyan)]" : ""}
                             `}
                             title={op.concept}
                           />
                         ))}
-                        {dayData.operations.length > 3 && (
+                        {dayData.contributions.slice(0, Math.max(0, 3 - dayData.operations.length)).map((c) => (
+                          <div
+                            key={c.id}
+                            className="w-2 h-2 rounded-full bg-[var(--brand-purple)]"
+                            title={`Ahorro: ${c.savings_goal?.name}`}
+                          />
+                        ))}
+                        {(dayData.operations.length + dayData.contributions.length) > 3 && (
                           <span className="text-[10px] text-[var(--brand-gray)]">
-                            +{dayData.operations.length - 3}
+                            +{dayData.operations.length + dayData.contributions.length - 3}
                           </span>
                         )}
                       </div>
@@ -460,7 +675,7 @@ export default function CalendarioPage() {
         </div>
 
         {/* Legend */}
-        <div className="flex items-center justify-center gap-6 text-sm text-[var(--brand-gray)]">
+        <div className="flex items-center justify-center gap-4 text-sm text-[var(--brand-gray)] flex-wrap">
           <div className="flex items-center gap-2">
             <div className="w-3 h-3 rounded-full bg-[var(--success)]" />
             <span>Ingresos</span>
@@ -473,21 +688,29 @@ export default function CalendarioPage() {
             <div className="w-3 h-3 rounded-full bg-[var(--brand-cyan)]" />
             <span>Transferencias</span>
           </div>
+          <div className="flex items-center gap-2">
+            <div className="w-3 h-3 rounded-full bg-[var(--brand-purple)]" />
+            <span>Ahorro</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-3 h-3 rounded bg-[var(--warning)]/30" />
+            <span>Recordatorios</span>
+          </div>
         </div>
       </div>
 
       {/* Day Detail Modal */}
       {showDayModal && selectedDay && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-[var(--background)] rounded-2xl shadow-2xl w-full max-w-lg max-h-[80vh] overflow-hidden">
+          <div className="bg-[var(--background)] rounded-2xl shadow-2xl w-full max-w-lg max-h-[80vh] flex flex-col">
             {/* Header */}
-            <div className="px-6 py-4 border-b border-[var(--border)] flex items-center justify-between">
+            <div className="px-6 py-4 border-b border-[var(--border)] flex items-center justify-between shrink-0">
               <div>
                 <h2 className="text-lg font-semibold capitalize">
                   {format(selectedDay.date, "EEEE, d 'de' MMMM", { locale: es })}
                 </h2>
                 <p className="text-sm text-[var(--brand-gray)]">
-                  {selectedDay.operations.length} operacion{selectedDay.operations.length !== 1 ? "es" : ""}
+                  {selectedDay.operations.length + selectedDay.contributions.length + selectedDay.reminders.length} elemento{(selectedDay.operations.length + selectedDay.contributions.length + selectedDay.reminders.length) !== 1 ? "s" : ""}
                 </p>
               </div>
               <button
@@ -498,11 +721,11 @@ export default function CalendarioPage() {
               </button>
             </div>
 
-            {/* Content */}
-            <div className="p-6 overflow-y-auto max-h-[calc(80vh-140px)]">
+            {/* Content - Scrollable */}
+            <div className="flex-1 overflow-y-auto p-6 min-h-0">
               {/* Day Totals */}
-              {selectedDay.operations.length > 0 && (
-                <div className="flex items-center gap-4 mb-4 pb-4 border-b border-[var(--border)]">
+              {(selectedDay.operations.length > 0 || selectedDay.contributions.length > 0) && (
+                <div className="flex items-center gap-4 mb-4 pb-4 border-b border-[var(--border)] flex-wrap">
                   {selectedDay.totalIncome > 0 && (
                     <div className="flex items-center gap-2">
                       <TrendingUp className="w-4 h-4 text-[var(--success)]" />
@@ -519,121 +742,237 @@ export default function CalendarioPage() {
                       </span>
                     </div>
                   )}
-                  <div className="flex items-center gap-2 ml-auto">
-                    <Euro className="w-4 h-4 text-[var(--brand-gray)]" />
-                    <span className="font-semibold">
-                      Balance: {formatCurrency(selectedDay.totalIncome - selectedDay.totalExpenses)}
-                    </span>
+                  {selectedDay.totalSavings > 0 && (
+                    <div className="flex items-center gap-2">
+                      <PiggyBank className="w-4 h-4 text-[var(--brand-cyan)]" />
+                      <span className="text-[var(--brand-cyan)] font-semibold">
+                        {formatCurrency(selectedDay.totalSavings)}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Reminders Section */}
+              {selectedDay.reminders.length > 0 && (
+                <div className="mb-4">
+                  <h3 className="text-sm font-medium text-[var(--brand-gray)] mb-2 flex items-center gap-2">
+                    <Bell className="w-4 h-4" />
+                    Recordatorios
+                  </h3>
+                  <div className="space-y-2">
+                    {selectedDay.reminders.map((reminder) => (
+                      <div
+                        key={reminder.id}
+                        className={`p-3 rounded-xl bg-[var(--warning)]/5 border border-[var(--warning)]/20 ${
+                          reminder.is_completed ? "opacity-50" : ""
+                        }`}
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="flex items-start gap-3 flex-1 min-w-0">
+                            <button
+                              onClick={() => handleToggleReminderComplete(reminder)}
+                              className={`mt-0.5 w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors ${
+                                reminder.is_completed
+                                  ? "bg-[var(--success)] border-[var(--success)]"
+                                  : "border-[var(--warning)] hover:bg-[var(--warning)]/10"
+                              }`}
+                            >
+                              {reminder.is_completed && (
+                                <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                                </svg>
+                              )}
+                            </button>
+                            <div className="flex-1 min-w-0">
+                              <span className={`font-medium ${reminder.is_completed ? "line-through" : ""}`}>
+                                {reminder.name}
+                              </span>
+                              {reminder.description && (
+                                <p className="text-sm text-[var(--brand-gray)] mt-0.5">{reminder.description}</p>
+                              )}
+                              {reminder.recurrence && reminder.recurrence !== "none" && (
+                                <div className="flex items-center gap-1 mt-1 text-xs text-[var(--brand-gray)]">
+                                  <Repeat className="w-3 h-3" />
+                                  <span>
+                                    {reminder.recurrence === "monthly" && "Mensual"}
+                                    {reminder.recurrence === "quarterly" && "Trimestral"}
+                                    {reminder.recurrence === "yearly" && "Anual"}
+                                  </span>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2 shrink-0">
+                            {reminder.amount && (
+                              <span className="text-[var(--warning)] font-semibold">
+                                {formatCurrency(reminder.amount)}
+                              </span>
+                            )}
+                            <div className="flex items-center gap-1">
+                              <button
+                                onClick={() => {
+                                  setShowDayModal(false);
+                                  handleEditReminder(reminder);
+                                }}
+                                className="p-1.5 rounded-lg hover:bg-[var(--border)] transition-colors"
+                                title="Editar"
+                              >
+                                <Edit2 className="w-4 h-4 text-[var(--brand-gray)]" />
+                              </button>
+                              <button
+                                onClick={() => handleDeleteReminder(reminder)}
+                                className="p-1.5 rounded-lg hover:bg-[var(--danger)]/10 transition-colors"
+                                title="Eliminar"
+                              >
+                                <Trash2 className="w-4 h-4 text-[var(--danger)]" />
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </div>
               )}
 
-              {/* Operations List */}
-              {selectedDay.operations.length === 0 ? (
-                <div className="text-center py-8">
-                  <CalendarIcon className="w-12 h-12 text-[var(--brand-gray)] mx-auto mb-3" />
-                  <p className="text-[var(--brand-gray)]">No hay operaciones este día</p>
-                  <button
-                    onClick={() => {
-                      setShowDayModal(false);
-                      handleAddOperation(selectedDay.date);
-                    }}
-                    className="mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-xl gradient-brand text-white font-medium hover:opacity-90 transition-opacity"
-                  >
-                    <Plus className="w-4 h-4" />
-                    Añadir operación
-                  </button>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {selectedDay.operations.map((op) => (
-                    <div
-                      key={op.id}
-                      className="p-4 rounded-xl bg-[var(--background-secondary)] hover:bg-[var(--background-secondary)]/80 transition-colors"
-                    >
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="flex items-start gap-3 flex-1 min-w-0">
-                          {/* Type Icon */}
-                          <div className={`
-                            p-2 rounded-lg shrink-0
-                            ${op.type === "income" ? "bg-[var(--success)]/10" : ""}
-                            ${op.type === "expense" ? "bg-[var(--danger)]/10" : ""}
-                            ${op.type === "transfer" ? "bg-[var(--brand-cyan)]/10" : ""}
-                          `}>
-                            {getOperationIcon(op.type)}
+              {/* Savings Contributions Section */}
+              {selectedDay.contributions.length > 0 && (
+                <div className="mb-4">
+                  <h3 className="text-sm font-medium text-[var(--brand-gray)] mb-2 flex items-center gap-2">
+                    <PiggyBank className="w-4 h-4" />
+                    Aportes a ahorro
+                  </h3>
+                  <div className="space-y-2">
+                    {selectedDay.contributions.map((contrib) => (
+                      <div
+                        key={contrib.id}
+                        className="p-3 rounded-xl bg-[var(--brand-purple)]/5 border border-[var(--brand-purple)]/20"
+                      >
+                        <div className="flex items-center justify-between gap-3">
+                          <div className="flex items-center gap-3">
+                            <span className="text-xl">{contrib.savings_goal?.icon || "🎯"}</span>
+                            <span className="font-medium">{contrib.savings_goal?.name || "Meta de ahorro"}</span>
                           </div>
+                          <span className="text-[var(--brand-purple)] font-semibold">
+                            +{formatCurrency(contrib.amount)}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
 
-                          {/* Details */}
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2">
-                              <span className="font-medium truncate">{op.concept}</span>
-                              {op.category && (
-                                <span className="text-xs px-2 py-0.5 rounded-full bg-[var(--border)] shrink-0">
-                                  {op.category.icon} {op.category.name}
-                                </span>
+              {/* Operations Section */}
+              {selectedDay.operations.length > 0 && (
+                <div>
+                  <h3 className="text-sm font-medium text-[var(--brand-gray)] mb-2 flex items-center gap-2">
+                    <CalendarIcon className="w-4 h-4" />
+                    Operaciones
+                  </h3>
+                  <div className="space-y-2">
+                    {selectedDay.operations.map((op) => (
+                      <div
+                        key={op.id}
+                        className="p-3 rounded-xl bg-[var(--background-secondary)] hover:bg-[var(--background-secondary)]/80 transition-colors"
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="flex items-start gap-3 flex-1 min-w-0">
+                            <div className={`
+                              p-2 rounded-lg shrink-0
+                              ${op.type === "income" ? "bg-[var(--success)]/10" : ""}
+                              ${op.type === "expense" ? "bg-[var(--danger)]/10" : ""}
+                              ${op.type === "savings" ? "bg-[var(--brand-cyan)]/10" : ""}
+                            `}>
+                              {getOperationIcon(op.type)}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <span className="font-medium truncate">{op.concept}</span>
+                                {op.category && (
+                                  <span className="text-xs px-2 py-0.5 rounded-full bg-[var(--border)] shrink-0">
+                                    {op.category.icon} {op.category.name}
+                                  </span>
+                                )}
+                              </div>
+                              {op.description && (
+                                <p className="text-sm text-[var(--brand-gray)] mt-1 line-clamp-2">
+                                  {op.description}
+                                </p>
                               )}
                             </div>
-                            {op.description && (
-                              <p className="text-sm text-[var(--brand-gray)] mt-1 line-clamp-2">
-                                {op.description}
-                              </p>
-                            )}
                           </div>
-                        </div>
-
-                        {/* Amount & Actions */}
-                        <div className="flex items-center gap-2 shrink-0">
-                          <span className={`
-                            font-semibold
-                            ${op.type === "income" ? "text-[var(--success)]" : ""}
-                            ${op.type === "expense" ? "text-[var(--danger)]" : ""}
-                            ${op.type === "transfer" ? "text-[var(--brand-cyan)]" : ""}
-                          `}>
-                            {op.type === "income" ? "+" : "-"}{formatCurrency(op.amount)}
-                          </span>
-
-                          <div className="flex items-center gap-1 ml-2">
-                            <button
-                              onClick={() => {
-                                setShowDayModal(false);
-                                handleEditOperation(op);
-                              }}
-                              className="p-1.5 rounded-lg hover:bg-[var(--border)] transition-colors"
-                              title="Editar"
-                            >
-                              <Edit2 className="w-4 h-4 text-[var(--brand-gray)]" />
-                            </button>
-                            <button
-                              onClick={() => handleDeleteOperation(op)}
-                              className="p-1.5 rounded-lg hover:bg-[var(--danger)]/10 transition-colors"
-                              title="Eliminar"
-                            >
-                              <Trash2 className="w-4 h-4 text-[var(--danger)]" />
-                            </button>
+                          <div className="flex items-center gap-2 shrink-0">
+                            <span className={`
+                              font-semibold
+                              ${op.type === "income" ? "text-[var(--success)]" : ""}
+                              ${op.type === "expense" ? "text-[var(--danger)]" : ""}
+                              ${op.type === "savings" ? "text-[var(--brand-cyan)]" : ""}
+                            `}>
+                              {op.type === "income" ? "+" : "-"}{formatCurrency(op.amount)}
+                            </span>
+                            <div className="flex items-center gap-1">
+                              <button
+                                onClick={() => {
+                                  setShowDayModal(false);
+                                  handleEditOperation(op);
+                                }}
+                                className="p-1.5 rounded-lg hover:bg-[var(--border)] transition-colors"
+                                title="Editar"
+                              >
+                                <Edit2 className="w-4 h-4 text-[var(--brand-gray)]" />
+                              </button>
+                              <button
+                                onClick={() => handleDeleteOperation(op)}
+                                className="p-1.5 rounded-lg hover:bg-[var(--danger)]/10 transition-colors"
+                                title="Eliminar"
+                              >
+                                <Trash2 className="w-4 h-4 text-[var(--danger)]" />
+                              </button>
+                            </div>
                           </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Empty State */}
+              {selectedDay.operations.length === 0 && selectedDay.contributions.length === 0 && selectedDay.reminders.length === 0 && (
+                <div className="text-center py-8">
+                  <CalendarIcon className="w-12 h-12 text-[var(--brand-gray)] mx-auto mb-3" />
+                  <p className="text-[var(--brand-gray)]">No hay elementos este día</p>
                 </div>
               )}
             </div>
 
             {/* Footer */}
-            {selectedDay.operations.length > 0 && (
-              <div className="px-6 py-4 border-t border-[var(--border)]">
+            <div className="px-6 py-4 border-t border-[var(--border)] shrink-0">
+              <div className="flex gap-2">
+                <button
+                  onClick={() => {
+                    setShowDayModal(false);
+                    handleAddReminder(selectedDay.date);
+                  }}
+                  className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl border border-[var(--border)] font-medium hover:bg-[var(--background-secondary)] transition-colors"
+                >
+                  <Bell className="w-4 h-4" />
+                  Recordatorio
+                </button>
                 <button
                   onClick={() => {
                     setShowDayModal(false);
                     handleAddOperation(selectedDay.date);
                   }}
-                  className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl gradient-brand text-white font-medium hover:opacity-90 transition-opacity"
+                  className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl gradient-brand text-white font-medium hover:opacity-90 transition-opacity"
                 >
                   <Plus className="w-4 h-4" />
-                  Añadir operación a este día
+                  Operación
                 </button>
               </div>
-            )}
+            </div>
           </div>
         </div>
       )}
@@ -662,6 +1001,265 @@ export default function CalendarioPage() {
         title="Eliminar operación"
         message={`¿Estás seguro de que quieres eliminar "${deletingOperation?.concept}"? Esta acción no se puede deshacer.`}
       />
+
+      {/* Reminder Modal */}
+      <ReminderModal
+        isOpen={showReminderModal}
+        onClose={() => {
+          setShowReminderModal(false);
+          setEditingReminder(null);
+          setPreselectedDate(null);
+        }}
+        onSave={() => {
+          setShowReminderModal(false);
+          setEditingReminder(null);
+          setPreselectedDate(null);
+          fetchMonthOperations();
+        }}
+        reminder={editingReminder}
+        preselectedDate={preselectedDate}
+      />
+
+      {/* Delete Reminder Confirmation Modal */}
+      <DeleteConfirmModal
+        isOpen={showDeleteReminderModal}
+        onClose={() => {
+          setShowDeleteReminderModal(false);
+          setDeletingReminder(null);
+        }}
+        onConfirm={confirmDeleteReminder}
+        title="Eliminar recordatorio"
+        message={`¿Estás seguro de que quieres eliminar "${deletingReminder?.name}"? Esta acción no se puede deshacer.`}
+      />
     </>
+  );
+}
+
+// Reminder Modal Component
+function ReminderModal({
+  isOpen,
+  onClose,
+  onSave,
+  reminder,
+  preselectedDate,
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  onSave: () => void;
+  reminder: Reminder | null;
+  preselectedDate: string | null;
+}) {
+  const [name, setName] = useState("");
+  const [description, setDescription] = useState("");
+  const [reminderDate, setReminderDate] = useState("");
+  const [amount, setAmount] = useState("");
+  const [recurrence, setRecurrence] = useState<"none" | "monthly" | "quarterly" | "yearly">("none");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  const supabase = createClient();
+
+  useEffect(() => {
+    if (reminder) {
+      setName(reminder.name);
+      setDescription(reminder.description || "");
+      setReminderDate(reminder.reminder_date);
+      setAmount(reminder.amount?.toString() || "");
+      setRecurrence(reminder.recurrence || "none");
+    } else {
+      setName("");
+      setDescription("");
+      setReminderDate(preselectedDate || format(new Date(), "yyyy-MM-dd"));
+      setAmount("");
+      setRecurrence("none");
+    }
+    setError("");
+  }, [reminder, preselectedDate, isOpen]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+
+    if (!name.trim()) {
+      setError("Introduce un nombre para el recordatorio");
+      return;
+    }
+    if (!reminderDate) {
+      setError("Selecciona una fecha");
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("No autenticado");
+
+      const reminderData = {
+        user_id: user.id,
+        name: name.trim(),
+        description: description.trim() || null,
+        reminder_date: reminderDate,
+        amount: amount ? parseFloat(amount) : null,
+        recurrence: recurrence === "none" ? null : recurrence,
+      };
+
+      if (reminder) {
+        const { error: updateError } = await supabase
+          .from("calendar_reminders")
+          .update(reminderData)
+          .eq("id", reminder.id);
+
+        if (updateError) throw updateError;
+      } else {
+        const { error: insertError } = await supabase
+          .from("calendar_reminders")
+          .insert(reminderData);
+
+        if (insertError) throw insertError;
+      }
+
+      onSave();
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : "Error al guardar";
+      setError(errorMessage);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      <div className="bg-[var(--background)] rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
+        <div className="px-6 py-4 border-b border-[var(--border)] flex items-center justify-between">
+          <h2 className="text-lg font-semibold">
+            {reminder ? "Editar recordatorio" : "Nuevo recordatorio"}
+          </h2>
+          <button
+            onClick={onClose}
+            className="p-1 rounded-lg hover:bg-[var(--background-secondary)] transition-colors"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+          {/* Name */}
+          <div>
+            <label className="block text-sm font-medium mb-2">Nombre</label>
+            <input
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Ej: Pago ITV, Renovar seguro..."
+              className="w-full px-4 py-3 bg-[var(--background-secondary)] border border-[var(--border)] rounded-xl focus:outline-none focus:border-[var(--brand-cyan)] focus:ring-1 focus:ring-[var(--brand-cyan)]"
+              autoFocus
+            />
+          </div>
+
+          {/* Date */}
+          <div>
+            <label className="block text-sm font-medium mb-2">Fecha</label>
+            <div className="relative">
+              <CalendarIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[var(--brand-gray)]" />
+              <input
+                type="date"
+                value={reminderDate}
+                onChange={(e) => setReminderDate(e.target.value)}
+                className="w-full pl-10 pr-4 py-3 bg-[var(--background-secondary)] border border-[var(--border)] rounded-xl focus:outline-none focus:border-[var(--brand-cyan)] focus:ring-1 focus:ring-[var(--brand-cyan)]"
+              />
+            </div>
+          </div>
+
+          {/* Amount (optional) */}
+          <div>
+            <label className="block text-sm font-medium mb-2">
+              Importe <span className="text-[var(--brand-gray)] font-normal">(opcional)</span>
+            </label>
+            <div className="relative">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--brand-gray)]">€</span>
+              <input
+                type="number"
+                step="0.01"
+                min="0"
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
+                placeholder="0.00"
+                className="w-full pl-10 pr-4 py-3 bg-[var(--background-secondary)] border border-[var(--border)] rounded-xl focus:outline-none focus:border-[var(--brand-cyan)] focus:ring-1 focus:ring-[var(--brand-cyan)]"
+              />
+            </div>
+          </div>
+
+          {/* Recurrence */}
+          <div>
+            <label className="block text-sm font-medium mb-2">
+              Repetir <span className="text-[var(--brand-gray)] font-normal">(opcional)</span>
+            </label>
+            <div className="grid grid-cols-4 gap-2">
+              {[
+                { value: "none", label: "No" },
+                { value: "monthly", label: "Mensual" },
+                { value: "quarterly", label: "Trimestral" },
+                { value: "yearly", label: "Anual" },
+              ].map((option) => (
+                <button
+                  key={option.value}
+                  type="button"
+                  onClick={() => setRecurrence(option.value as typeof recurrence)}
+                  className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    recurrence === option.value
+                      ? "bg-[var(--brand-purple)] text-white"
+                      : "bg-[var(--background-secondary)] hover:bg-[var(--border)]"
+                  }`}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Description (optional) */}
+          <div>
+            <label className="block text-sm font-medium mb-2">
+              Descripción <span className="text-[var(--brand-gray)] font-normal">(opcional)</span>
+            </label>
+            <textarea
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="Notas adicionales..."
+              rows={2}
+              className="w-full px-4 py-3 bg-[var(--background-secondary)] border border-[var(--border)] rounded-xl focus:outline-none focus:border-[var(--brand-cyan)] focus:ring-1 focus:ring-[var(--brand-cyan)] resize-none"
+            />
+          </div>
+
+          {/* Error */}
+          {error && (
+            <div className="p-3 rounded-lg bg-[var(--danger)]/10 text-[var(--danger)] text-sm">
+              {error}
+            </div>
+          )}
+
+          {/* Buttons */}
+          <div className="flex gap-3 pt-2">
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex-1 px-4 py-3 rounded-xl border border-[var(--border)] font-medium hover:bg-[var(--background-secondary)] transition-colors"
+            >
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              disabled={loading}
+              className="flex-1 px-4 py-3 rounded-xl gradient-brand text-white font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
+            >
+              {loading ? "Guardando..." : reminder ? "Guardar cambios" : "Crear recordatorio"}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
   );
 }

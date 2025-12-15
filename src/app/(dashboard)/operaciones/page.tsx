@@ -3,13 +3,14 @@
 import { useState, useEffect, useCallback } from "react";
 import Header from "@/components/layout/Header";
 import OperationModal from "@/components/operations/OperationModal";
+import DeleteConfirmModal from "@/components/operations/DeleteConfirmModal";
 import { createClient } from "@/lib/supabase/client";
 import { useProfile } from "@/hooks/useProfile";
 import {
   Plus,
   TrendingUp,
   TrendingDown,
-  ArrowLeftRight,
+  PiggyBank,
   Filter,
   Calendar,
   MoreVertical,
@@ -35,7 +36,7 @@ interface Category {
 
 interface Operation {
   id: string;
-  type: "income" | "expense" | "transfer";
+  type: "income" | "expense" | "savings";
   amount: number;
   concept: string;
   description: string | null;
@@ -48,7 +49,7 @@ interface Operation {
 const typeConfig = {
   income: { label: "Ingreso", icon: TrendingUp, color: "text-[var(--success)]", bg: "bg-[var(--success)]/10" },
   expense: { label: "Gasto", icon: TrendingDown, color: "text-[var(--danger)]", bg: "bg-[var(--danger)]/10" },
-  transfer: { label: "Transferencia", icon: ArrowLeftRight, color: "text-[var(--brand-cyan)]", bg: "bg-[var(--brand-cyan)]/10" },
+  savings: { label: "Ahorro", icon: PiggyBank, color: "text-[var(--brand-cyan)]", bg: "bg-[var(--brand-cyan)]/10" },
 };
 
 const ITEMS_PER_PAGE_OPTIONS = [25, 50, 100];
@@ -63,6 +64,12 @@ export default function OperacionesPage() {
   const [showModal, setShowModal] = useState(false);
   const [editingOperation, setEditingOperation] = useState<Operation | null>(null);
   const [activeMenu, setActiveMenu] = useState<string | null>(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deletingOperationId, setDeletingOperationId] = useState<string | null>(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+
+  // Totales calculados del rango de fechas completo (no de la lista paginada)
+  const [monthTotals, setMonthTotals] = useState({ income: 0, expense: 0, savings: 0 });
 
   // Filtros - inicializar desde localStorage
   const [filterType, setFilterType] = useState<string>("");
@@ -104,11 +111,39 @@ export default function OperacionesPage() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
-    // Build query for count
+    // Calcular fechas del mes seleccionado
+    const [year, month] = filterMonth.split("-");
+    const startDate = `${year}-${month}-01`;
+    const endDate = new Date(parseInt(year), parseInt(month), 0).toISOString().split("T")[0];
+
+    // Query para obtener totales del mes completo (independiente de filtro de tipo)
+    const { data: allMonthOps } = await supabase
+      .from("operations")
+      .select("type, amount")
+      .eq("user_id", user.id)
+      .gte("operation_date", startDate)
+      .lte("operation_date", endDate);
+
+    if (allMonthOps) {
+      const totals = allMonthOps.reduce(
+        (acc, op) => {
+          if (op.type === "income") acc.income += op.amount;
+          if (op.type === "expense") acc.expense += op.amount;
+          if (op.type === "savings") acc.savings += op.amount;
+          return acc;
+        },
+        { income: 0, expense: 0, savings: 0 }
+      );
+      setMonthTotals(totals);
+    }
+
+    // Build query for count (con filtros aplicados)
     let countQuery = supabase
       .from("operations")
       .select("*", { count: "exact", head: true })
-      .eq("user_id", user.id);
+      .eq("user_id", user.id)
+      .gte("operation_date", startDate)
+      .lte("operation_date", endDate);
 
     // Build query for data
     let dataQuery = supabase
@@ -118,6 +153,8 @@ export default function OperacionesPage() {
         category:categories(id, name, icon, color, type, segment)
       `)
       .eq("user_id", user.id)
+      .gte("operation_date", startDate)
+      .lte("operation_date", endDate)
       .order("operation_date", { ascending: false })
       .order("created_at", { ascending: false });
 
@@ -125,15 +162,6 @@ export default function OperacionesPage() {
     if (filterType) {
       countQuery = countQuery.eq("type", filterType);
       dataQuery = dataQuery.eq("type", filterType);
-    }
-
-    // Filtro por mes
-    if (filterMonth) {
-      const [year, month] = filterMonth.split("-");
-      const startDate = `${year}-${month}-01`;
-      const endDate = new Date(parseInt(year), parseInt(month), 0).toISOString().split("T")[0];
-      countQuery = countQuery.gte("operation_date", startDate).lte("operation_date", endDate);
-      dataQuery = dataQuery.gte("operation_date", startDate).lte("operation_date", endDate);
     }
 
     // Get total count
@@ -180,14 +208,24 @@ export default function OperacionesPage() {
     setActiveMenu(null);
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm("¿Estás seguro de eliminar esta operación?")) return;
+  const handleDeleteClick = (id: string) => {
+    setDeletingOperationId(id);
+    setShowDeleteModal(true);
+    setActiveMenu(null);
+  };
 
-    const { error } = await supabase.from("operations").delete().eq("id", id);
+  const handleDeleteConfirm = async () => {
+    if (!deletingOperationId) return;
+
+    setDeleteLoading(true);
+    const { error } = await supabase.from("operations").delete().eq("id", deletingOperationId);
+    setDeleteLoading(false);
+
     if (!error) {
       fetchOperations();
     }
-    setActiveMenu(null);
+    setShowDeleteModal(false);
+    setDeletingOperationId(null);
   };
 
   const handleNewOperation = () => {
@@ -204,15 +242,6 @@ export default function OperacionesPage() {
     }).format(amount);
   };
 
-  // Calcular totales del mes (basado en todas las operaciones filtradas, no solo la página actual)
-  const totals = operations.reduce(
-    (acc, op) => {
-      if (op.type === "income") acc.income += op.amount;
-      if (op.type === "expense") acc.expense += op.amount;
-      return acc;
-    },
-    { income: 0, expense: 0 }
-  );
 
   // Pagination calculations
   const totalPages = Math.ceil(totalCount / itemsPerPage);
@@ -277,7 +306,7 @@ export default function OperacionesPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-[var(--brand-gray)]">Ingresos del mes</p>
-                <p className="text-xl font-bold text-[var(--success)]">{formatCurrency(totals.income)}</p>
+                <p className="text-xl font-bold text-[var(--success)]">{formatCurrency(monthTotals.income)}</p>
               </div>
               <div className="p-2 rounded-lg bg-[var(--success)]/10">
                 <TrendingUp className="w-5 h-5 text-[var(--success)]" />
@@ -288,7 +317,7 @@ export default function OperacionesPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-[var(--brand-gray)]">Gastos del mes</p>
-                <p className="text-xl font-bold text-[var(--danger)]">{formatCurrency(totals.expense)}</p>
+                <p className="text-xl font-bold text-[var(--danger)]">{formatCurrency(monthTotals.expense)}</p>
               </div>
               <div className="p-2 rounded-lg bg-[var(--danger)]/10">
                 <TrendingDown className="w-5 h-5 text-[var(--danger)]" />
@@ -298,13 +327,11 @@ export default function OperacionesPage() {
           <div className="card p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-[var(--brand-gray)]">Balance</p>
-                <p className={`text-xl font-bold ${totals.income - totals.expense >= 0 ? "text-[var(--success)]" : "text-[var(--danger)]"}`}>
-                  {formatCurrency(totals.income - totals.expense)}
-                </p>
+                <p className="text-sm text-[var(--brand-gray)]">Ahorro del mes</p>
+                <p className="text-xl font-bold text-[var(--brand-cyan)]">{formatCurrency(monthTotals.savings)}</p>
               </div>
               <div className="p-2 rounded-lg bg-[var(--brand-cyan)]/10">
-                <ArrowLeftRight className="w-5 h-5 text-[var(--brand-cyan)]" />
+                <PiggyBank className="w-5 h-5 text-[var(--brand-cyan)]" />
               </div>
             </div>
           </div>
@@ -320,7 +347,7 @@ export default function OperacionesPage() {
                 type="month"
                 value={filterMonth}
                 onChange={(e) => setFilterMonth(e.target.value)}
-                className="px-3 py-2 bg-[var(--background-secondary)] border border-[var(--border)] rounded-lg text-sm focus:outline-none focus:border-[var(--brand-cyan)]"
+                className="px-3 py-2 bg-[var(--background-secondary)] border border-[var(--border)] rounded-lg text-sm focus:outline-none focus:border-[var(--brand-cyan)] focus:ring-1 focus:ring-[var(--brand-cyan)]"
               />
             </div>
 
@@ -330,12 +357,12 @@ export default function OperacionesPage() {
               <select
                 value={filterType}
                 onChange={(e) => setFilterType(e.target.value)}
-                className="px-3 py-2 bg-[var(--background-secondary)] border border-[var(--border)] rounded-lg text-sm focus:outline-none focus:border-[var(--brand-cyan)]"
+                className="px-3 py-2 bg-[var(--background-secondary)] border border-[var(--border)] rounded-lg text-sm focus:outline-none focus:border-[var(--brand-cyan)] focus:ring-1 focus:ring-[var(--brand-cyan)]"
               >
                 <option value="">Todos los tipos</option>
                 <option value="income">Ingresos</option>
                 <option value="expense">Gastos</option>
-                <option value="transfer">Transferencias</option>
+                <option value="savings">Ahorros</option>
               </select>
             </div>
 
@@ -345,7 +372,7 @@ export default function OperacionesPage() {
               <select
                 value={itemsPerPage}
                 onChange={(e) => setItemsPerPage(parseInt(e.target.value))}
-                className="px-3 py-2 bg-[var(--background-secondary)] border border-[var(--border)] rounded-lg text-sm focus:outline-none focus:border-[var(--brand-cyan)]"
+                className="px-3 py-2 bg-[var(--background-secondary)] border border-[var(--border)] rounded-lg text-sm focus:outline-none focus:border-[var(--brand-cyan)] focus:ring-1 focus:ring-[var(--brand-cyan)]"
               >
                 {ITEMS_PER_PAGE_OPTIONS.map((option) => (
                   <option key={option} value={option}>{option} por página</option>
@@ -455,7 +482,7 @@ export default function OperacionesPage() {
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
-                              handleDelete(operation.id);
+                              handleDeleteClick(operation.id);
                             }}
                             className="w-full flex items-center gap-2 px-3 py-2 text-sm text-[var(--danger)] hover:bg-[var(--danger)]/10 transition-colors"
                           >
@@ -549,6 +576,19 @@ export default function OperacionesPage() {
         }}
         onSave={fetchOperations}
         operation={editingOperation}
+      />
+
+      {/* Modal de confirmación de eliminación */}
+      <DeleteConfirmModal
+        isOpen={showDeleteModal}
+        onClose={() => {
+          setShowDeleteModal(false);
+          setDeletingOperationId(null);
+        }}
+        onConfirm={handleDeleteConfirm}
+        title="¿Eliminar operación?"
+        message="Esta acción no se puede deshacer. La operación será eliminada permanentemente."
+        loading={deleteLoading}
       />
     </>
   );

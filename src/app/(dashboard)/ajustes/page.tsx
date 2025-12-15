@@ -11,7 +11,6 @@ import {
   AlertTriangle,
   CheckCircle,
   X,
-  FileJson,
   Calendar,
   Database,
   HelpCircle,
@@ -353,21 +352,13 @@ export default function AjustesPage() {
           <div className="card p-6 lg:col-span-2">
             <h3 className="font-semibold mb-4 flex items-center gap-2">
               <HelpCircle className="w-5 h-5 text-[var(--brand-purple)]" />
-              Acerca de FinyBuddy
+              Acerca de
             </h3>
 
-            <div className="flex flex-col sm:flex-row gap-4">
-              <div className="flex-1 p-4 rounded-xl bg-[var(--background-secondary)]">
-                <p className="text-sm text-[var(--brand-gray)] mb-1">Versión</p>
-                <p className="font-mono font-semibold">1.0.0</p>
-              </div>
-
-              <div className="flex-1 p-4 rounded-xl bg-gradient-to-br from-[var(--brand-purple)]/10 to-[var(--brand-cyan)]/10">
-                <p className="font-semibold mb-1">FinyBuddy</p>
-                <p className="text-xs text-[var(--brand-gray)]">
-                  Tu asistente financiero personal. Gestiona tus finanzas de forma inteligente con la regla 50/30/20
-                </p>
-              </div>
+            <div className="flex items-center gap-4 p-4 rounded-xl bg-[var(--background-secondary)]">
+              <p className="font-semibold">FinyBuddy</p>
+              <span className="text-[var(--brand-gray)]">•</span>
+              <p className="text-sm text-[var(--brand-gray)]">Versión <span className="font-mono">1.0.0</span></p>
             </div>
           </div>
         </div>
@@ -389,39 +380,22 @@ export default function AjustesPage() {
 
             <div className="p-6 space-y-4">
               <p className="text-sm text-[var(--brand-gray)]">
-                Elige el formato en el que quieres exportar tus datos. El archivo JSON incluye todos
-                tus datos, mientras que el CSV solo incluye las operaciones.
+                Descarga todas tus operaciones en un archivo compatible con Excel y otras hojas de cálculo.
               </p>
 
-              <div className="space-y-3">
-                <button
-                  onClick={() => handleExportData("json")}
-                  disabled={exporting}
-                  className="w-full flex items-center gap-4 p-4 rounded-xl border border-[var(--border)] hover:border-[var(--brand-cyan)] hover:bg-[var(--brand-cyan)]/5 transition-colors disabled:opacity-50"
-                >
-                  <div className="p-3 rounded-lg bg-[var(--brand-cyan)]/10">
-                    <FileJson className="w-6 h-6 text-[var(--brand-cyan)]" />
-                  </div>
-                  <div className="text-left">
-                    <p className="font-medium">Exportar como JSON</p>
-                    <p className="text-xs text-[var(--brand-gray)]">Todos los datos en formato estructurado</p>
-                  </div>
-                </button>
-
-                <button
-                  onClick={() => handleExportData("csv")}
-                  disabled={exporting}
-                  className="w-full flex items-center gap-4 p-4 rounded-xl border border-[var(--border)] hover:border-[var(--brand-purple)] hover:bg-[var(--brand-purple)]/5 transition-colors disabled:opacity-50"
-                >
-                  <div className="p-3 rounded-lg bg-[var(--brand-purple)]/10">
-                    <Download className="w-6 h-6 text-[var(--brand-purple)]" />
-                  </div>
-                  <div className="text-left">
-                    <p className="font-medium">Exportar como CSV</p>
-                    <p className="text-xs text-[var(--brand-gray)]">Solo operaciones, compatible con Excel</p>
-                  </div>
-                </button>
-              </div>
+              <button
+                onClick={() => handleExportData("csv")}
+                disabled={exporting}
+                className="w-full flex items-center gap-4 p-4 rounded-xl border border-[var(--brand-cyan)] bg-[var(--brand-cyan)]/5 hover:bg-[var(--brand-cyan)]/10 transition-colors disabled:opacity-50"
+              >
+                <div className="p-3 rounded-lg bg-[var(--brand-cyan)]/10">
+                  <Download className="w-6 h-6 text-[var(--brand-cyan)]" />
+                </div>
+                <div className="text-left">
+                  <p className="font-medium">Descargar operaciones</p>
+                  <p className="text-xs text-[var(--brand-gray)]">Archivo CSV compatible con Excel</p>
+                </div>
+              </button>
 
               {exporting && (
                 <div className="text-center py-2">

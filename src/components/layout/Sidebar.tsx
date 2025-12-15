@@ -19,6 +19,7 @@ import {
   ChevronRight,
   GraduationCap,
   Bot,
+  Scale,
 } from "lucide-react";
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
@@ -45,6 +46,7 @@ const mainNavItems: NavItem[] = [
 
 const settingsNavItems: NavItem[] = [
   { name: "Mis Categorías", href: "/categorias", icon: FolderOpen },
+  { name: "Mi Regla financiera", href: "/regla-financiera", icon: Scale },
   { name: "Perfil", href: "/perfil", icon: User },
   { name: "Ajustes", href: "/ajustes", icon: Settings },
 ];
