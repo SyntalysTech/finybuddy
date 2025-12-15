@@ -3,6 +3,14 @@
 -- en funciones SQL del dashboard
 -- =====================================================
 
+-- PRIMERO: Modificar el CHECK constraint para incluir 'savings'
+-- Eliminar el constraint existente
+ALTER TABLE operations DROP CONSTRAINT IF EXISTS operations_type_check;
+
+-- Crear nuevo constraint que incluye 'savings'
+ALTER TABLE operations ADD CONSTRAINT operations_type_check
+    CHECK (type IN ('income', 'expense', 'transfer', 'savings'));
+
 -- Actualizar get_monthly_summary para usar 'savings' en lugar de 'transfer'
 CREATE OR REPLACE FUNCTION get_monthly_summary(
     p_user_id UUID,
