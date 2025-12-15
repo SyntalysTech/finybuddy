@@ -560,7 +560,7 @@ export default function DashboardPage() {
                 <BarChart data={barData}>
                   <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
                   <XAxis dataKey="name" stroke="var(--brand-gray)" />
-                  <YAxis stroke="var(--brand-gray)" tickFormatter={(value) => `${value / 1000}k`} />
+                  <YAxis stroke="var(--brand-gray)" tickFormatter={(value) => `${value}€`} />
                   <Tooltip
                     formatter={(value: number) => formatCurrency(value)}
                     contentStyle={{
