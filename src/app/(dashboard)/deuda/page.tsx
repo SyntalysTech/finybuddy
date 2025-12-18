@@ -29,6 +29,7 @@ import {
 import { format, differenceInMonths, parseISO } from "date-fns";
 import { es } from "date-fns/locale";
 import DeleteConfirmModal from "@/components/operations/DeleteConfirmModal";
+import { useProfile } from "@/hooks/useProfile";
 
 interface Debt {
   id: string;
@@ -43,6 +44,7 @@ interface Debt {
   due_date: string | null;
   status: "active" | "paused" | "paid";
   debt_type: "mortgage" | "car_loan" | "personal_loan" | "credit_card" | "student_loan" | "other";
+  priority: "high" | "medium" | "low";
   created_at: string;
   paid_at: string | null;
 }
@@ -69,20 +71,35 @@ const getDebtTypeInfo = (type: string) => {
   return DEBT_TYPES.find((t) => t.value === type) || DEBT_TYPES[5];
 };
 
+const PRIORITY_OPTIONS = [
+  { value: "high", label: "Alta", color: "#EF4444" },
+  { value: "medium", label: "Media", color: "#F59E0B" },
+  { value: "low", label: "Baja", color: "#10B981" },
+];
+
+const getPriorityInfo = (priority: string) => {
+  return PRIORITY_OPTIONS.find((p) => p.value === priority) || PRIORITY_OPTIONS[1];
+};
+
 export default function DeudaPage() {
+  const { profile } = useProfile();
   const [debts, setDebts] = useState<Debt[]>([]);
   const [loading, setLoading] = useState(true);
   const [showDebtModal, setShowDebtModal] = useState(false);
   const [editingDebt, setEditingDebt] = useState<Debt | null>(null);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [payingDebt, setPayingDebt] = useState<Debt | null>(null);
+  const [editingPayment, setEditingPayment] = useState<DebtPayment | null>(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deletingDebt, setDeletingDebt] = useState<Debt | null>(null);
+  const [showDeletePaymentModal, setShowDeletePaymentModal] = useState(false);
+  const [deletingPayment, setDeletingPayment] = useState<DebtPayment | null>(null);
   const [expandedDebt, setExpandedDebt] = useState<string | null>(null);
   const [payments, setPayments] = useState<DebtPayment[]>([]);
-  const [filter, setFilter] = useState<"all" | "active" | "paid">("all");
+  const [filter, setFilter] = useState<"all" | "active" | "paused" | "paid">("all");
 
   const supabase = createClient();
+  const showDecimals = profile?.show_decimals ?? true;
 
   const fetchDebts = useCallback(async () => {
     setLoading(true);
@@ -180,10 +197,61 @@ export default function DeudaPage() {
     }
   };
 
+  const handleDeletePayment = async () => {
+    if (!deletingPayment || !expandedDebt) return;
+
+    try {
+      // Get the debt to recalculate
+      const debt = debts.find(d => d.id === expandedDebt);
+      if (!debt) return;
+
+      // Delete the payment
+      const { error: deleteError } = await supabase
+        .from("debt_payments")
+        .delete()
+        .eq("id", deletingPayment.id);
+
+      if (deleteError) throw deleteError;
+
+      // Recalculate balance (add the payment amount back)
+      const newBalance = Math.min(debt.current_balance + deletingPayment.amount, debt.original_amount);
+
+      // Update status based on new balance
+      let newStatus: "active" | "paused" | "paid" = debt.status;
+      let paidAt = debt.paid_at;
+
+      if (newBalance > 0 && debt.status === "paid") {
+        newStatus = "active";
+        paidAt = null;
+      }
+
+      const { error: updateError } = await supabase
+        .from("debts")
+        .update({
+          current_balance: newBalance,
+          status: newStatus,
+          paid_at: paidAt,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", debt.id);
+
+      if (updateError) throw updateError;
+
+      setShowDeletePaymentModal(false);
+      setDeletingPayment(null);
+      fetchDebts();
+      fetchPayments(expandedDebt);
+    } catch (error) {
+      console.error("Error deleting payment:", error);
+    }
+  };
+
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("es-ES", {
       style: "currency",
-      currency: "EUR",
+      currency: profile?.currency || "EUR",
+      minimumFractionDigits: showDecimals ? 2 : 0,
+      maximumFractionDigits: showDecimals ? 2 : 0,
     }).format(amount);
   };
 
@@ -197,12 +265,21 @@ export default function DeudaPage() {
     return Math.ceil(debt.current_balance / debt.monthly_payment);
   };
 
-  const filteredDebts = debts.filter((debt) => {
-    if (filter === "all") return true;
-    if (filter === "active") return debt.status === "active" || debt.status === "paused";
-    if (filter === "paid") return debt.status === "paid";
-    return true;
-  });
+  const priorityOrder = { high: 0, medium: 1, low: 2 };
+
+  const filteredDebts = debts
+    .filter((debt) => {
+      if (filter === "all") return true;
+      if (filter === "active") return debt.status === "active";
+      if (filter === "paused") return debt.status === "paused";
+      if (filter === "paid") return debt.status === "paid";
+      return true;
+    })
+    .sort((a, b) => {
+      const priorityA = priorityOrder[a.priority || "medium"];
+      const priorityB = priorityOrder[b.priority || "medium"];
+      return priorityA - priorityB;
+    });
 
   // Summary stats
   const totalDebt = debts.filter(d => d.status !== "paid").reduce((sum, d) => sum + d.current_balance, 0);
@@ -284,10 +361,11 @@ export default function DeudaPage() {
         </div>
 
         {/* Filter Tabs */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           {[
             { value: "all", label: "Todas" },
             { value: "active", label: "Activas" },
+            { value: "paused", label: "Pausadas" },
             { value: "paid", label: "Pagadas" },
           ].map((tab) => (
             <button
@@ -337,6 +415,7 @@ export default function DeudaPage() {
               const typeInfo = getDebtTypeInfo(debt.debt_type);
               const TypeIcon = typeInfo.icon;
               const isOverdue = debt.due_date && parseISO(debt.due_date) < new Date() && debt.status === "active";
+              const priorityInfo = getPriorityInfo(debt.priority || "medium");
 
               return (
                 <div
@@ -355,10 +434,19 @@ export default function DeudaPage() {
                       <div className="flex-1 min-w-0">
                         <div className="flex items-start justify-between gap-4">
                           <div>
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-2 flex-wrap">
                               <h3 className="font-semibold text-lg">{debt.name}</h3>
                               <span className="px-2 py-0.5 rounded-full text-xs bg-[var(--background-secondary)]">
                                 {typeInfo.label}
+                              </span>
+                              <span
+                                className="px-2 py-0.5 rounded-full text-xs"
+                                style={{
+                                  backgroundColor: `${priorityInfo.color}20`,
+                                  color: priorityInfo.color
+                                }}
+                              >
+                                {priorityInfo.label}
                               </span>
                               {debt.status === "paused" && (
                                 <span className="px-2 py-0.5 rounded-full text-xs bg-[var(--warning)]/10 text-[var(--warning)]">
@@ -545,9 +633,32 @@ export default function DeudaPage() {
                                     )}
                                   </div>
                                 </div>
-                                <span className="text-xs text-[var(--brand-gray)]">
-                                  {format(parseISO(payment.payment_date), "d MMM yyyy", { locale: es })}
-                                </span>
+                                <div className="flex items-center gap-2">
+                                  <span className="text-xs text-[var(--brand-gray)]">
+                                    {format(parseISO(payment.payment_date), "d MMM yyyy", { locale: es })}
+                                  </span>
+                                  <button
+                                    onClick={() => {
+                                      setEditingPayment(payment);
+                                      setPayingDebt(debt);
+                                      setShowPaymentModal(true);
+                                    }}
+                                    className="p-1.5 rounded-lg hover:bg-[var(--background)] transition-colors"
+                                    title="Editar pago"
+                                  >
+                                    <Edit2 className="w-3.5 h-3.5 text-[var(--brand-gray)]" />
+                                  </button>
+                                  <button
+                                    onClick={() => {
+                                      setDeletingPayment(payment);
+                                      setShowDeletePaymentModal(true);
+                                    }}
+                                    className="p-1.5 rounded-lg hover:bg-[var(--danger)]/10 transition-colors"
+                                    title="Eliminar pago"
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5 text-[var(--danger)]" />
+                                  </button>
+                                </div>
                               </div>
                             ))}
                           </div>
@@ -583,17 +694,20 @@ export default function DeudaPage() {
         onClose={() => {
           setShowPaymentModal(false);
           setPayingDebt(null);
+          setEditingPayment(null);
         }}
         onSave={() => {
           setShowPaymentModal(false);
           setPayingDebt(null);
+          setEditingPayment(null);
           fetchDebts();
           if (expandedDebt) fetchPayments(expandedDebt);
         }}
         debt={payingDebt}
+        payment={editingPayment}
       />
 
-      {/* Delete Confirmation */}
+      {/* Delete Confirmation - Debt */}
       <DeleteConfirmModal
         isOpen={showDeleteModal}
         onClose={() => {
@@ -603,6 +717,18 @@ export default function DeudaPage() {
         onConfirm={handleDeleteDebt}
         title="Eliminar deuda"
         message={`¿Estás seguro de que quieres eliminar "${deletingDebt?.name}"? Se eliminarán también todos los pagos asociados.`}
+      />
+
+      {/* Delete Confirmation - Payment */}
+      <DeleteConfirmModal
+        isOpen={showDeletePaymentModal}
+        onClose={() => {
+          setShowDeletePaymentModal(false);
+          setDeletingPayment(null);
+        }}
+        onConfirm={handleDeletePayment}
+        title="Eliminar pago"
+        message={`¿Estás seguro de que quieres eliminar este pago de ${deletingPayment ? formatCurrency(deletingPayment.amount) : ""}? El saldo pendiente se recalculará automáticamente.`}
       />
     </>
   );
@@ -624,6 +750,7 @@ function DebtModal({
   const [description, setDescription] = useState("");
   const [creditor, setCreditor] = useState("");
   const [debtType, setDebtType] = useState<Debt["debt_type"]>("other");
+  const [priority, setPriority] = useState<Debt["priority"]>("medium");
   const [originalAmount, setOriginalAmount] = useState("");
   const [currentBalance, setCurrentBalance] = useState("");
   const [interestRate, setInterestRate] = useState("");
@@ -641,6 +768,7 @@ function DebtModal({
       setDescription(debt.description || "");
       setCreditor(debt.creditor || "");
       setDebtType(debt.debt_type);
+      setPriority(debt.priority || "medium");
       setOriginalAmount(debt.original_amount.toString());
       setCurrentBalance(debt.current_balance.toString());
       setInterestRate(debt.interest_rate?.toString() || "");
@@ -652,6 +780,7 @@ function DebtModal({
       setDescription("");
       setCreditor("");
       setDebtType("other");
+      setPriority("medium");
       setOriginalAmount("");
       setCurrentBalance("");
       setInterestRate("");
@@ -674,8 +803,17 @@ function DebtModal({
       setError("Introduce un importe original válido");
       return;
     }
+    if (!startDate) {
+      setError("Introduce una fecha de inicio");
+      return;
+    }
 
     const balance = currentBalance ? parseFloat(currentBalance) : parseFloat(originalAmount);
+
+    if (balance > parseFloat(originalAmount)) {
+      setError("El saldo pendiente no puede ser mayor que el importe original");
+      return;
+    }
 
     setLoading(true);
 
@@ -683,18 +821,34 @@ function DebtModal({
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("No autenticado");
 
+      // Determinar estado automáticamente basado en el saldo
+      let newStatus: "active" | "paused" | "paid" = debt?.status || "active";
+      let paidAt = debt?.paid_at || null;
+
+      if (balance <= 0) {
+        newStatus = "paid";
+        paidAt = paidAt || new Date().toISOString();
+      } else if (debt?.status === "paid") {
+        // Si estaba pagada pero ahora tiene saldo, reactivar
+        newStatus = "active";
+        paidAt = null;
+      }
+
       const debtData = {
         user_id: user.id,
         name: name.trim(),
         description: description.trim() || null,
         creditor: creditor.trim() || null,
         debt_type: debtType,
+        priority,
         original_amount: parseFloat(originalAmount),
         current_balance: balance,
         interest_rate: interestRate ? parseFloat(interestRate) : 0,
         monthly_payment: monthlyPayment ? parseFloat(monthlyPayment) : null,
         start_date: startDate,
         due_date: dueDate || null,
+        status: newStatus,
+        paid_at: paidAt,
         updated_at: new Date().toISOString(),
       };
 
@@ -780,6 +934,39 @@ function DebtModal({
             />
           </div>
 
+          {/* Priority */}
+          <div>
+            <label className="block text-sm font-medium mb-2">Prioridad</label>
+            <div className="grid grid-cols-3 gap-2">
+              {PRIORITY_OPTIONS.map((p) => {
+                const isSelected = priority === p.value;
+                return (
+                  <button
+                    key={p.value}
+                    type="button"
+                    onClick={() => setPriority(p.value as Debt["priority"])}
+                    className={`p-3 rounded-xl border-2 transition-all ${
+                      isSelected
+                        ? "border-current"
+                        : "border-[var(--border)] hover:border-[var(--brand-gray)]"
+                    }`}
+                    style={{
+                      borderColor: isSelected ? p.color : undefined,
+                      backgroundColor: isSelected ? `${p.color}15` : undefined,
+                    }}
+                  >
+                    <span
+                      className="text-sm font-medium"
+                      style={{ color: isSelected ? p.color : undefined }}
+                    >
+                      {p.label}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
           {/* Creditor */}
           <div>
             <label className="block text-sm font-medium mb-2">
@@ -805,11 +992,11 @@ function DebtModal({
                 <Euro className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[var(--brand-gray)]" />
                 <input
                   type="number"
-                  step="1"
+                  step="0.01"
                   min="0"
                   value={originalAmount}
                   onChange={(e) => setOriginalAmount(e.target.value)}
-                  placeholder="0"
+                  placeholder="0.00"
                   className="w-full pl-10 pr-4 py-3 bg-[var(--background-secondary)] border border-[var(--border)] rounded-xl focus:outline-none focus:border-[var(--brand-cyan)] focus:ring-1 focus:ring-[var(--brand-cyan)] [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                 />
               </div>
@@ -820,11 +1007,11 @@ function DebtModal({
                 <Euro className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[var(--brand-gray)]" />
                 <input
                   type="number"
-                  step="1"
+                  step="0.01"
                   min="0"
                   value={currentBalance}
                   onChange={(e) => setCurrentBalance(e.target.value)}
-                  placeholder={originalAmount || "0"}
+                  placeholder={originalAmount || "0.00"}
                   className="w-full pl-10 pr-4 py-3 bg-[var(--background-secondary)] border border-[var(--border)] rounded-xl focus:outline-none focus:border-[var(--brand-cyan)] focus:ring-1 focus:ring-[var(--brand-cyan)] [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                 />
               </div>
@@ -835,7 +1022,7 @@ function DebtModal({
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium mb-2">
-                Interés TAE <span className="text-[var(--brand-gray)] font-normal">(%)</span>
+                Interés TAE (%) <span className="text-[var(--brand-gray)] font-normal">(opc.)</span>
               </label>
               <div className="relative">
                 <Percent className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[var(--brand-gray)]" />
@@ -851,16 +1038,18 @@ function DebtModal({
               </div>
             </div>
             <div>
-              <label className="block text-sm font-medium mb-2">Cuota mensual</label>
+              <label className="block text-sm font-medium mb-2">
+                Cuota mensual <span className="text-[var(--brand-gray)] font-normal">(opc.)</span>
+              </label>
               <div className="relative">
                 <Euro className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[var(--brand-gray)]" />
                 <input
                   type="number"
-                  step="1"
+                  step="0.01"
                   min="0"
                   value={monthlyPayment}
                   onChange={(e) => setMonthlyPayment(e.target.value)}
-                  placeholder="0"
+                  placeholder="0.00"
                   className="w-full pl-10 pr-4 py-3 bg-[var(--background-secondary)] border border-[var(--border)] rounded-xl focus:outline-none focus:border-[var(--brand-cyan)] focus:ring-1 focus:ring-[var(--brand-cyan)] [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                 />
               </div>
@@ -947,11 +1136,13 @@ function PaymentModal({
   onClose,
   onSave,
   debt,
+  payment,
 }: {
   isOpen: boolean;
   onClose: () => void;
   onSave: () => void;
   debt: Debt | null;
+  payment?: DebtPayment | null;
 }) {
   const [amount, setAmount] = useState("");
   const [note, setNote] = useState("");
@@ -960,15 +1151,24 @@ function PaymentModal({
   const [error, setError] = useState("");
 
   const supabase = createClient();
+  const isEditing = !!payment;
 
   useEffect(() => {
     if (isOpen && debt) {
-      setAmount(debt.monthly_payment?.toString() || "");
-      setNote("");
-      setPaymentDate(format(new Date(), "yyyy-MM-dd"));
+      if (payment) {
+        // Editing existing payment
+        setAmount(payment.amount.toString());
+        setNote(payment.notes || "");
+        setPaymentDate(payment.payment_date);
+      } else {
+        // New payment
+        setAmount(debt.monthly_payment?.toString() || "");
+        setNote("");
+        setPaymentDate(format(new Date(), "yyyy-MM-dd"));
+      }
       setError("");
     }
-  }, [isOpen, debt]);
+  }, [isOpen, debt, payment]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -986,30 +1186,57 @@ function PaymentModal({
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("No autenticado");
 
-      // Insert payment
-      const { error: insertError } = await supabase
-        .from("debt_payments")
-        .insert({
-          user_id: user.id,
-          debt_id: debt.id,
-          amount: parseFloat(amount),
-          notes: note.trim() || null,
-          payment_date: paymentDate,
-        });
+      const newPaymentAmount = parseFloat(amount);
+      let balanceChange: number;
 
-      if (insertError) throw insertError;
+      if (isEditing && payment) {
+        // Update existing payment
+        const { error: updatePaymentError } = await supabase
+          .from("debt_payments")
+          .update({
+            amount: newPaymentAmount,
+            notes: note.trim() || null,
+            payment_date: paymentDate,
+          })
+          .eq("id", payment.id);
+
+        if (updatePaymentError) throw updatePaymentError;
+
+        // Calculate balance change (difference between old and new amount)
+        balanceChange = payment.amount - newPaymentAmount;
+      } else {
+        // Insert new payment
+        const { error: insertError } = await supabase
+          .from("debt_payments")
+          .insert({
+            user_id: user.id,
+            debt_id: debt.id,
+            amount: newPaymentAmount,
+            notes: note.trim() || null,
+            payment_date: paymentDate,
+          });
+
+        if (insertError) throw insertError;
+
+        // New payment reduces balance
+        balanceChange = -newPaymentAmount;
+      }
 
       // Update debt current_balance
-      const newBalance = Math.max(0, debt.current_balance - parseFloat(amount));
+      const newBalance = Math.max(0, Math.min(debt.current_balance + balanceChange, debt.original_amount));
       const updateData: Record<string, unknown> = {
         current_balance: newBalance,
         updated_at: new Date().toISOString(),
       };
 
-      // If balance is 0, mark as paid
+      // Update status based on balance
       if (newBalance <= 0) {
         updateData.status = "paid";
-        updateData.paid_at = new Date().toISOString();
+        updateData.paid_at = debt.paid_at || new Date().toISOString();
+      } else if (debt.status === "paid") {
+        // Reactivate if was paid but now has balance
+        updateData.status = "active";
+        updateData.paid_at = null;
       }
 
       const { error: updateError } = await supabase
@@ -1035,7 +1262,7 @@ function PaymentModal({
       <div className="bg-[var(--background)] rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
         <div className="px-6 py-4 border-b border-[var(--border)] flex items-center justify-between">
           <div>
-            <h2 className="text-lg font-semibold">Registrar pago</h2>
+            <h2 className="text-lg font-semibold">{isEditing ? "Editar pago" : "Registrar pago"}</h2>
             <p className="text-sm text-[var(--brand-gray)]">{debt.name}</p>
           </div>
           <button
@@ -1075,11 +1302,11 @@ function PaymentModal({
               <Euro className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[var(--brand-gray)]" />
               <input
                 type="number"
-                step="1"
+                step="0.01"
                 min="0"
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
-                placeholder="0"
+                placeholder="0.00"
                 className="w-full pl-10 pr-4 py-3 bg-[var(--background-secondary)] border border-[var(--border)] rounded-xl text-lg font-semibold focus:outline-none focus:border-[var(--brand-cyan)] focus:ring-1 focus:ring-[var(--brand-cyan)] [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                 autoFocus
               />
@@ -1153,7 +1380,7 @@ function PaymentModal({
               disabled={loading}
               className="flex-1 px-4 py-3 rounded-xl gradient-brand text-white font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
             >
-              {loading ? "Guardando..." : "Registrar pago"}
+              {loading ? "Guardando..." : isEditing ? "Guardar cambios" : "Registrar pago"}
             </button>
           </div>
         </form>

@@ -15,8 +15,7 @@ import {
   Trash2,
   PiggyBank,
   Bell,
-  Clock,
-  Repeat
+  Clock
 } from "lucide-react";
 import {
   format,
@@ -56,16 +55,7 @@ interface Operation {
   category?: Category;
 }
 
-interface SavingsContribution {
-  id: string;
-  amount: number;
-  contribution_date: string;
-  savings_goal: {
-    name: string;
-    icon: string;
-    color: string;
-  };
-}
+// SavingsContribution interface removed - calendar will no longer show contributions from savings goals
 
 interface Reminder {
   id: string;
@@ -73,14 +63,12 @@ interface Reminder {
   description: string | null;
   reminder_date: string;
   amount: number | null;
-  recurrence: "none" | "monthly" | "quarterly" | "yearly" | null;
   is_completed: boolean;
 }
 
 interface DayData {
   date: Date;
   operations: Operation[];
-  contributions: SavingsContribution[];
   reminders: Reminder[];
   totalIncome: number;
   totalExpenses: number;
@@ -163,20 +151,6 @@ export default function CalendarioPage() {
         .lte("operation_date", format(calendarEnd, "yyyy-MM-dd"))
         .order("operation_date", { ascending: true });
 
-      // Fetch savings contributions for the visible calendar range
-      const { data: contributions } = await supabase
-        .from("savings_contributions")
-        .select(`
-          id,
-          amount,
-          contribution_date,
-          savings_goal:savings_goals(name, icon, color)
-        `)
-        .eq("user_id", user.id)
-        .gte("contribution_date", format(calendarStart, "yyyy-MM-dd"))
-        .lte("contribution_date", format(calendarEnd, "yyyy-MM-dd"))
-        .order("contribution_date", { ascending: true });
-
       // Fetch reminders for the visible calendar range
       const { data: reminders } = await supabase
         .from("calendar_reminders")
@@ -195,12 +169,6 @@ export default function CalendarioPage() {
         const dayOperations = (operations || []).filter(
           (op) => op.operation_date === dayStr
         );
-        const dayContributions = (contributions || []).filter(
-          (c) => c.contribution_date === dayStr
-        ).map(c => ({
-          ...c,
-          savings_goal: c.savings_goal as unknown as SavingsContribution["savings_goal"]
-        }));
         const dayReminders = (reminders || []).filter(
           (r) => r.reminder_date === dayStr
         );
@@ -213,13 +181,14 @@ export default function CalendarioPage() {
           .filter((op) => op.type === "expense")
           .reduce((sum, op) => sum + op.amount, 0);
 
-        const totalSavings = dayContributions
-          .reduce((sum, c) => sum + c.amount, 0);
+        // Calculate savings from operations of type 'savings' only
+        const totalSavings = dayOperations
+          .filter((op) => op.type === "savings")
+          .reduce((sum, op) => sum + op.amount, 0);
 
         days.push({
           date: new Date(day),
           operations: dayOperations,
-          contributions: dayContributions,
           reminders: dayReminders,
           totalIncome,
           totalExpenses,
@@ -239,13 +208,6 @@ export default function CalendarioPage() {
         }
       );
 
-      const monthContributions = (contributions || []).filter(
-        (c) => {
-          const cDate = parseISO(c.contribution_date);
-          return isSameMonth(cDate, currentDate);
-        }
-      );
-
       const totalIncome = monthOperations
         .filter((op) => op.type === "income")
         .reduce((sum, op) => sum + op.amount, 0);
@@ -254,8 +216,10 @@ export default function CalendarioPage() {
         .filter((op) => op.type === "expense")
         .reduce((sum, op) => sum + op.amount, 0);
 
-      const totalSavings = monthContributions
-        .reduce((sum, c) => sum + c.amount, 0);
+      // Calculate savings from operations of type 'savings' only
+      const totalSavings = monthOperations
+        .filter((op) => op.type === "savings")
+        .reduce((sum, op) => sum + op.amount, 0);
 
       setMonthSummary({
         totalIncome,
@@ -408,6 +372,14 @@ export default function CalendarioPage() {
 
       if (error) throw error;
 
+      // Update selectedDay immediately to remove the deleted reminder
+      if (selectedDay) {
+        setSelectedDay({
+          ...selectedDay,
+          reminders: selectedDay.reminders.filter(r => r.id !== deletingReminder.id)
+        });
+      }
+
       setShowDeleteReminderModal(false);
       setDeletingReminder(null);
       fetchMonthOperations();
@@ -549,9 +521,8 @@ export default function CalendarioPage() {
                 const isCurrentMonth = isSameMonth(dayData.date, currentDate);
                 const isTodayDate = isToday(dayData.date);
                 const hasOperations = dayData.operations.length > 0;
-                const hasContributions = dayData.contributions.length > 0;
                 const hasReminders = dayData.reminders.length > 0;
-                const totalItems = dayData.operations.length + dayData.contributions.length + dayData.reminders.length;
+                const totalItems = dayData.operations.length + dayData.reminders.length;
 
                 return (
                   <div
@@ -587,7 +558,7 @@ export default function CalendarioPage() {
                     </div>
 
                     {/* Day Totals */}
-                    {(hasOperations || hasContributions) && (
+                    {hasOperations && (
                       <div className="space-y-1">
                         {dayData.totalIncome > 0 && (
                           <div className="flex items-center gap-1 text-xs">
@@ -638,8 +609,8 @@ export default function CalendarioPage() {
                       </div>
                     )}
 
-                    {/* Operation/Contribution dots (max 3) */}
-                    {(hasOperations || hasContributions) && (
+                    {/* Operation dots (max 3) */}
+                    {hasOperations && (
                       <div className="mt-1 flex flex-wrap gap-1">
                         {dayData.operations.slice(0, 3).map((op) => (
                           <div
@@ -653,16 +624,9 @@ export default function CalendarioPage() {
                             title={op.concept}
                           />
                         ))}
-                        {dayData.contributions.slice(0, Math.max(0, 3 - dayData.operations.length)).map((c) => (
-                          <div
-                            key={c.id}
-                            className="w-2 h-2 rounded-full bg-[var(--brand-purple)]"
-                            title={`Ahorro: ${c.savings_goal?.name}`}
-                          />
-                        ))}
-                        {(dayData.operations.length + dayData.contributions.length) > 3 && (
+                        {dayData.operations.length > 3 && (
                           <span className="text-[10px] text-[var(--brand-gray)]">
-                            +{dayData.operations.length + dayData.contributions.length - 3}
+                            +{dayData.operations.length - 3}
                           </span>
                         )}
                       </div>
@@ -686,10 +650,6 @@ export default function CalendarioPage() {
           </div>
           <div className="flex items-center gap-2">
             <div className="w-3 h-3 rounded-full bg-[var(--brand-cyan)]" />
-            <span>Transferencias</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded-full bg-[var(--brand-purple)]" />
             <span>Ahorro</span>
           </div>
           <div className="flex items-center gap-2">
@@ -706,11 +666,11 @@ export default function CalendarioPage() {
             {/* Header */}
             <div className="px-6 py-4 border-b border-[var(--border)] flex items-center justify-between shrink-0">
               <div>
-                <h2 className="text-lg font-semibold capitalize">
-                  {format(selectedDay.date, "EEEE, d 'de' MMMM", { locale: es })}
+                <h2 className="text-lg font-semibold">
+                  {format(selectedDay.date, "EEEE, d ", { locale: es }).charAt(0).toUpperCase() + format(selectedDay.date, "EEEE, d ", { locale: es }).slice(1).toLowerCase()}de {format(selectedDay.date, "MMMM", { locale: es }).toLowerCase()}
                 </h2>
                 <p className="text-sm text-[var(--brand-gray)]">
-                  {selectedDay.operations.length + selectedDay.contributions.length + selectedDay.reminders.length} elemento{(selectedDay.operations.length + selectedDay.contributions.length + selectedDay.reminders.length) !== 1 ? "s" : ""}
+                  {selectedDay.operations.length + selectedDay.reminders.length} registro{(selectedDay.operations.length + selectedDay.reminders.length) !== 1 ? "s" : ""}
                 </p>
               </div>
               <button
@@ -724,7 +684,7 @@ export default function CalendarioPage() {
             {/* Content - Scrollable */}
             <div className="flex-1 overflow-y-auto p-6 min-h-0">
               {/* Day Totals */}
-              {(selectedDay.operations.length > 0 || selectedDay.contributions.length > 0) && (
+              {selectedDay.operations.length > 0 && (
                 <div className="flex items-center gap-4 mb-4 pb-4 border-b border-[var(--border)] flex-wrap">
                   {selectedDay.totalIncome > 0 && (
                     <div className="flex items-center gap-2">
@@ -791,16 +751,6 @@ export default function CalendarioPage() {
                               {reminder.description && (
                                 <p className="text-sm text-[var(--brand-gray)] mt-0.5">{reminder.description}</p>
                               )}
-                              {reminder.recurrence && reminder.recurrence !== "none" && (
-                                <div className="flex items-center gap-1 mt-1 text-xs text-[var(--brand-gray)]">
-                                  <Repeat className="w-3 h-3" />
-                                  <span>
-                                    {reminder.recurrence === "monthly" && "Mensual"}
-                                    {reminder.recurrence === "quarterly" && "Trimestral"}
-                                    {reminder.recurrence === "yearly" && "Anual"}
-                                  </span>
-                                </div>
-                              )}
                             </div>
                           </div>
                           <div className="flex items-center gap-2 shrink-0">
@@ -829,34 +779,6 @@ export default function CalendarioPage() {
                               </button>
                             </div>
                           </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Savings Contributions Section */}
-              {selectedDay.contributions.length > 0 && (
-                <div className="mb-4">
-                  <h3 className="text-sm font-medium text-[var(--brand-gray)] mb-2 flex items-center gap-2">
-                    <PiggyBank className="w-4 h-4" />
-                    Aportes a ahorro
-                  </h3>
-                  <div className="space-y-2">
-                    {selectedDay.contributions.map((contrib) => (
-                      <div
-                        key={contrib.id}
-                        className="p-3 rounded-xl bg-[var(--brand-purple)]/5 border border-[var(--brand-purple)]/20"
-                      >
-                        <div className="flex items-center justify-between gap-3">
-                          <div className="flex items-center gap-3">
-                            <span className="text-xl">{contrib.savings_goal?.icon || "🎯"}</span>
-                            <span className="font-medium">{contrib.savings_goal?.name || "Meta de ahorro"}</span>
-                          </div>
-                          <span className="text-[var(--brand-purple)] font-semibold">
-                            +{formatCurrency(contrib.amount)}
-                          </span>
                         </div>
                       </div>
                     ))}
@@ -940,10 +862,10 @@ export default function CalendarioPage() {
               )}
 
               {/* Empty State */}
-              {selectedDay.operations.length === 0 && selectedDay.contributions.length === 0 && selectedDay.reminders.length === 0 && (
+              {selectedDay.operations.length === 0 && selectedDay.reminders.length === 0 && (
                 <div className="text-center py-8">
                   <CalendarIcon className="w-12 h-12 text-[var(--brand-gray)] mx-auto mb-3" />
-                  <p className="text-[var(--brand-gray)]">No hay elementos este día</p>
+                  <p className="text-[var(--brand-gray)]">No hay registros este día</p>
                 </div>
               )}
             </div>
@@ -1053,7 +975,6 @@ function ReminderModal({
   const [description, setDescription] = useState("");
   const [reminderDate, setReminderDate] = useState("");
   const [amount, setAmount] = useState("");
-  const [recurrence, setRecurrence] = useState<"none" | "monthly" | "quarterly" | "yearly">("none");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -1065,13 +986,11 @@ function ReminderModal({
       setDescription(reminder.description || "");
       setReminderDate(reminder.reminder_date);
       setAmount(reminder.amount?.toString() || "");
-      setRecurrence(reminder.recurrence || "none");
     } else {
       setName("");
       setDescription("");
       setReminderDate(preselectedDate || format(new Date(), "yyyy-MM-dd"));
       setAmount("");
-      setRecurrence("none");
     }
     setError("");
   }, [reminder, preselectedDate, isOpen]);
@@ -1101,7 +1020,6 @@ function ReminderModal({
         description: description.trim() || null,
         reminder_date: reminderDate,
         amount: amount ? parseFloat(amount) : null,
-        recurrence: recurrence === "none" ? null : recurrence,
       };
 
       if (reminder) {
@@ -1189,34 +1107,6 @@ function ReminderModal({
                 placeholder="0.00"
                 className="w-full pl-10 pr-4 py-3 bg-[var(--background-secondary)] border border-[var(--border)] rounded-xl focus:outline-none focus:border-[var(--brand-cyan)] focus:ring-1 focus:ring-[var(--brand-cyan)]"
               />
-            </div>
-          </div>
-
-          {/* Recurrence */}
-          <div>
-            <label className="block text-sm font-medium mb-2">
-              Repetir <span className="text-[var(--brand-gray)] font-normal">(opcional)</span>
-            </label>
-            <div className="grid grid-cols-4 gap-2">
-              {[
-                { value: "none", label: "No" },
-                { value: "monthly", label: "Mensual" },
-                { value: "quarterly", label: "Trimestral" },
-                { value: "yearly", label: "Anual" },
-              ].map((option) => (
-                <button
-                  key={option.value}
-                  type="button"
-                  onClick={() => setRecurrence(option.value as typeof recurrence)}
-                  className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                    recurrence === option.value
-                      ? "bg-[var(--brand-purple)] text-white"
-                      : "bg-[var(--background-secondary)] hover:bg-[var(--border)]"
-                  }`}
-                >
-                  {option.label}
-                </button>
-              ))}
             </div>
           </div>
 

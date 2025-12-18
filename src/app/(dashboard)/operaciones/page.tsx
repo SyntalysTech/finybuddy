@@ -287,7 +287,7 @@ export default function OperacionesPage() {
     <>
       <Header
         title="Operaciones"
-        subtitle="Gestiona tus ingresos y gastos"
+        subtitle="Gestiona tus ingresos, gastos y ahorro"
         actions={
           <button
             onClick={handleNewOperation}

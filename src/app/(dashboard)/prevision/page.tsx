@@ -548,6 +548,11 @@ export default function PrevisionPage() {
                 <p className="text-xl font-bold text-[var(--danger)]">
                   {formatCurrency(totalExpenses)}
                 </p>
+                {hasBudget && totalIncome > 0 && (
+                  <p className="text-xs text-[var(--brand-gray)] mt-1">
+                    {Math.round((totalExpenses / totalIncome) * 100)}% de tus ingresos
+                  </p>
+                )}
               </div>
               <div className="p-2 rounded-lg bg-[var(--danger)]/10">
                 <TrendingDown className="w-5 h-5 text-[var(--danger)]" />
@@ -801,26 +806,36 @@ export default function PrevisionPage() {
             </button>
 
             {showAddCategory && (
-              <div className="absolute top-full left-0 mt-2 w-72 bg-[var(--background)] border border-[var(--border)] rounded-xl shadow-lg overflow-hidden z-10">
-                <div className="p-3 border-b border-[var(--border)]">
-                  <p className="text-sm font-medium">Selecciona una categoría</p>
+              <>
+                {/* Backdrop to close on click outside */}
+                <div
+                  className="fixed inset-0 z-[5]"
+                  onClick={() => setShowAddCategory(false)}
+                />
+                <div className="absolute top-full left-0 mt-2 w-72 bg-[var(--background)] border border-[var(--border)] rounded-xl shadow-lg overflow-hidden z-10">
+                  <div className="p-3 border-b border-[var(--border)]">
+                    <p className="text-sm font-medium">Selecciona una categoría</p>
+                  </div>
+                  <div className="max-h-64 overflow-y-auto">
+                    {availableCategories.map(cat => (
+                      <button
+                        key={cat.id}
+                        onClick={() => addCategoryToBudget(cat.id)}
+                        className="w-full flex items-center gap-3 px-4 py-3 hover:bg-[var(--background-secondary)] transition-colors"
+                      >
+                        <span style={{ color: cat.color }}>{cat.icon}</span>
+                        <span>{cat.name}</span>
+                        <span className="ml-auto text-xs text-[var(--brand-gray)]">
+                          {cat.type === "income" ? "Ingreso" :
+                            cat.segment === "needs" ? "Necesidades" :
+                            cat.segment === "wants" ? "Deseos" :
+                            cat.segment === "savings" ? "Ahorro" : "Gasto"}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
                 </div>
-                <div className="max-h-64 overflow-y-auto">
-                  {availableCategories.map(cat => (
-                    <button
-                      key={cat.id}
-                      onClick={() => addCategoryToBudget(cat.id)}
-                      className="w-full flex items-center gap-3 px-4 py-3 hover:bg-[var(--background-secondary)] transition-colors"
-                    >
-                      <span style={{ color: cat.color }}>{cat.icon}</span>
-                      <span>{cat.name}</span>
-                      <span className="ml-auto text-xs text-[var(--brand-gray)] capitalize">
-                        {cat.type === "income" ? "Ingreso" : cat.segment || "Gasto"}
-                      </span>
-                    </button>
-                  ))}
-                </div>
-              </div>
+              </>
             )}
           </div>
         )}

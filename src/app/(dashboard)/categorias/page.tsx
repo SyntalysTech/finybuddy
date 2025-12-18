@@ -325,7 +325,7 @@ export default function CategoriasPage() {
             >
               <Edit2 className="w-4 h-4 text-[var(--brand-gray)]" />
             </button>
-            {!category.is_default && (
+            {(!category.operation_count || category.operation_count === 0) && (
               <button
                 onClick={() => {
                   setDeletingCategory(category);
@@ -347,7 +347,7 @@ export default function CategoriasPage() {
     <>
       <Header
         title="Mis Categorías"
-        subtitle="Gestiona tus categorías de ingresos y gastos"
+        subtitle="Gestiona tus categorías de ingresos, gastos y ahorro"
         actions={
           <button
             onClick={() => {
@@ -391,24 +391,24 @@ export default function CategoriasPage() {
 
           <div className="card p-4">
             <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-[var(--danger)]/10">
-                <TrendingDown className="w-5 h-5 text-[var(--danger)]" />
-              </div>
-              <div>
-                <p className="text-sm text-[var(--brand-gray)]">Gastos</p>
-                <p className="text-xl font-bold">{expenseCategories}</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="card p-4">
-            <div className="flex items-center gap-3">
               <div className="p-2 rounded-lg bg-[var(--success)]/10">
                 <TrendingUp className="w-5 h-5 text-[var(--success)]" />
               </div>
               <div>
                 <p className="text-sm text-[var(--brand-gray)]">Ingresos</p>
                 <p className="text-xl font-bold">{incomeCategories}</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="card p-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-[var(--danger)]/10">
+                <TrendingDown className="w-5 h-5 text-[var(--danger)]" />
+              </div>
+              <div>
+                <p className="text-sm text-[var(--brand-gray)]">Gastos</p>
+                <p className="text-xl font-bold">{expenseCategories}</p>
               </div>
             </div>
           </div>
@@ -588,20 +588,6 @@ export default function CategoriasPage() {
         ) : filter === "all" ? (
           // Grouped view
           <div className="space-y-6">
-            {/* Expenses */}
-            {groupedCategories.expense.length > 0 && (
-              <div className="card p-5">
-                <div className="flex items-center gap-2 mb-4">
-                  <TrendingDown className="w-5 h-5 text-[var(--danger)]" />
-                  <h2 className="font-semibold">Categorías de Gastos</h2>
-                  <span className="text-sm text-[var(--brand-gray)]">({groupedCategories.expense.length})</span>
-                </div>
-                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                  {groupedCategories.expense.map(renderCategoryCard)}
-                </div>
-              </div>
-            )}
-
             {/* Income */}
             {groupedCategories.income.length > 0 && (
               <div className="card p-5">
@@ -612,6 +598,20 @@ export default function CategoriasPage() {
                 </div>
                 <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                   {groupedCategories.income.map(renderCategoryCard)}
+                </div>
+              </div>
+            )}
+
+            {/* Expenses */}
+            {groupedCategories.expense.length > 0 && (
+              <div className="card p-5">
+                <div className="flex items-center gap-2 mb-4">
+                  <TrendingDown className="w-5 h-5 text-[var(--danger)]" />
+                  <h2 className="font-semibold">Categorías de Gastos</h2>
+                  <span className="text-sm text-[var(--brand-gray)]">({groupedCategories.expense.length})</span>
+                </div>
+                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                  {groupedCategories.expense.map(renderCategoryCard)}
                 </div>
               </div>
             )}

@@ -25,6 +25,7 @@ import {
 import { format, differenceInDays, parseISO } from "date-fns";
 import { es } from "date-fns/locale";
 import DeleteConfirmModal from "@/components/operations/DeleteConfirmModal";
+import { useProfile } from "@/hooks/useProfile";
 
 interface SavingsGoal {
   id: string;
@@ -65,7 +66,13 @@ export default function AhorroPage() {
   const [deletingGoal, setDeletingGoal] = useState<SavingsGoal | null>(null);
   const [expandedGoal, setExpandedGoal] = useState<string | null>(null);
   const [contributions, setContributions] = useState<SavingsContribution[]>([]);
-  const [filter, setFilter] = useState<"all" | "active" | "completed">("all");
+  const [filter, setFilter] = useState<"all" | "active" | "paused" | "completed">("all");
+  const [editingContribution, setEditingContribution] = useState<SavingsContribution | null>(null);
+  const [showDeleteContributionModal, setShowDeleteContributionModal] = useState(false);
+  const [deletingContribution, setDeletingContribution] = useState<SavingsContribution | null>(null);
+
+  const { profile } = useProfile();
+  const showDecimals = profile?.show_decimals ?? true;
 
   const supabase = createClient();
 
@@ -168,7 +175,9 @@ export default function AhorroPage() {
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("es-ES", {
       style: "currency",
-      currency: "EUR",
+      currency: profile?.currency || "EUR",
+      minimumFractionDigits: showDecimals ? 2 : 0,
+      maximumFractionDigits: showDecimals ? 2 : 0,
     }).format(amount);
   };
 
@@ -194,10 +203,60 @@ export default function AhorroPage() {
 
   const filteredGoals = goals.filter((goal) => {
     if (filter === "all") return true;
-    if (filter === "active") return goal.status === "active" || goal.status === "paused";
+    if (filter === "active") return goal.status === "active";
+    if (filter === "paused") return goal.status === "paused";
     if (filter === "completed") return goal.status === "completed";
     return true;
   });
+
+  const handleDeleteContribution = async () => {
+    if (!deletingContribution || !expandedGoal) return;
+
+    try {
+      const goal = goals.find(g => g.id === expandedGoal);
+      if (!goal) return;
+
+      // Delete the contribution
+      const { error: deleteError } = await supabase
+        .from("savings_contributions")
+        .delete()
+        .eq("id", deletingContribution.id);
+
+      if (deleteError) throw deleteError;
+
+      // Recalculate current_amount
+      const newAmount = Math.max(0, goal.current_amount - deletingContribution.amount);
+
+      // Determine new status
+      let newStatus: SavingsGoal["status"] = goal.status;
+      let completedAt = goal.completed_at;
+
+      // If was completed and now amount is less than target, reactivate
+      if (goal.status === "completed" && newAmount < goal.target_amount) {
+        newStatus = "active";
+        completedAt = null;
+      }
+
+      const { error: updateError } = await supabase
+        .from("savings_goals")
+        .update({
+          current_amount: newAmount,
+          status: newStatus,
+          completed_at: completedAt,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", goal.id);
+
+      if (updateError) throw updateError;
+
+      setShowDeleteContributionModal(false);
+      setDeletingContribution(null);
+      fetchGoals();
+      fetchContributions(expandedGoal);
+    } catch (error) {
+      console.error("Error deleting contribution:", error);
+    }
+  };
 
   // Summary stats
   const totalSaved = goals.reduce((sum, g) => sum + g.current_amount, 0);
@@ -281,6 +340,7 @@ export default function AhorroPage() {
           {[
             { value: "all", label: "Todas" },
             { value: "active", label: "Activas" },
+            { value: "paused", label: "Pausadas" },
             { value: "completed", label: "Completadas" },
           ].map((tab) => (
             <button
@@ -537,9 +597,32 @@ export default function AhorroPage() {
                                     )}
                                   </div>
                                 </div>
-                                <span className="text-xs text-[var(--brand-gray)]">
-                                  {format(parseISO(contrib.contribution_date), "d MMM yyyy", { locale: es })}
-                                </span>
+                                <div className="flex items-center gap-2">
+                                  <span className="text-xs text-[var(--brand-gray)]">
+                                    {format(parseISO(contrib.contribution_date), "d MMM yyyy", { locale: es })}
+                                  </span>
+                                  <button
+                                    onClick={() => {
+                                      setEditingContribution(contrib);
+                                      setContributingGoal(goal);
+                                      setShowContributionModal(true);
+                                    }}
+                                    className="p-1.5 rounded-lg hover:bg-[var(--background)] transition-colors"
+                                    title="Editar aporte"
+                                  >
+                                    <Edit2 className="w-3.5 h-3.5 text-[var(--brand-gray)]" />
+                                  </button>
+                                  <button
+                                    onClick={() => {
+                                      setDeletingContribution(contrib);
+                                      setShowDeleteContributionModal(true);
+                                    }}
+                                    className="p-1.5 rounded-lg hover:bg-[var(--danger)]/10 transition-colors"
+                                    title="Eliminar aporte"
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5 text-[var(--danger)]" />
+                                  </button>
+                                </div>
                               </div>
                             ))}
                           </div>
@@ -575,17 +658,20 @@ export default function AhorroPage() {
         onClose={() => {
           setShowContributionModal(false);
           setContributingGoal(null);
+          setEditingContribution(null);
         }}
         onSave={() => {
           setShowContributionModal(false);
           setContributingGoal(null);
+          setEditingContribution(null);
           fetchGoals();
           if (expandedGoal) fetchContributions(expandedGoal);
         }}
         goal={contributingGoal}
+        contribution={editingContribution}
       />
 
-      {/* Delete Confirmation */}
+      {/* Delete Goal Confirmation */}
       <DeleteConfirmModal
         isOpen={showDeleteModal}
         onClose={() => {
@@ -595,6 +681,18 @@ export default function AhorroPage() {
         onConfirm={handleDeleteGoal}
         title="Eliminar meta de ahorro"
         message={`¿Estás seguro de que quieres eliminar "${deletingGoal?.name}"? Se eliminarán también todos los aportes asociados.`}
+      />
+
+      {/* Delete Contribution Confirmation */}
+      <DeleteConfirmModal
+        isOpen={showDeleteContributionModal}
+        onClose={() => {
+          setShowDeleteContributionModal(false);
+          setDeletingContribution(null);
+        }}
+        onConfirm={handleDeleteContribution}
+        title="Eliminar aporte"
+        message={`¿Estás seguro de que quieres eliminar este aporte de ${deletingContribution ? formatCurrency(deletingContribution.amount) : ""}? El saldo de la meta se recalculará automáticamente.`}
       />
     </>
   );
@@ -661,11 +759,34 @@ function GoalModal({
       return;
     }
 
+    const current = parseFloat(currentAmount) || 0;
+    const target = parseFloat(targetAmount);
+
+    // Validate current amount doesn't exceed target
+    if (current > target) {
+      setError("El ahorrado actual no puede superar el objetivo");
+      return;
+    }
+
     setLoading(true);
 
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("No autenticado");
+
+      // Auto-complete/reactivate logic
+      let newStatus: SavingsGoal["status"] = goal?.status || "active";
+      let completedAt = goal?.completed_at || null;
+
+      if (current >= target) {
+        // Auto-complete if current equals or exceeds target
+        newStatus = "completed";
+        completedAt = completedAt || new Date().toISOString();
+      } else if (goal?.status === "completed") {
+        // Reactivate if was completed but now current is less than target
+        newStatus = "active";
+        completedAt = null;
+      }
 
       const goalData = {
         user_id: user.id,
@@ -673,10 +794,12 @@ function GoalModal({
         description: description.trim() || null,
         icon,
         color,
-        target_amount: parseFloat(targetAmount),
-        current_amount: parseFloat(currentAmount) || 0,
+        target_amount: target,
+        current_amount: current,
         target_date: targetDate || null,
         priority,
+        status: newStatus,
+        completed_at: completedAt,
         updated_at: new Date().toISOString(),
       };
 
@@ -893,11 +1016,13 @@ function ContributionModal({
   onClose,
   onSave,
   goal,
+  contribution,
 }: {
   isOpen: boolean;
   onClose: () => void;
   onSave: () => void;
   goal: SavingsGoal | null;
+  contribution?: SavingsContribution | null;
 }) {
   const [amount, setAmount] = useState("");
   const [note, setNote] = useState("");
@@ -906,15 +1031,22 @@ function ContributionModal({
   const [error, setError] = useState("");
 
   const supabase = createClient();
+  const isEditing = !!contribution;
 
   useEffect(() => {
     if (isOpen) {
-      setAmount("");
-      setNote("");
-      setContributionDate(format(new Date(), "yyyy-MM-dd"));
+      if (contribution) {
+        setAmount(contribution.amount.toString());
+        setNote(contribution.notes || "");
+        setContributionDate(contribution.contribution_date);
+      } else {
+        setAmount("");
+        setNote("");
+        setContributionDate(format(new Date(), "yyyy-MM-dd"));
+      }
       setError("");
     }
-  }, [isOpen]);
+  }, [isOpen, contribution]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -926,31 +1058,86 @@ function ContributionModal({
       return;
     }
 
+    const newContribAmount = parseFloat(amount);
+
+    // Validate that the new contribution doesn't exceed the remaining target
+    if (!isEditing) {
+      const wouldExceed = goal.current_amount + newContribAmount > goal.target_amount;
+      if (wouldExceed) {
+        setError("El aporte haría que el ahorrado supere el objetivo");
+        return;
+      }
+    } else if (contribution) {
+      const difference = newContribAmount - contribution.amount;
+      const wouldExceed = goal.current_amount + difference > goal.target_amount;
+      if (wouldExceed) {
+        setError("El aporte haría que el ahorrado supere el objetivo");
+        return;
+      }
+    }
+
     setLoading(true);
 
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("No autenticado");
 
-      // Insert contribution
-      const { error: insertError } = await supabase
-        .from("savings_contributions")
-        .insert({
-          user_id: user.id,
-          savings_goal_id: goal.id,
-          amount: parseFloat(amount),
-          notes: note.trim() || null,
-          contribution_date: contributionDate,
-        });
+      let newGoalAmount: number;
 
-      if (insertError) throw insertError;
+      if (isEditing && contribution) {
+        // Update existing contribution
+        const { error: updateContribError } = await supabase
+          .from("savings_contributions")
+          .update({
+            amount: newContribAmount,
+            notes: note.trim() || null,
+            contribution_date: contributionDate,
+          })
+          .eq("id", contribution.id);
 
-      // Update goal current_amount
-      const newAmount = goal.current_amount + parseFloat(amount);
+        if (updateContribError) throw updateContribError;
+
+        // Recalculate goal amount based on difference
+        const difference = newContribAmount - contribution.amount;
+        newGoalAmount = goal.current_amount + difference;
+      } else {
+        // Insert new contribution
+        const { error: insertError } = await supabase
+          .from("savings_contributions")
+          .insert({
+            user_id: user.id,
+            savings_goal_id: goal.id,
+            amount: newContribAmount,
+            notes: note.trim() || null,
+            contribution_date: contributionDate,
+          });
+
+        if (insertError) throw insertError;
+
+        newGoalAmount = goal.current_amount + newContribAmount;
+      }
+
+      // Determine new status
+      let newStatus: SavingsGoal["status"] = goal.status;
+      let completedAt = goal.completed_at;
+
+      if (newGoalAmount >= goal.target_amount) {
+        // Auto-complete
+        newStatus = "completed";
+        completedAt = completedAt || new Date().toISOString();
+      } else if (goal.status === "completed") {
+        // Reactivate
+        newStatus = "active";
+        completedAt = null;
+      }
+
+      // Update goal current_amount and status
       const { error: updateError } = await supabase
         .from("savings_goals")
         .update({
-          current_amount: newAmount,
+          current_amount: newGoalAmount,
+          status: newStatus,
+          completed_at: completedAt,
           updated_at: new Date().toISOString(),
         })
         .eq("id", goal.id);
@@ -968,14 +1155,16 @@ function ContributionModal({
 
   if (!isOpen || !goal) return null;
 
-  const remaining = goal.target_amount - goal.current_amount;
+  const remaining = isEditing && contribution
+    ? goal.target_amount - goal.current_amount + contribution.amount
+    : goal.target_amount - goal.current_amount;
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
       <div className="bg-[var(--background)] rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
         <div className="px-6 py-4 border-b border-[var(--border)] flex items-center justify-between">
           <div>
-            <h2 className="text-lg font-semibold">Añadir aporte</h2>
+            <h2 className="text-lg font-semibold">{isEditing ? "Editar aporte" : "Añadir aporte"}</h2>
             <p className="text-sm text-[var(--brand-gray)]">{goal.name}</p>
           </div>
           <button
@@ -1089,7 +1278,7 @@ function ContributionModal({
               disabled={loading}
               className="flex-1 px-4 py-3 rounded-xl gradient-brand text-white font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
             >
-              {loading ? "Guardando..." : "Añadir aporte"}
+              {loading ? "Guardando..." : isEditing ? "Guardar cambios" : "Añadir aporte"}
             </button>
           </div>
         </form>
