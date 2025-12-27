@@ -22,7 +22,11 @@ import {
   FileText,
   Home,
   Calculator,
+  Sun,
+  Moon,
+  Monitor,
 } from "lucide-react";
+import { useTheme } from "@/contexts/ThemeContext";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 
@@ -55,8 +59,15 @@ const BILLING_TYPES = [
   { value: "empresa", label: "Empresa" },
 ];
 
+const THEME_OPTIONS = [
+  { value: "light", label: "Claro", icon: Sun },
+  { value: "dark", label: "Oscuro", icon: Moon },
+  { value: "system", label: "Sistema", icon: Monitor },
+];
+
 export default function PerfilPage() {
   const router = useRouter();
+  const { theme, setTheme } = useTheme();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -481,6 +492,35 @@ export default function PerfilPage() {
                       />
                     </div>
                   </button>
+                </div>
+                <div className="sm:col-span-2">
+                  <label className="block text-sm font-medium mb-2">Tema</label>
+                  <div className="grid grid-cols-3 gap-2">
+                    {THEME_OPTIONS.map((option) => {
+                      const Icon = option.icon;
+                      const isSelected = theme === option.value;
+                      return (
+                        <button
+                          key={option.value}
+                          type="button"
+                          onClick={() => setTheme(option.value as "light" | "dark" | "system")}
+                          className={`flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all ${
+                            isSelected
+                              ? "border-[var(--brand-purple)] bg-[var(--brand-purple)]/10"
+                              : "border-[var(--border)] hover:border-[var(--brand-gray)] bg-[var(--background-secondary)]"
+                          }`}
+                        >
+                          <Icon className={`w-6 h-6 ${isSelected ? "text-[var(--brand-purple)]" : "text-[var(--brand-gray)]"}`} />
+                          <span className={`text-sm font-medium ${isSelected ? "text-[var(--brand-purple)]" : ""}`}>
+                            {option.label}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <p className="text-xs text-[var(--brand-gray)] mt-2">
+                    El cambio se aplica inmediatamente a toda la aplicación
+                  </p>
                 </div>
               </div>
             </div>

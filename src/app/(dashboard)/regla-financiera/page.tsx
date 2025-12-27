@@ -224,12 +224,19 @@ export default function ReglaFinancieraPage() {
                 </button>
                 <div className="flex-1 relative">
                   <input
-                    type="number"
-                    min="0"
-                    max="100"
+                    type="text"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
                     value={ruleNeeds}
-                    onChange={(e) => setRuleNeeds(Math.max(0, Math.min(100, parseInt(e.target.value) || 0)))}
-                    className="w-full px-4 py-3 bg-[var(--background-secondary)] border border-[var(--border)] rounded-xl text-center text-lg font-semibold focus:outline-none focus:border-[var(--brand-cyan)] focus:ring-1 focus:ring-[var(--brand-cyan)] [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                    onChange={(e) => {
+                      const val = e.target.value.replace(/[^0-9]/g, '');
+                      setRuleNeeds(Math.max(0, Math.min(100, parseInt(val) || 0)));
+                    }}
+                    onBlur={(e) => {
+                      const val = parseInt(e.target.value) || 0;
+                      setRuleNeeds(Math.max(0, Math.min(100, val)));
+                    }}
+                    className="w-full px-4 py-3 bg-[var(--background-secondary)] border border-[var(--border)] rounded-xl text-center text-lg font-semibold focus:outline-none focus:border-[var(--brand-cyan)] focus:ring-1 focus:ring-[var(--brand-cyan)]"
                   />
                   <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--brand-gray)]">%</span>
                 </div>
@@ -259,12 +266,19 @@ export default function ReglaFinancieraPage() {
                 </button>
                 <div className="flex-1 relative">
                   <input
-                    type="number"
-                    min="0"
-                    max="100"
+                    type="text"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
                     value={ruleWants}
-                    onChange={(e) => setRuleWants(Math.max(0, Math.min(100, parseInt(e.target.value) || 0)))}
-                    className="w-full px-4 py-3 bg-[var(--background-secondary)] border border-[var(--border)] rounded-xl text-center text-lg font-semibold focus:outline-none focus:border-[var(--brand-cyan)] focus:ring-1 focus:ring-[var(--brand-cyan)] [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                    onChange={(e) => {
+                      const val = e.target.value.replace(/[^0-9]/g, '');
+                      setRuleWants(Math.max(0, Math.min(100, parseInt(val) || 0)));
+                    }}
+                    onBlur={(e) => {
+                      const val = parseInt(e.target.value) || 0;
+                      setRuleWants(Math.max(0, Math.min(100, val)));
+                    }}
+                    className="w-full px-4 py-3 bg-[var(--background-secondary)] border border-[var(--border)] rounded-xl text-center text-lg font-semibold focus:outline-none focus:border-[var(--brand-cyan)] focus:ring-1 focus:ring-[var(--brand-cyan)]"
                   />
                   <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--brand-gray)]">%</span>
                 </div>
@@ -294,12 +308,19 @@ export default function ReglaFinancieraPage() {
                 </button>
                 <div className="flex-1 relative">
                   <input
-                    type="number"
-                    min="0"
-                    max="100"
+                    type="text"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
                     value={ruleSavings}
-                    onChange={(e) => setRuleSavings(Math.max(0, Math.min(100, parseInt(e.target.value) || 0)))}
-                    className="w-full px-4 py-3 bg-[var(--background-secondary)] border border-[var(--border)] rounded-xl text-center text-lg font-semibold focus:outline-none focus:border-[var(--brand-cyan)] focus:ring-1 focus:ring-[var(--brand-cyan)] [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                    onChange={(e) => {
+                      const val = e.target.value.replace(/[^0-9]/g, '');
+                      setRuleSavings(Math.max(0, Math.min(100, parseInt(val) || 0)));
+                    }}
+                    onBlur={(e) => {
+                      const val = parseInt(e.target.value) || 0;
+                      setRuleSavings(Math.max(0, Math.min(100, val)));
+                    }}
+                    className="w-full px-4 py-3 bg-[var(--background-secondary)] border border-[var(--border)] rounded-xl text-center text-lg font-semibold focus:outline-none focus:border-[var(--brand-cyan)] focus:ring-1 focus:ring-[var(--brand-cyan)]"
                   />
                   <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--brand-gray)]">%</span>
                 </div>

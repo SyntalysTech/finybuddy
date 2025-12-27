@@ -50,15 +50,14 @@
   --font-mono: var(--font-geist-mono);
 }
 
-/* Dark mode */
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0F172A;
-    --background-secondary: #1E293B;
-    --foreground: #F8FAFC;
-    --border: #334155;
-    --border-light: #1E293B;
-  }
+/* Clase para forzar light mode */
+.light,
+:root:not(.dark) {
+  --background: #ffffff;
+  --background-secondary: #F8FAFC;
+  --foreground: #0F172A;
+  --border: #E2E8F0;
+  --border-light: #F1F5F9;
 }
 
 /* Clase para forzar dark mode */
