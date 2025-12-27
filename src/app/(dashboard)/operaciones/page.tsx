@@ -13,8 +13,7 @@ import {
   PiggyBank,
   Filter,
   Calendar,
-  MoreVertical,
-  Edit,
+  Edit2,
   Trash2,
   Receipt,
   ChevronLeft,
@@ -63,7 +62,6 @@ export default function OperacionesPage() {
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [editingOperation, setEditingOperation] = useState<Operation | null>(null);
-  const [activeMenu, setActiveMenu] = useState<string | null>(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deletingOperationId, setDeletingOperationId] = useState<string | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
@@ -190,28 +188,15 @@ export default function OperacionesPage() {
     setCurrentPage(1);
   }, [filterType, filterMonth, itemsPerPage]);
 
-  // Cerrar menú al hacer click fuera
-  useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      const target = e.target as HTMLElement;
-      // No cerrar si el click es dentro del menú o botón
-      if (target.closest('[data-menu-container]')) return;
-      setActiveMenu(null);
-    };
-    document.addEventListener("click", handleClickOutside);
-    return () => document.removeEventListener("click", handleClickOutside);
-  }, []);
 
   const handleEdit = (operation: Operation) => {
     setEditingOperation(operation);
     setShowModal(true);
-    setActiveMenu(null);
   };
 
   const handleDeleteClick = (id: string) => {
     setDeletingOperationId(id);
     setShowDeleteModal(true);
-    setActiveMenu(null);
   };
 
   const handleDeleteConfirm = async () => {
@@ -455,42 +440,22 @@ export default function OperacionesPage() {
                       {operation.type === "expense" ? "-" : "+"}{formatCurrency(operation.amount)}
                     </div>
 
-                    {/* Menú acciones */}
-                    <div className="relative" data-menu-container>
+                    {/* Botones de acción */}
+                    <div className="flex items-center gap-1">
                       <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setActiveMenu(activeMenu === operation.id ? null : operation.id);
-                        }}
+                        onClick={() => handleEdit(operation)}
                         className="p-2 rounded-lg hover:bg-[var(--background-secondary)] transition-colors"
+                        title="Editar"
                       >
-                        <MoreVertical className="w-4 h-4 text-[var(--brand-gray)]" />
+                        <Edit2 className="w-4 h-4 text-[var(--brand-gray)]" />
                       </button>
-
-                      {activeMenu === operation.id && (
-                        <div className="absolute right-0 top-full mt-1 w-36 bg-[var(--background)] border border-[var(--border)] rounded-lg shadow-lg z-50">
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleEdit(operation);
-                            }}
-                            className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-[var(--background-secondary)] transition-colors"
-                          >
-                            <Edit className="w-4 h-4" />
-                            Editar
-                          </button>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleDeleteClick(operation.id);
-                            }}
-                            className="w-full flex items-center gap-2 px-3 py-2 text-sm text-[var(--danger)] hover:bg-[var(--danger)]/10 transition-colors"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                            Eliminar
-                          </button>
-                        </div>
-                      )}
+                      <button
+                        onClick={() => handleDeleteClick(operation.id)}
+                        className="p-2 rounded-lg hover:bg-[var(--danger)]/10 transition-colors"
+                        title="Eliminar"
+                      >
+                        <Trash2 className="w-4 h-4 text-[var(--danger)]" />
+                      </button>
                     </div>
                   </div>
                 );

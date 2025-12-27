@@ -21,6 +21,7 @@ import {
   Sparkles,
   AlertTriangle,
   X,
+  GripVertical,
 } from "lucide-react";
 import { format, subMonths, addMonths } from "date-fns";
 import { es } from "date-fns/locale";
@@ -67,6 +68,15 @@ export default function PrevisionPage() {
 
   // Delete confirmation modal
   const [showDeleteBudgetModal, setShowDeleteBudgetModal] = useState(false);
+  const [showDeleteCategoryModal, setShowDeleteCategoryModal] = useState<string | null>(null);
+  const [savingCategory, setSavingCategory] = useState<string | null>(null);
+
+  // Check if next month has budget
+  const [hasNextMonthBudget, setHasNextMonthBudget] = useState(false);
+
+  // Drag & drop state
+  const [draggedCategoryId, setDraggedCategoryId] = useState<string | null>(null);
+  const [dragOverCategoryId, setDragOverCategoryId] = useState<string | null>(null);
 
   const supabase = createClient();
   const selectedYear = selectedDate.getFullYear();
@@ -128,6 +138,32 @@ export default function PrevisionPage() {
       setBudgets([]);
       setHasBudget(false);
     }
+
+    // Check if next month has budget
+    const nextDate = addMonths(new Date(selectedYear, selectedMonth - 1), 1);
+    const nextYear = nextDate.getFullYear();
+    const nextMonth = nextDate.getMonth() + 1;
+
+    const { data: nextBudgetsData } = await supabase
+      .from("budgets")
+      .select("id")
+      .eq("user_id", user.id)
+      .eq("year", nextYear)
+      .eq("month", nextMonth)
+      .limit(1);
+
+    const { data: nextPlannedSavingsData } = await supabase
+      .from("planned_savings")
+      .select("id")
+      .eq("user_id", user.id)
+      .eq("year", nextYear)
+      .eq("month", nextMonth)
+      .limit(1);
+
+    setHasNextMonthBudget(
+      Boolean((nextBudgetsData && nextBudgetsData.length > 0) ||
+      (nextPlannedSavingsData && nextPlannedSavingsData.length > 0))
+    );
 
     setLoading(false);
     setHasChanges(false);
@@ -198,12 +234,42 @@ export default function PrevisionPage() {
     setEditingPlannedSavings(true);
   };
 
-  // Save planned savings edit
-  const savePlannedSavingsEdit = () => {
+  // Save planned savings edit - immediate save to database
+  const savePlannedSavingsEdit = async () => {
     const newAmount = parseFloat(plannedSavingsValue) || 0;
-    setPlannedSavings(newAmount);
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    try {
+      // Delete existing planned savings for this month
+      await supabase
+        .from("planned_savings")
+        .delete()
+        .eq("user_id", user.id)
+        .eq("year", selectedYear)
+        .eq("month", selectedMonth);
+
+      // Insert new planned savings if amount > 0
+      if (newAmount > 0) {
+        const { error } = await supabase
+          .from("planned_savings")
+          .insert({
+            user_id: user.id,
+            amount: newAmount,
+            month: selectedMonth,
+            year: selectedYear,
+          });
+
+        if (error) throw error;
+      }
+
+      setPlannedSavings(newAmount);
+    } catch (error) {
+      console.error("Error saving planned savings:", error);
+      alert("Error al guardar el ahorro previsto");
+    }
+
     setEditingPlannedSavings(false);
-    setHasChanges(true);
   };
 
   // Delete entire budget
@@ -282,6 +348,51 @@ export default function PrevisionPage() {
     }
   };
 
+  // Copy from next month
+  const copyFromNextMonth = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    const nextDate = addMonths(selectedDate, 1);
+    const nextYear = nextDate.getFullYear();
+    const nextMonth = nextDate.getMonth() + 1;
+
+    const { data: nextBudgets } = await supabase
+      .from("budgets")
+      .select(`*, category:categories(*)`)
+      .eq("user_id", user.id)
+      .eq("year", nextYear)
+      .eq("month", nextMonth);
+
+    // Also copy planned savings
+    const { data: nextPlannedSavings } = await supabase
+      .from("planned_savings")
+      .select("amount")
+      .eq("user_id", user.id)
+      .eq("year", nextYear)
+      .eq("month", nextMonth)
+      .single();
+
+    if ((nextBudgets && nextBudgets.length > 0) || nextPlannedSavings) {
+      if (nextBudgets && nextBudgets.length > 0) {
+        const newBudgets = nextBudgets.map(b => ({
+          ...b,
+          id: undefined,
+          year: selectedYear,
+          month: selectedMonth,
+        }));
+        setBudgets(newBudgets as BudgetWithCategory[]);
+      }
+      if (nextPlannedSavings) {
+        setPlannedSavings(nextPlannedSavings.amount);
+      }
+      setHasChanges(true);
+      setHasBudget(true);
+    } else {
+      alert("No hay presupuesto del mes posterior para copiar");
+    }
+  };
+
   // Create new budget from all active categories
   const createNewBudget = () => {
     const newBudgets: BudgetWithCategory[] = categories.map(cat => ({
@@ -317,10 +428,38 @@ export default function PrevisionPage() {
     setShowAddCategory(false);
   };
 
-  // Remove category from budget
-  const removeCategoryFromBudget = (categoryId: string) => {
-    setBudgets(budgets.filter(b => b.category_id !== categoryId));
-    setHasChanges(true);
+  // Remove category from budget - with confirmation modal
+  const confirmRemoveCategoryFromBudget = async () => {
+    if (!showDeleteCategoryModal) return;
+
+    const categoryId = showDeleteCategoryModal;
+    const budget = budgets.find(b => b.category_id === categoryId);
+
+    // If budget has an ID (exists in DB), delete it
+    if (budget?.id) {
+      const { error } = await supabase
+        .from("budgets")
+        .delete()
+        .eq("id", budget.id);
+
+      if (error) {
+        console.error("Error deleting budget:", error);
+        alert("Error al eliminar la categoría del presupuesto");
+        setShowDeleteCategoryModal(null);
+        return;
+      }
+    }
+
+    // Update local state
+    const newBudgets = budgets.filter(b => b.category_id !== categoryId);
+    setBudgets(newBudgets);
+
+    // Check if budget is now empty
+    if (newBudgets.length === 0 && plannedSavings === 0) {
+      setHasBudget(false);
+    }
+
+    setShowDeleteCategoryModal(null);
   };
 
   // Start editing
@@ -329,14 +468,61 @@ export default function PrevisionPage() {
     setEditValue(currentAmount.toString());
   };
 
-  // Save edit
-  const saveEdit = (categoryId: string) => {
+  // Save edit - immediate save to database
+  const saveEdit = async (categoryId: string) => {
     const newAmount = parseFloat(editValue) || 0;
-    setBudgets(budgets.map(b =>
-      b.category_id === categoryId ? { ...b, amount: newAmount } : b
-    ));
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    setSavingCategory(categoryId);
+
+    const budget = budgets.find(b => b.category_id === categoryId);
+
+    try {
+      if (budget?.id) {
+        // Update existing budget
+        const { error } = await supabase
+          .from("budgets")
+          .update({ amount: newAmount })
+          .eq("id", budget.id);
+
+        if (error) throw error;
+      } else {
+        // Insert new budget
+        const { data, error } = await supabase
+          .from("budgets")
+          .insert({
+            user_id: user.id,
+            category_id: categoryId,
+            amount: newAmount,
+            month: selectedMonth,
+            year: selectedYear,
+          })
+          .select()
+          .single();
+
+        if (error) throw error;
+
+        // Update local state with the new ID
+        setBudgets(budgets.map(b =>
+          b.category_id === categoryId ? { ...b, id: data.id, amount: newAmount } : b
+        ));
+        setSavingCategory(null);
+        setEditingBudget(null);
+        return;
+      }
+
+      // Update local state
+      setBudgets(budgets.map(b =>
+        b.category_id === categoryId ? { ...b, amount: newAmount } : b
+      ));
+    } catch (error) {
+      console.error("Error saving budget:", error);
+      alert("Error al guardar el cambio");
+    }
+
+    setSavingCategory(null);
     setEditingBudget(null);
-    setHasChanges(true);
   };
 
   // Save all budgets
@@ -421,15 +607,103 @@ export default function PrevisionPage() {
     c => !budgets.find(b => b.category_id === c.id)
   );
 
+  // Drag & drop handlers
+  const handleDragStart = (e: React.DragEvent, categoryId: string) => {
+    setDraggedCategoryId(categoryId);
+    e.dataTransfer.effectAllowed = "move";
+    e.dataTransfer.setData("text/plain", categoryId);
+  };
+
+  const handleDragOver = (e: React.DragEvent, categoryId: string) => {
+    e.preventDefault();
+    if (draggedCategoryId && draggedCategoryId !== categoryId) {
+      setDragOverCategoryId(categoryId);
+    }
+  };
+
+  const handleDragLeave = () => {
+    setDragOverCategoryId(null);
+  };
+
+  const handleDrop = (e: React.DragEvent, targetCategoryId: string, segment: "income" | "needs" | "wants" | "savings") => {
+    e.preventDefault();
+    if (!draggedCategoryId || draggedCategoryId === targetCategoryId) {
+      setDraggedCategoryId(null);
+      setDragOverCategoryId(null);
+      return;
+    }
+
+    // Get budgets for this segment
+    let segmentBudgets: BudgetWithCategory[];
+    if (segment === "income") {
+      segmentBudgets = budgets.filter(b => b.category?.type === "income");
+    } else {
+      segmentBudgets = budgets.filter(b => b.category?.type === "expense" && b.category?.segment === segment);
+    }
+
+    const draggedIndex = segmentBudgets.findIndex(b => b.category_id === draggedCategoryId);
+    const targetIndex = segmentBudgets.findIndex(b => b.category_id === targetCategoryId);
+
+    if (draggedIndex !== -1 && targetIndex !== -1) {
+      // Reorder within segment
+      const newSegmentBudgets = [...segmentBudgets];
+      const [draggedItem] = newSegmentBudgets.splice(draggedIndex, 1);
+      newSegmentBudgets.splice(targetIndex, 0, draggedItem);
+
+      // Rebuild full budgets array preserving order
+      const otherBudgets = budgets.filter(b => {
+        if (segment === "income") {
+          return b.category?.type !== "income";
+        } else {
+          return !(b.category?.type === "expense" && b.category?.segment === segment);
+        }
+      });
+
+      // Put segment budgets in their place
+      if (segment === "income") {
+        setBudgets([...newSegmentBudgets, ...otherBudgets]);
+      } else {
+        const incomeBudgets = budgets.filter(b => b.category?.type === "income");
+        const needsBudgets = segment === "needs" ? newSegmentBudgets : budgets.filter(b => b.category?.segment === "needs");
+        const wantsBudgets = segment === "wants" ? newSegmentBudgets : budgets.filter(b => b.category?.segment === "wants");
+        const savingsBudgets = segment === "savings" ? newSegmentBudgets : budgets.filter(b => b.category?.segment === "savings");
+        setBudgets([...incomeBudgets, ...needsBudgets, ...wantsBudgets, ...savingsBudgets]);
+      }
+
+      setHasChanges(true);
+    }
+
+    setDraggedCategoryId(null);
+    setDragOverCategoryId(null);
+  };
+
+  const handleDragEnd = () => {
+    setDraggedCategoryId(null);
+    setDragOverCategoryId(null);
+  };
+
   // Render budget row
-  const renderBudgetRow = (budget: BudgetWithCategory) => {
+  const renderBudgetRow = (budget: BudgetWithCategory, segment: "income" | "needs" | "wants" | "savings") => {
     const isEditing = editingBudget === budget.category_id;
+    const isDragging = draggedCategoryId === budget.category_id;
+    const isDragOver = dragOverCategoryId === budget.category_id;
 
     return (
       <div
         key={budget.category_id}
-        className="flex items-center gap-4 p-4 hover:bg-[var(--background-secondary)] transition-colors"
+        draggable={!isEditing}
+        onDragStart={(e) => handleDragStart(e, budget.category_id)}
+        onDragOver={(e) => handleDragOver(e, budget.category_id)}
+        onDragLeave={handleDragLeave}
+        onDrop={(e) => handleDrop(e, budget.category_id, segment)}
+        onDragEnd={handleDragEnd}
+        className={`flex items-center gap-2 p-4 hover:bg-[var(--background-secondary)] transition-colors ${isDragging ? "opacity-50" : ""} ${isDragOver ? "border-t-2 border-[var(--brand-cyan)]" : ""}`}
       >
+        {/* Drag handle */}
+        <div className="cursor-grab active:cursor-grabbing text-[var(--brand-gray)] hover:text-[var(--foreground)]">
+          <GripVertical className="w-4 h-4" />
+        </div>
+
         {/* Category icon and name */}
         <div className="flex items-center gap-3 flex-1 min-w-0">
           <span
@@ -455,13 +729,15 @@ export default function PrevisionPage() {
             <div className="flex items-center gap-2">
               <input
                 type="number"
+                step="0.01"
                 value={editValue}
                 onChange={(e) => setEditValue(e.target.value)}
+                onWheel={(e) => e.currentTarget.blur()}
                 onKeyDown={(e) => {
                   if (e.key === "Enter") saveEdit(budget.category_id);
                   if (e.key === "Escape") setEditingBudget(null);
                 }}
-                className="w-32 px-3 py-2 bg-[var(--background-secondary)] border border-[var(--brand-cyan)] rounded-lg text-right font-semibold focus:outline-none"
+                className="w-32 px-3 py-2 bg-[var(--background-secondary)] border border-[var(--brand-cyan)] rounded-lg text-right font-semibold focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                 autoFocus
               />
               <button
@@ -469,6 +745,12 @@ export default function PrevisionPage() {
                 className="p-2 rounded-lg bg-[var(--success)]/10 text-[var(--success)] hover:bg-[var(--success)]/20 transition-colors"
               >
                 <CheckCircle className="w-4 h-4" />
+              </button>
+              <button
+                onClick={() => setEditingBudget(null)}
+                className="p-2 rounded-lg bg-[var(--danger)]/10 text-[var(--danger)] hover:bg-[var(--danger)]/20 transition-colors"
+              >
+                <X className="w-4 h-4" />
               </button>
             </div>
           ) : (
@@ -483,7 +765,7 @@ export default function PrevisionPage() {
                 <Edit2 className="w-4 h-4 text-[var(--brand-gray)]" />
               </button>
               <button
-                onClick={() => removeCategoryFromBudget(budget.category_id)}
+                onClick={() => setShowDeleteCategoryModal(budget.category_id)}
                 className="p-2 rounded-lg hover:bg-[var(--danger)]/10 transition-colors"
               >
                 <Trash2 className="w-4 h-4 text-[var(--danger)]" />
@@ -603,7 +885,7 @@ export default function PrevisionPage() {
             <p className="text-[var(--brand-gray)] mb-6">
               Crea tu presupuesto mensual para planificar tus finanzas
             </p>
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-3 flex-wrap">
               <button
                 onClick={createNewBudget}
                 className="flex items-center gap-2 px-6 py-3 rounded-lg gradient-brand text-white font-medium hover:opacity-90 transition-opacity"
@@ -618,6 +900,15 @@ export default function PrevisionPage() {
                 <Copy className="w-4 h-4" />
                 Copiar del mes anterior
               </button>
+              {hasNextMonthBudget && (
+                <button
+                  onClick={copyFromNextMonth}
+                  className="flex items-center gap-2 px-6 py-3 rounded-lg border border-[var(--border)] font-medium hover:bg-[var(--background-secondary)] transition-colors"
+                >
+                  <Copy className="w-4 h-4" />
+                  Copiar del mes posterior
+                </button>
+              )}
             </div>
           </div>
         )}
@@ -640,7 +931,7 @@ export default function PrevisionPage() {
               </div>
               <div className="divide-y divide-[var(--border)]">
                 {incomeBudgets.length > 0 ? (
-                  incomeBudgets.map(renderBudgetRow)
+                  incomeBudgets.map(b => renderBudgetRow(b, "income"))
                 ) : (
                   <div className="p-6 text-center text-[var(--brand-gray)]">
                     No hay categorías de ingresos
@@ -666,7 +957,7 @@ export default function PrevisionPage() {
                 </div>
                 <div className="divide-y divide-[var(--border)]">
                   {needsBudgets.length > 0 ? (
-                    needsBudgets.map(renderBudgetRow)
+                    needsBudgets.map(b => renderBudgetRow(b, "needs"))
                   ) : (
                     <div className="p-4 text-center text-sm text-[var(--brand-gray)]">
                       Sin categorías de necesidades
@@ -690,7 +981,7 @@ export default function PrevisionPage() {
                 </div>
                 <div className="divide-y divide-[var(--border)]">
                   {wantsBudgets.length > 0 ? (
-                    wantsBudgets.map(renderBudgetRow)
+                    wantsBudgets.map(b => renderBudgetRow(b, "wants"))
                   ) : (
                     <div className="p-4 text-center text-sm text-[var(--brand-gray)]">
                       Sin categorías de deseos
@@ -730,11 +1021,12 @@ export default function PrevisionPage() {
                           type="number"
                           value={plannedSavingsValue}
                           onChange={(e) => setPlannedSavingsValue(e.target.value)}
+                          onWheel={(e) => e.currentTarget.blur()}
                           onKeyDown={(e) => {
                             if (e.key === "Enter") savePlannedSavingsEdit();
                             if (e.key === "Escape") setEditingPlannedSavings(false);
                           }}
-                          className="w-full px-4 py-3 bg-[var(--background-secondary)] border border-[var(--brand-cyan)] rounded-lg text-lg font-semibold focus:outline-none"
+                          className="w-full px-4 py-3 bg-[var(--background-secondary)] border border-[var(--brand-cyan)] rounded-lg text-lg font-semibold focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                           autoFocus
                           step="0.01"
                           min="0"
@@ -745,6 +1037,12 @@ export default function PrevisionPage() {
                         className="p-3 rounded-lg bg-[var(--success)]/10 text-[var(--success)] hover:bg-[var(--success)]/20 transition-colors"
                       >
                         <CheckCircle className="w-5 h-5" />
+                      </button>
+                      <button
+                        onClick={() => setEditingPlannedSavings(false)}
+                        className="p-3 rounded-lg bg-[var(--danger)]/10 text-[var(--danger)] hover:bg-[var(--danger)]/20 transition-colors"
+                      >
+                        <X className="w-5 h-5" />
                       </button>
                     </div>
                   ) : (
@@ -786,7 +1084,7 @@ export default function PrevisionPage() {
                     </p>
                   </div>
                   <div className="divide-y divide-[var(--border)]">
-                    {savingsBudgets.map(renderBudgetRow)}
+                    {savingsBudgets.map(b => renderBudgetRow(b, "savings"))}
                   </div>
                 </div>
               )}
@@ -1032,6 +1330,59 @@ export default function PrevisionPage() {
                 </button>
                 <button
                   onClick={deleteEntireBudget}
+                  className="flex-1 px-4 py-3 rounded-xl bg-[var(--danger)] text-white font-medium hover:opacity-90 transition-opacity"
+                >
+                  Sí, eliminar
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Category Confirmation Modal */}
+      {showDeleteCategoryModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-[var(--background)] rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
+            <div className="px-6 py-4 border-b border-[var(--border)] flex items-center justify-between">
+              <h2 className="text-lg font-semibold text-[var(--danger)]">Eliminar categoría del presupuesto</h2>
+              <button
+                onClick={() => setShowDeleteCategoryModal(null)}
+                className="p-1 rounded-lg hover:bg-[var(--background-secondary)] transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="p-6">
+              <div className="flex items-start gap-4 mb-6">
+                <div className="p-3 rounded-full bg-[var(--danger)]/10">
+                  <AlertTriangle className="w-6 h-6 text-[var(--danger)]" />
+                </div>
+                <div>
+                  {(() => {
+                    const categoryToDelete = budgets.find(b => b.category_id === showDeleteCategoryModal);
+                    return (
+                      <>
+                        <p className="font-medium mb-2">
+                          ¿Eliminar &quot;{categoryToDelete?.category?.name}&quot; del presupuesto?
+                        </p>
+                        <p className="text-sm text-[var(--brand-gray)]">
+                          Se eliminará el importe previsto de {formatCurrency(categoryToDelete?.amount || 0)} para esta categoría en {format(selectedDate, "MMMM yyyy", { locale: es })}.
+                        </p>
+                      </>
+                    );
+                  })()}
+                </div>
+              </div>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowDeleteCategoryModal(null)}
+                  className="flex-1 px-4 py-3 rounded-xl border border-[var(--border)] font-medium hover:bg-[var(--background-secondary)] transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={confirmRemoveCategoryFromBudget}
                   className="flex-1 px-4 py-3 rounded-xl bg-[var(--danger)] text-white font-medium hover:opacity-90 transition-opacity"
                 >
                   Sí, eliminar

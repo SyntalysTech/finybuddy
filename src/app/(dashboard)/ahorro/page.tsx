@@ -720,6 +720,8 @@ function GoalModal({
   const [priority, setPriority] = useState(3);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [showConfirmReset, setShowConfirmReset] = useState(false);
+  const [pendingSubmit, setPendingSubmit] = useState(false);
 
   const supabase = createClient();
 
@@ -744,9 +746,21 @@ function GoalModal({
       setPriority(3);
     }
     setError("");
+    setShowConfirmReset(false);
+    setPendingSubmit(false);
   }, [goal, isOpen]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  // Prevent body scroll when modal is open
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+      return () => {
+        document.body.style.overflow = '';
+      };
+    }
+  }, [isOpen]);
+
+  const handleSubmit = async (e: React.FormEvent, skipConfirmation = false) => {
     e.preventDefault();
     setError("");
 
@@ -768,11 +782,28 @@ function GoalModal({
       return;
     }
 
+    // Si es una meta completada y se está modificando el ahorro actual, pedir confirmación
+    if (goal?.status === "completed" && current < target && !skipConfirmation) {
+      setShowConfirmReset(true);
+      setPendingSubmit(true);
+      return;
+    }
+
     setLoading(true);
 
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("No autenticado");
+
+      // Si estamos reactivando una meta completada, eliminar el historial de aportes
+      if (goal?.status === "completed" && current < target) {
+        const { error: deleteContributionsError } = await supabase
+          .from("savings_contributions")
+          .delete()
+          .eq("goal_id", goal.id);
+
+        if (deleteContributionsError) throw deleteContributionsError;
+      }
 
       // Auto-complete/reactivate logic
       let newStatus: SavingsGoal["status"] = goal?.status || "active";
@@ -824,7 +855,14 @@ function GoalModal({
       setError(errorMessage);
     } finally {
       setLoading(false);
+      setShowConfirmReset(false);
+      setPendingSubmit(false);
     }
+  };
+
+  const handleConfirmReset = (e: React.MouseEvent) => {
+    e.preventDefault();
+    handleSubmit({ preventDefault: () => {} } as React.FormEvent, true);
   };
 
   if (!isOpen) return null;
@@ -926,8 +964,9 @@ function GoalModal({
                   min="0"
                   value={targetAmount}
                   onChange={(e) => setTargetAmount(e.target.value)}
+                  onWheel={(e) => e.currentTarget.blur()}
                   placeholder="0.00"
-                  className="w-full pl-10 pr-4 py-3 bg-[var(--background-secondary)] border border-[var(--border)] rounded-xl focus:outline-none focus:border-[var(--brand-cyan)] focus:ring-1 focus:ring-[var(--brand-cyan)]"
+                  className="w-full pl-10 pr-4 py-3 bg-[var(--background-secondary)] border border-[var(--border)] rounded-xl focus:outline-none focus:border-[var(--brand-cyan)] focus:ring-1 focus:ring-[var(--brand-cyan)] [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                 />
               </div>
             </div>
@@ -941,8 +980,9 @@ function GoalModal({
                   min="0"
                   value={currentAmount}
                   onChange={(e) => setCurrentAmount(e.target.value)}
+                  onWheel={(e) => e.currentTarget.blur()}
                   placeholder="0.00"
-                  className="w-full pl-10 pr-4 py-3 bg-[var(--background-secondary)] border border-[var(--border)] rounded-xl focus:outline-none focus:border-[var(--brand-cyan)] focus:ring-1 focus:ring-[var(--brand-cyan)]"
+                  className="w-full pl-10 pr-4 py-3 bg-[var(--background-secondary)] border border-[var(--border)] rounded-xl focus:outline-none focus:border-[var(--brand-cyan)] focus:ring-1 focus:ring-[var(--brand-cyan)] [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                 />
               </div>
             </div>
@@ -987,6 +1027,43 @@ function GoalModal({
             </div>
           )}
 
+          {/* Confirmation for resetting completed goal */}
+          {showConfirmReset && (
+            <div className="p-4 rounded-xl bg-[var(--warning)]/10 border border-[var(--warning)]/30">
+              <div className="flex items-start gap-3">
+                <AlertTriangle className="w-5 h-5 text-[var(--warning)] shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-sm font-medium text-[var(--warning)]">
+                    Reactivar meta completada
+                  </p>
+                  <p className="text-sm text-[var(--brand-gray)] mt-1">
+                    Todos los aportes registrados hasta ahora se eliminarán si decides modificar el ahorro actual de una meta completada. ¿Deseas continuar?
+                  </p>
+                  <div className="flex gap-2 mt-3">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowConfirmReset(false);
+                        setPendingSubmit(false);
+                      }}
+                      className="px-3 py-1.5 rounded-lg text-sm border border-[var(--border)] hover:bg-[var(--background-secondary)] transition-colors"
+                    >
+                      Cancelar
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleConfirmReset}
+                      disabled={loading}
+                      className="px-3 py-1.5 rounded-lg text-sm bg-[var(--warning)] text-white font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
+                    >
+                      {loading ? "Procesando..." : "Sí, continuar"}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Buttons */}
           <div className="flex gap-3 pt-2">
             <button
@@ -998,7 +1075,7 @@ function GoalModal({
             </button>
             <button
               type="submit"
-              disabled={loading}
+              disabled={loading || pendingSubmit}
               className="flex-1 px-4 py-3 rounded-xl gradient-brand text-white font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
             >
               {loading ? "Guardando..." : goal ? "Guardar cambios" : "Crear meta"}
@@ -1047,6 +1124,16 @@ function ContributionModal({
       setError("");
     }
   }, [isOpen, contribution]);
+
+  // Prevent body scroll when modal is open
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+      return () => {
+        document.body.style.overflow = '';
+      };
+    }
+  }, [isOpen]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -1213,8 +1300,9 @@ function ContributionModal({
                 min="0"
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
+                onWheel={(e) => e.currentTarget.blur()}
                 placeholder="0.00"
-                className="w-full pl-10 pr-4 py-3 bg-[var(--background-secondary)] border border-[var(--border)] rounded-xl text-lg font-semibold focus:outline-none focus:border-[var(--brand-cyan)] focus:ring-1 focus:ring-[var(--brand-cyan)]"
+                className="w-full pl-10 pr-4 py-3 bg-[var(--background-secondary)] border border-[var(--border)] rounded-xl text-lg font-semibold focus:outline-none focus:border-[var(--brand-cyan)] focus:ring-1 focus:ring-[var(--brand-cyan)] [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                 autoFocus
               />
             </div>
