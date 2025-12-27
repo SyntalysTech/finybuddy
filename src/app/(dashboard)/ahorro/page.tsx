@@ -764,7 +764,7 @@ function GoalModal({
 
     // Validate current amount doesn't exceed target
     if (current > target) {
-      setError("El ahorrado actual no puede superar el objetivo");
+      setError("El ahorro actual no puede superar el objetivo");
       return;
     }
 
@@ -932,7 +932,7 @@ function GoalModal({
               </div>
             </div>
             <div>
-              <label className="block text-sm font-medium mb-2">Ahorrado actual</label>
+              <label className="block text-sm font-medium mb-2">Ahorro actual</label>
               <div className="relative">
                 <Euro className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[var(--brand-gray)]" />
                 <input

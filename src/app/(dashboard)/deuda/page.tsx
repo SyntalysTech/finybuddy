@@ -760,6 +760,8 @@ function DebtModal({
   const [dueDate, setDueDate] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [showConfirmReset, setShowConfirmReset] = useState(false);
+  const [pendingSubmit, setPendingSubmit] = useState(false);
 
   const supabase = createClient();
 
@@ -790,9 +792,11 @@ function DebtModal({
       setDueDate("");
     }
     setError("");
+    setShowConfirmReset(false);
+    setPendingSubmit(false);
   }, [debt, isOpen]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent, skipConfirmation = false) => {
     e.preventDefault();
     setError("");
 
@@ -821,11 +825,28 @@ function DebtModal({
       return;
     }
 
+    // Si es una deuda completada y se está modificando el saldo, pedir confirmación
+    if (debt?.status === "paid" && balance > 0 && !skipConfirmation) {
+      setShowConfirmReset(true);
+      setPendingSubmit(true);
+      return;
+    }
+
     setLoading(true);
 
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("No autenticado");
+
+      // Si estamos reactivando una deuda completada, eliminar el historial de pagos
+      if (debt?.status === "paid" && balance > 0) {
+        const { error: deletePaymentsError } = await supabase
+          .from("debt_payments")
+          .delete()
+          .eq("debt_id", debt.id);
+
+        if (deletePaymentsError) throw deletePaymentsError;
+      }
 
       // Determinar estado automáticamente basado en el saldo
       let newStatus: "active" | "paused" | "paid" = debt?.status || "active";
@@ -879,7 +900,14 @@ function DebtModal({
       setError(errorMessage);
     } finally {
       setLoading(false);
+      setShowConfirmReset(false);
+      setPendingSubmit(false);
     }
+  };
+
+  const handleConfirmReset = (e: React.MouseEvent) => {
+    e.preventDefault();
+    handleSubmit({ preventDefault: () => {} } as React.FormEvent, true);
   };
 
   // Prevent body scroll when modal is open
@@ -1191,6 +1219,43 @@ function DebtModal({
             </div>
           )}
 
+          {/* Confirmation for resetting paid debt */}
+          {showConfirmReset && (
+            <div className="p-4 rounded-xl bg-[var(--warning)]/10 border border-[var(--warning)]/30">
+              <div className="flex items-start gap-3">
+                <AlertTriangle className="w-5 h-5 text-[var(--warning)] shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-sm font-medium text-[var(--warning)]">
+                    Reactivar deuda completada
+                  </p>
+                  <p className="text-sm text-[var(--brand-gray)] mt-1">
+                    Todos los pagos registrados hasta ahora se eliminarán si decides modificar el saldo pendiente de una deuda completada. ¿Deseas continuar?
+                  </p>
+                  <div className="flex gap-2 mt-3">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowConfirmReset(false);
+                        setPendingSubmit(false);
+                      }}
+                      className="px-3 py-1.5 rounded-lg text-sm border border-[var(--border)] hover:bg-[var(--background-secondary)] transition-colors"
+                    >
+                      Cancelar
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleConfirmReset}
+                      disabled={loading}
+                      className="px-3 py-1.5 rounded-lg text-sm bg-[var(--warning)] text-white font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
+                    >
+                      {loading ? "Procesando..." : "Sí, continuar"}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Buttons */}
           <div className="flex gap-3 pt-2">
             <button
@@ -1202,7 +1267,7 @@ function DebtModal({
             </button>
             <button
               type="submit"
-              disabled={loading}
+              disabled={loading || pendingSubmit}
               className="flex-1 px-4 py-3 rounded-xl gradient-brand text-white font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
             >
               {loading ? "Guardando..." : debt ? "Guardar cambios" : "Añadir deuda"}
@@ -1272,6 +1337,23 @@ function PaymentModal({
     if (!amount || parseFloat(amount) <= 0) {
       setError("Introduce un importe válido");
       return;
+    }
+
+    const paymentAmount = parseFloat(amount);
+
+    // Validar que el pago no sea mayor al saldo pendiente (solo para pagos nuevos o si el monto editado excede)
+    if (!isEditing && paymentAmount > debt.current_balance) {
+      setError("No se puede registrar un pago superior al importe pendiente de la deuda");
+      return;
+    }
+
+    // Para edición, validar que el nuevo monto no genere saldo negativo
+    if (isEditing && payment) {
+      const potentialNewBalance = debt.current_balance + payment.amount - paymentAmount;
+      if (potentialNewBalance < 0) {
+        setError("No se puede registrar un pago superior al importe pendiente de la deuda");
+        return;
+      }
     }
 
     setLoading(true);
