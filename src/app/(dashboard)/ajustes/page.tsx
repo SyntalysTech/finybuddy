@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Header from "@/components/layout/Header";
 import { createClient } from "@/lib/supabase/client";
+import { useTheme } from "@/contexts/ThemeContext";
 import {
   Bell,
   Download,
@@ -14,27 +15,49 @@ import {
   Calendar,
   Database,
   HelpCircle,
-  Mail,
+  Settings,
+  Home,
+  Calculator,
+  Sun,
+  Moon,
+  Monitor,
 } from "lucide-react";
 
+const START_PAGES = [
+  { value: "dashboard", label: "Dashboard" },
+  { value: "prevision-vs-realidad", label: "Previsión vs Realidad" },
+  { value: "calendario", label: "Calendario" },
+  { value: "operaciones", label: "Operaciones" },
+];
+
+const THEME_OPTIONS = [
+  { value: "light", label: "Claro", icon: Sun },
+  { value: "dark", label: "Oscuro", icon: Moon },
+  { value: "system", label: "Sistema", icon: Monitor },
+];
+
 interface NotificationSettings {
-  email_budget_alerts: boolean;
-  email_weekly_summary: boolean;
-  email_goal_reminders: boolean;
+  email_reminder_alerts: boolean;
+  in_app_monthly_summary: boolean;
 }
 
 export default function AjustesPage() {
   const router = useRouter();
+  const { theme, setTheme } = useTheme();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [exporting, setExporting] = useState(false);
 
+  // Preferences
+  const [startPage, setStartPage] = useState("dashboard");
+  const [showDecimals, setShowDecimals] = useState(true);
+  const [savingPreferences, setSavingPreferences] = useState(false);
+
   // Notification settings
   const [notifications, setNotifications] = useState<NotificationSettings>({
-    email_budget_alerts: true,
-    email_weekly_summary: true,
-    email_goal_reminders: true,
+    email_reminder_alerts: true,
+    in_app_monthly_summary: true,
   });
 
   // Modals
@@ -52,6 +75,18 @@ export default function AjustesPage() {
       if (!user) {
         router.push("/login");
         return;
+      }
+
+      // Fetch profile preferences
+      const { data: profileData } = await supabase
+        .from("profiles")
+        .select("start_page, show_decimals")
+        .eq("id", user.id)
+        .single();
+
+      if (profileData) {
+        setStartPage(profileData.start_page || "dashboard");
+        setShowDecimals(profileData.show_decimals ?? true);
       }
 
       const savedNotifications = localStorage.getItem("finybuddy_notifications");
@@ -78,6 +113,41 @@ export default function AjustesPage() {
     localStorage.setItem("finybuddy_notifications", JSON.stringify(newNotifications));
     setSuccess("Preferencias actualizadas");
     setTimeout(() => setSuccess(""), 2000);
+  };
+
+  const handlePreferenceChange = async (key: "start_page" | "show_decimals", value: string | boolean) => {
+    setSavingPreferences(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const updateData: { start_page?: string; show_decimals?: boolean; updated_at: string } = {
+        updated_at: new Date().toISOString(),
+      };
+
+      if (key === "start_page") {
+        updateData.start_page = value as string;
+        setStartPage(value as string);
+      } else {
+        updateData.show_decimals = value as boolean;
+        setShowDecimals(value as boolean);
+      }
+
+      const { error: updateError } = await supabase
+        .from("profiles")
+        .update(updateData)
+        .eq("id", user.id);
+
+      if (updateError) throw updateError;
+
+      setSuccess("Preferencias actualizadas");
+      setTimeout(() => setSuccess(""), 2000);
+    } catch (err) {
+      console.error("Error saving preference:", err);
+      setError("Error al guardar la preferencia");
+    } finally {
+      setSavingPreferences(false);
+    }
   };
 
   const handleExportData = async (format: "json" | "csv") => {
@@ -232,6 +302,92 @@ export default function AjustesPage() {
           </div>
         )}
 
+        {/* Preferences - Full width at top */}
+        <div className="card p-6">
+          <h3 className="font-semibold mb-4 flex items-center gap-2">
+            <Settings className="w-5 h-5 text-[var(--brand-purple)]" />
+            Preferencias
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* Página de inicio */}
+            <div>
+              <label className="block text-sm font-medium mb-2">Página de inicio</label>
+              <div className="relative">
+                <Home className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[var(--brand-gray)]" />
+                <select
+                  value={startPage}
+                  onChange={(e) => handlePreferenceChange("start_page", e.target.value)}
+                  disabled={savingPreferences}
+                  className="w-full pl-10 pr-4 py-3 bg-[var(--background-secondary)] border border-[var(--border)] rounded-xl focus:outline-none focus:border-[var(--brand-cyan)] focus:ring-1 focus:ring-[var(--brand-cyan)] appearance-none disabled:opacity-50"
+                >
+                  {START_PAGES.map((page) => (
+                    <option key={page.value} value={page.value}>
+                      {page.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            {/* Mostrar decimales */}
+            <div>
+              <label className="block text-sm font-medium mb-2">Mostrar decimales</label>
+              <button
+                onClick={() => handlePreferenceChange("show_decimals", !showDecimals)}
+                disabled={savingPreferences}
+                className={`w-full px-4 py-3 rounded-xl border flex items-center justify-between transition-colors disabled:opacity-50 ${
+                  showDecimals
+                    ? "border-[var(--brand-cyan)] bg-[var(--brand-cyan)]/10"
+                    : "border-[var(--border)] bg-[var(--background-secondary)]"
+                }`}
+              >
+                <div className="flex items-center gap-2">
+                  <Calculator className="w-5 h-5 text-[var(--brand-gray)]" />
+                  <span>{showDecimals ? "1.234,56 €" : "1.235 €"}</span>
+                </div>
+                <div
+                  className={`w-10 h-6 rounded-full transition-colors ${
+                    showDecimals ? "bg-[var(--brand-cyan)]" : "bg-[var(--border)]"
+                  }`}
+                >
+                  <div
+                    className="w-5 h-5 rounded-full bg-white shadow transition-transform mt-0.5"
+                    style={{ marginLeft: showDecimals ? "18px" : "2px" }}
+                  />
+                </div>
+              </button>
+            </div>
+
+            {/* Tema */}
+            <div>
+              <label className="block text-sm font-medium mb-2">Tema</label>
+              <div className="flex gap-2">
+                {THEME_OPTIONS.map((option) => {
+                  const Icon = option.icon;
+                  const isSelected = theme === option.value;
+                  return (
+                    <button
+                      key={option.value}
+                      type="button"
+                      onClick={() => setTheme(option.value as "light" | "dark" | "system")}
+                      className={`flex-1 flex flex-col items-center gap-1 p-3 rounded-xl border-2 transition-all ${
+                        isSelected
+                          ? "border-[var(--brand-purple)] bg-[var(--brand-purple)]/10"
+                          : "border-[var(--border)] hover:border-[var(--brand-gray)] bg-[var(--background-secondary)]"
+                      }`}
+                    >
+                      <Icon className={`w-5 h-5 ${isSelected ? "text-[var(--brand-purple)]" : "text-[var(--brand-gray)]"}`} />
+                      <span className={`text-xs font-medium ${isSelected ? "text-[var(--brand-purple)]" : ""}`}>
+                        {option.label}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        </div>
+
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Notifications */}
           <div className="card p-6">
@@ -241,70 +397,47 @@ export default function AjustesPage() {
             </h3>
 
             <div className="space-y-4">
-              {/* Alertas de presupuesto */}
-              <div className="flex items-center justify-between p-4 rounded-xl bg-[var(--background-secondary)]">
-                <div className="flex items-center gap-3">
-                  <Mail className="w-5 h-5 text-[var(--brand-gray)]" />
-                  <div>
-                    <p className="font-medium text-sm">Alertas de presupuesto</p>
-                    <p className="text-xs text-[var(--brand-gray)]">Recibe un email cuando superes tu presupuesto</p>
-                  </div>
-                </div>
-                <button
-                  onClick={() => handleNotificationChange("email_budget_alerts")}
-                  className={`relative w-11 h-6 rounded-full transition-colors ${
-                    notifications.email_budget_alerts ? "bg-[var(--brand-cyan)]" : "bg-[var(--border)]"
-                  }`}
-                >
-                  <div
-                    className={`absolute top-1 w-4 h-4 rounded-full bg-white shadow-sm transition-all ${
-                      notifications.email_budget_alerts ? "left-6" : "left-1"
-                    }`}
-                  />
-                </button>
-              </div>
-
-              {/* Resumen semanal */}
+              {/* Alerta de recordatorios */}
               <div className="flex items-center justify-between p-4 rounded-xl bg-[var(--background-secondary)]">
                 <div className="flex items-center gap-3">
                   <Calendar className="w-5 h-5 text-[var(--brand-gray)]" />
                   <div>
-                    <p className="font-medium text-sm">Resumen semanal</p>
-                    <p className="text-xs text-[var(--brand-gray)]">Recibe un resumen de tus finanzas cada semana</p>
+                    <p className="font-medium text-sm">Alerta de recordatorios</p>
+                    <p className="text-xs text-[var(--brand-gray)]">Recibe un email 1 día antes del vencimiento de un pago configurado en Calendario</p>
                   </div>
                 </div>
                 <button
-                  onClick={() => handleNotificationChange("email_weekly_summary")}
+                  onClick={() => handleNotificationChange("email_reminder_alerts")}
                   className={`relative w-11 h-6 rounded-full transition-colors ${
-                    notifications.email_weekly_summary ? "bg-[var(--brand-cyan)]" : "bg-[var(--border)]"
+                    notifications.email_reminder_alerts ? "bg-[var(--brand-cyan)]" : "bg-[var(--border)]"
                   }`}
                 >
                   <div
                     className={`absolute top-1 w-4 h-4 rounded-full bg-white shadow-sm transition-all ${
-                      notifications.email_weekly_summary ? "left-6" : "left-1"
+                      notifications.email_reminder_alerts ? "left-6" : "left-1"
                     }`}
                   />
                 </button>
               </div>
 
-              {/* Recordatorios de metas */}
+              {/* Resumen mensual */}
               <div className="flex items-center justify-between p-4 rounded-xl bg-[var(--background-secondary)]">
                 <div className="flex items-center gap-3">
                   <Bell className="w-5 h-5 text-[var(--brand-gray)]" />
                   <div>
-                    <p className="font-medium text-sm">Recordatorios de metas</p>
-                    <p className="text-xs text-[var(--brand-gray)]">Recibe recordatorios sobre tus metas de ahorro</p>
+                    <p className="font-medium text-sm">Resumen mensual</p>
+                    <p className="text-xs text-[var(--brand-gray)]">Recibe el día 2 de cada mes un resumen del mes anterior en el panel de notificaciones de la app</p>
                   </div>
                 </div>
                 <button
-                  onClick={() => handleNotificationChange("email_goal_reminders")}
+                  onClick={() => handleNotificationChange("in_app_monthly_summary")}
                   className={`relative w-11 h-6 rounded-full transition-colors ${
-                    notifications.email_goal_reminders ? "bg-[var(--brand-cyan)]" : "bg-[var(--border)]"
+                    notifications.in_app_monthly_summary ? "bg-[var(--brand-cyan)]" : "bg-[var(--border)]"
                   }`}
                 >
                   <div
                     className={`absolute top-1 w-4 h-4 rounded-full bg-white shadow-sm transition-all ${
-                      notifications.email_goal_reminders ? "left-6" : "left-1"
+                      notifications.in_app_monthly_summary ? "left-6" : "left-1"
                     }`}
                   />
                 </button>
@@ -329,7 +462,7 @@ export default function AjustesPage() {
                 </div>
                 <div className="text-left">
                   <p className="font-medium text-sm">Exportar datos</p>
-                  <p className="text-xs text-[var(--brand-gray)]">Descarga una copia de todos tus datos</p>
+                  <p className="text-xs text-[var(--brand-gray)]">Descarga una copia de todas tus operaciones</p>
                 </div>
               </button>
 

@@ -16,17 +16,10 @@ import {
   X,
   AlertTriangle,
   CheckCircle,
-  Settings,
   ChevronRight,
   Building2,
   FileText,
-  Home,
-  Calculator,
-  Sun,
-  Moon,
-  Monitor,
 } from "lucide-react";
-import { useTheme } from "@/contexts/ThemeContext";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 
@@ -35,8 +28,6 @@ interface Profile {
   email: string;
   full_name: string | null;
   avatar_url: string | null;
-  start_page: string;
-  show_decimals: boolean;
   billing_type: string | null;
   billing_name: string | null;
   billing_tax_id: string | null;
@@ -46,28 +37,14 @@ interface Profile {
   updated_at: string;
 }
 
-const START_PAGES = [
-  { value: "dashboard", label: "Dashboard" },
-  { value: "prevision-vs-realidad", label: "Previsión vs Realidad" },
-  { value: "calendario", label: "Calendario" },
-  { value: "operaciones", label: "Operaciones" },
-];
-
 const BILLING_TYPES = [
   { value: "individual", label: "Particular" },
   { value: "autonomo", label: "Autónomo" },
   { value: "empresa", label: "Empresa" },
 ];
 
-const THEME_OPTIONS = [
-  { value: "light", label: "Claro", icon: Sun },
-  { value: "dark", label: "Oscuro", icon: Moon },
-  { value: "system", label: "Sistema", icon: Monitor },
-];
-
 export default function PerfilPage() {
   const router = useRouter();
-  const { theme, setTheme } = useTheme();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -76,8 +53,6 @@ export default function PerfilPage() {
 
   // Form states
   const [fullName, setFullName] = useState("");
-  const [startPage, setStartPage] = useState("dashboard");
-  const [showDecimals, setShowDecimals] = useState(true);
   const [billingType, setBillingType] = useState("");
   const [billingName, setBillingName] = useState("");
   const [billingTaxId, setBillingTaxId] = useState("");
@@ -88,8 +63,6 @@ export default function PerfilPage() {
   const [hasChanges, setHasChanges] = useState(false);
   const initialValuesRef = useRef<{
     fullName: string;
-    startPage: string;
-    showDecimals: boolean;
     billingType: string;
     billingName: string;
     billingTaxId: string;
@@ -127,8 +100,6 @@ export default function PerfilPage() {
       if (profileData) {
         setProfile(profileData);
         const initialFullName = profileData.full_name || "";
-        const initialStartPage = profileData.start_page || "dashboard";
-        const initialShowDecimals = profileData.show_decimals ?? true;
         const initialBillingType = profileData.billing_type || "";
         const initialBillingName = profileData.billing_name || "";
         const initialBillingTaxId = profileData.billing_tax_id || "";
@@ -136,8 +107,6 @@ export default function PerfilPage() {
         const initialBillingCountry = profileData.billing_country || "";
 
         setFullName(initialFullName);
-        setStartPage(initialStartPage);
-        setShowDecimals(initialShowDecimals);
         setBillingType(initialBillingType);
         setBillingName(initialBillingName);
         setBillingTaxId(initialBillingTaxId);
@@ -148,8 +117,6 @@ export default function PerfilPage() {
         // Store initial values for change detection
         initialValuesRef.current = {
           fullName: initialFullName,
-          startPage: initialStartPage,
-          showDecimals: initialShowDecimals,
           billingType: initialBillingType,
           billingName: initialBillingName,
           billingTaxId: initialBillingTaxId,
@@ -175,8 +142,6 @@ export default function PerfilPage() {
     if (initialValuesRef.current) {
       const changed =
         fullName !== initialValuesRef.current.fullName ||
-        startPage !== initialValuesRef.current.startPage ||
-        showDecimals !== initialValuesRef.current.showDecimals ||
         billingType !== initialValuesRef.current.billingType ||
         billingName !== initialValuesRef.current.billingName ||
         billingTaxId !== initialValuesRef.current.billingTaxId ||
@@ -184,7 +149,7 @@ export default function PerfilPage() {
         billingCountry !== initialValuesRef.current.billingCountry;
       setHasChanges(changed);
     }
-  }, [fullName, startPage, showDecimals, billingType, billingName, billingTaxId, billingAddress, billingCountry]);
+  }, [fullName, billingType, billingName, billingTaxId, billingAddress, billingCountry]);
 
   const handleSaveProfile = async () => {
     if (!profile) return;
@@ -198,8 +163,6 @@ export default function PerfilPage() {
         .from("profiles")
         .update({
           full_name: fullName.trim() || null,
-          start_page: startPage,
-          show_decimals: showDecimals,
           billing_type: billingType || null,
           billing_name: billingName.trim() || null,
           billing_tax_id: billingTaxId.trim() || null,
@@ -214,8 +177,6 @@ export default function PerfilPage() {
       // Update initial values to current values after successful save
       initialValuesRef.current = {
         fullName,
-        startPage,
-        showDecimals,
         billingType,
         billingName,
         billingTaxId,
@@ -438,89 +399,6 @@ export default function PerfilPage() {
                     />
                   </div>
                   <p className="text-xs text-[var(--brand-gray)] mt-1">El email no se puede cambiar</p>
-                </div>
-              </div>
-            </div>
-
-            {/* Preferences */}
-            <div className="card p-6">
-              <h3 className="font-semibold mb-4 flex items-center gap-2">
-                <Settings className="w-5 h-5 text-[var(--brand-purple)]" />
-                Preferencias
-              </h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium mb-2">Página de inicio</label>
-                  <div className="relative">
-                    <Home className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[var(--brand-gray)]" />
-                    <select
-                      value={startPage}
-                      onChange={(e) => setStartPage(e.target.value)}
-                      className="w-full pl-10 pr-4 py-3 bg-[var(--background-secondary)] border border-[var(--border)] rounded-xl focus:outline-none focus:border-[var(--brand-cyan)] focus:ring-1 focus:ring-[var(--brand-cyan)] appearance-none"
-                    >
-                      {START_PAGES.map((page) => (
-                        <option key={page.value} value={page.value}>
-                          {page.label}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <p className="text-xs text-[var(--brand-gray)] mt-1">Se aplicará en el próximo inicio de sesión</p>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-2">Mostrar decimales</label>
-                  <button
-                    onClick={() => setShowDecimals(!showDecimals)}
-                    className={`w-full px-4 py-3 rounded-xl border flex items-center justify-between transition-colors ${
-                      showDecimals
-                        ? "border-[var(--brand-cyan)] bg-[var(--brand-cyan)]/10"
-                        : "border-[var(--border)] bg-[var(--background-secondary)]"
-                    }`}
-                  >
-                    <div className="flex items-center gap-2">
-                      <Calculator className="w-5 h-5 text-[var(--brand-gray)]" />
-                      <span>{showDecimals ? "1.234,56 €" : "1.235 €"}</span>
-                    </div>
-                    <div
-                      className={`w-10 h-6 rounded-full transition-colors ${
-                        showDecimals ? "bg-[var(--brand-cyan)]" : "bg-[var(--border)]"
-                      }`}
-                    >
-                      <div
-                        className="w-5 h-5 rounded-full bg-white shadow transition-transform mt-0.5"
-                        style={{ marginLeft: showDecimals ? "18px" : "2px" }}
-                      />
-                    </div>
-                  </button>
-                </div>
-                <div className="sm:col-span-2">
-                  <label className="block text-sm font-medium mb-2">Tema</label>
-                  <div className="grid grid-cols-3 gap-2">
-                    {THEME_OPTIONS.map((option) => {
-                      const Icon = option.icon;
-                      const isSelected = theme === option.value;
-                      return (
-                        <button
-                          key={option.value}
-                          type="button"
-                          onClick={() => setTheme(option.value as "light" | "dark" | "system")}
-                          className={`flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all ${
-                            isSelected
-                              ? "border-[var(--brand-purple)] bg-[var(--brand-purple)]/10"
-                              : "border-[var(--border)] hover:border-[var(--brand-gray)] bg-[var(--background-secondary)]"
-                          }`}
-                        >
-                          <Icon className={`w-6 h-6 ${isSelected ? "text-[var(--brand-purple)]" : "text-[var(--brand-gray)]"}`} />
-                          <span className={`text-sm font-medium ${isSelected ? "text-[var(--brand-purple)]" : ""}`}>
-                            {option.label}
-                          </span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                  <p className="text-xs text-[var(--brand-gray)] mt-2">
-                    El cambio se aplica inmediatamente a toda la aplicación
-                  </p>
                 </div>
               </div>
             </div>
