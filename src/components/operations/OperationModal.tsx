@@ -245,10 +245,10 @@ export default function OperationModal({ isOpen, onClose, onSave, operation, pre
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 overflow-y-auto overscroll-contain">
       {/* Exit Confirmation Dialog */}
       {showExitConfirm && (
-        <div className="absolute inset-0 bg-black/30 flex items-center justify-center z-60">
+        <div className="absolute inset-0 bg-black/30 flex items-center justify-center z-60 overscroll-contain">
           <div className="bg-[var(--background)] rounded-xl shadow-2xl w-full max-w-sm p-6">
             <div className="flex items-center gap-3 mb-4">
               <div className="p-2 rounded-lg bg-[var(--warning)]/10">
@@ -278,9 +278,9 @@ export default function OperationModal({ isOpen, onClose, onSave, operation, pre
       )}
 
       {/* Main Modal - NO onClick on backdrop to prevent accidental close */}
-      <div className="bg-[var(--background)] rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden">
+      <div className="bg-[var(--background)] rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto overscroll-contain">
         {/* Header */}
-        <div className="px-6 py-4 border-b border-[var(--border)] flex items-center justify-between">
+        <div className="px-6 py-4 border-b border-[var(--border)] flex items-center justify-between sticky top-0 bg-[var(--background)] z-10">
           <h2 className="text-lg font-semibold">
             {operation ? "Editar operación" : "Nueva operación"}
           </h2>

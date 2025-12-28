@@ -825,8 +825,9 @@ function DebtModal({
       return;
     }
 
-    // Si es una deuda completada y se está modificando el saldo, pedir confirmación
-    if (debt?.status === "paid" && balance > 0 && !skipConfirmation) {
+    // Si se está modificando el saldo pendiente de una deuda existente que tiene pagos, pedir confirmación
+    // Esto aplica tanto a deudas pagadas como activas/pausadas
+    if (debt && debt.current_balance !== balance && !skipConfirmation) {
       setShowConfirmReset(true);
       setPendingSubmit(true);
       return;
@@ -838,8 +839,8 @@ function DebtModal({
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("No autenticado");
 
-      // Si estamos reactivando una deuda completada, eliminar el historial de pagos
-      if (debt?.status === "paid" && balance > 0) {
+      // Si se modificó el saldo pendiente, eliminar el historial de pagos
+      if (debt && debt.current_balance !== balance) {
         const { error: deletePaymentsError } = await supabase
           .from("debt_payments")
           .delete()
@@ -1032,66 +1033,34 @@ function DebtModal({
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium mb-2">Importe original</label>
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => setOriginalAmount((prev) => Math.max(0, (parseFloat(prev) || 0) - 100).toString())}
-                  className="p-3 rounded-xl bg-[var(--background-secondary)] border border-[var(--border)] hover:border-[var(--brand-cyan)] hover:bg-[var(--brand-cyan)]/10 transition-colors"
-                >
-                  <Minus className="w-4 h-4" />
-                </button>
-                <div className="relative flex-1">
-                  <Euro className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[var(--brand-gray)]" />
-                  <input
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    value={originalAmount}
-                    onChange={(e) => setOriginalAmount(e.target.value)}
-                    onWheel={(e) => e.currentTarget.blur()}
-                    placeholder="0.00"
-                    className="w-full pl-10 pr-4 py-3 bg-[var(--background-secondary)] border border-[var(--border)] rounded-xl focus:outline-none focus:border-[var(--brand-cyan)] focus:ring-1 focus:ring-[var(--brand-cyan)] [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                  />
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setOriginalAmount((prev) => ((parseFloat(prev) || 0) + 100).toString())}
-                  className="p-3 rounded-xl bg-[var(--background-secondary)] border border-[var(--border)] hover:border-[var(--brand-cyan)] hover:bg-[var(--brand-cyan)]/10 transition-colors"
-                >
-                  <Plus className="w-4 h-4" />
-                </button>
+              <div className="relative">
+                <Euro className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[var(--brand-gray)]" />
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={originalAmount}
+                  onChange={(e) => setOriginalAmount(e.target.value)}
+                  onWheel={(e) => e.currentTarget.blur()}
+                  placeholder="0.00"
+                  className="w-full pl-10 pr-4 py-3 bg-[var(--background-secondary)] border border-[var(--border)] rounded-xl focus:outline-none focus:border-[var(--brand-cyan)] focus:ring-1 focus:ring-[var(--brand-cyan)] [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                />
               </div>
             </div>
             <div>
               <label className="block text-sm font-medium mb-2">Saldo pendiente</label>
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => setCurrentBalance((prev) => Math.max(0, (parseFloat(prev) || 0) - 100).toString())}
-                  className="p-3 rounded-xl bg-[var(--background-secondary)] border border-[var(--border)] hover:border-[var(--brand-cyan)] hover:bg-[var(--brand-cyan)]/10 transition-colors"
-                >
-                  <Minus className="w-4 h-4" />
-                </button>
-                <div className="relative flex-1">
-                  <Euro className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[var(--brand-gray)]" />
-                  <input
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    value={currentBalance}
-                    onChange={(e) => setCurrentBalance(e.target.value)}
-                    onWheel={(e) => e.currentTarget.blur()}
-                    placeholder={originalAmount || "0.00"}
-                    className="w-full pl-10 pr-4 py-3 bg-[var(--background-secondary)] border border-[var(--border)] rounded-xl focus:outline-none focus:border-[var(--brand-cyan)] focus:ring-1 focus:ring-[var(--brand-cyan)] [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                  />
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setCurrentBalance((prev) => ((parseFloat(prev) || 0) + 100).toString())}
-                  className="p-3 rounded-xl bg-[var(--background-secondary)] border border-[var(--border)] hover:border-[var(--brand-cyan)] hover:bg-[var(--brand-cyan)]/10 transition-colors"
-                >
-                  <Plus className="w-4 h-4" />
-                </button>
+              <div className="relative">
+                <Euro className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[var(--brand-gray)]" />
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={currentBalance}
+                  onChange={(e) => setCurrentBalance(e.target.value)}
+                  onWheel={(e) => e.currentTarget.blur()}
+                  placeholder={originalAmount || "0.00"}
+                  className="w-full pl-10 pr-4 py-3 bg-[var(--background-secondary)] border border-[var(--border)] rounded-xl focus:outline-none focus:border-[var(--brand-cyan)] focus:ring-1 focus:ring-[var(--brand-cyan)] [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                />
               </div>
             </div>
           </div>
@@ -1102,68 +1071,36 @@ function DebtModal({
               <label className="block text-sm font-medium mb-2">
                 Interés TAE (%) <span className="text-[var(--brand-gray)] font-normal">(opc.)</span>
               </label>
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => setInterestRate((prev) => Math.max(0, (parseFloat(prev) || 0) - 0.5).toString())}
-                  className="p-3 rounded-xl bg-[var(--background-secondary)] border border-[var(--border)] hover:border-[var(--brand-cyan)] hover:bg-[var(--brand-cyan)]/10 transition-colors"
-                >
-                  <Minus className="w-4 h-4" />
-                </button>
-                <div className="relative flex-1">
-                  <Percent className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[var(--brand-gray)]" />
-                  <input
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    value={interestRate}
-                    onChange={(e) => setInterestRate(e.target.value)}
-                    onWheel={(e) => e.currentTarget.blur()}
-                    placeholder="0.00"
-                    className="w-full pl-10 pr-4 py-3 bg-[var(--background-secondary)] border border-[var(--border)] rounded-xl focus:outline-none focus:border-[var(--brand-cyan)] focus:ring-1 focus:ring-[var(--brand-cyan)] [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                  />
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setInterestRate((prev) => ((parseFloat(prev) || 0) + 0.5).toString())}
-                  className="p-3 rounded-xl bg-[var(--background-secondary)] border border-[var(--border)] hover:border-[var(--brand-cyan)] hover:bg-[var(--brand-cyan)]/10 transition-colors"
-                >
-                  <Plus className="w-4 h-4" />
-                </button>
+              <div className="relative">
+                <Percent className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[var(--brand-gray)]" />
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={interestRate}
+                  onChange={(e) => setInterestRate(e.target.value)}
+                  onWheel={(e) => e.currentTarget.blur()}
+                  placeholder="0.00"
+                  className="w-full pl-10 pr-4 py-3 bg-[var(--background-secondary)] border border-[var(--border)] rounded-xl focus:outline-none focus:border-[var(--brand-cyan)] focus:ring-1 focus:ring-[var(--brand-cyan)] [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                />
               </div>
             </div>
             <div>
               <label className="block text-sm font-medium mb-2">
                 Cuota mensual <span className="text-[var(--brand-gray)] font-normal">(opc.)</span>
               </label>
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => setMonthlyPayment((prev) => Math.max(0, (parseFloat(prev) || 0) - 50).toString())}
-                  className="p-3 rounded-xl bg-[var(--background-secondary)] border border-[var(--border)] hover:border-[var(--brand-cyan)] hover:bg-[var(--brand-cyan)]/10 transition-colors"
-                >
-                  <Minus className="w-4 h-4" />
-                </button>
-                <div className="relative flex-1">
-                  <Euro className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[var(--brand-gray)]" />
-                  <input
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    value={monthlyPayment}
-                    onChange={(e) => setMonthlyPayment(e.target.value)}
-                    onWheel={(e) => e.currentTarget.blur()}
-                    placeholder="0.00"
-                    className="w-full pl-10 pr-4 py-3 bg-[var(--background-secondary)] border border-[var(--border)] rounded-xl focus:outline-none focus:border-[var(--brand-cyan)] focus:ring-1 focus:ring-[var(--brand-cyan)] [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                  />
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setMonthlyPayment((prev) => ((parseFloat(prev) || 0) + 50).toString())}
-                  className="p-3 rounded-xl bg-[var(--background-secondary)] border border-[var(--border)] hover:border-[var(--brand-cyan)] hover:bg-[var(--brand-cyan)]/10 transition-colors"
-                >
-                  <Plus className="w-4 h-4" />
-                </button>
+              <div className="relative">
+                <Euro className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[var(--brand-gray)]" />
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={monthlyPayment}
+                  onChange={(e) => setMonthlyPayment(e.target.value)}
+                  onWheel={(e) => e.currentTarget.blur()}
+                  placeholder="0.00"
+                  className="w-full pl-10 pr-4 py-3 bg-[var(--background-secondary)] border border-[var(--border)] rounded-xl focus:outline-none focus:border-[var(--brand-cyan)] focus:ring-1 focus:ring-[var(--brand-cyan)] [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                />
               </div>
             </div>
           </div>
@@ -1219,17 +1156,17 @@ function DebtModal({
             </div>
           )}
 
-          {/* Confirmation for resetting paid debt */}
+          {/* Confirmation for modifying balance */}
           {showConfirmReset && (
             <div className="p-4 rounded-xl bg-[var(--warning)]/10 border border-[var(--warning)]/30">
               <div className="flex items-start gap-3">
                 <AlertTriangle className="w-5 h-5 text-[var(--warning)] shrink-0 mt-0.5" />
                 <div>
                   <p className="text-sm font-medium text-[var(--warning)]">
-                    Reactivar deuda completada
+                    Modificar saldo pendiente
                   </p>
                   <p className="text-sm text-[var(--brand-gray)] mt-1">
-                    Todos los pagos registrados hasta ahora se eliminarán si decides modificar el saldo pendiente de una deuda completada. ¿Deseas continuar?
+                    Todos los pagos registrados hasta ahora se eliminarán si modificas el saldo pendiente. ¿Deseas continuar?
                   </p>
                   <div className="flex gap-2 mt-3">
                     <button
@@ -1474,35 +1411,19 @@ function PaymentModal({
           {/* Amount */}
           <div>
             <label className="block text-sm font-medium mb-2">Importe del pago</label>
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => setAmount((prev) => Math.max(0, (parseFloat(prev) || 0) - 50).toString())}
-                className="p-3 rounded-xl bg-[var(--background-secondary)] border border-[var(--border)] hover:border-[var(--brand-cyan)] hover:bg-[var(--brand-cyan)]/10 transition-colors"
-              >
-                <Minus className="w-4 h-4" />
-              </button>
-              <div className="relative flex-1">
-                <Euro className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[var(--brand-gray)]" />
-                <input
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  value={amount}
-                  onChange={(e) => setAmount(e.target.value)}
-                  onWheel={(e) => e.currentTarget.blur()}
-                  placeholder="0.00"
-                  className="w-full pl-10 pr-4 py-3 bg-[var(--background-secondary)] border border-[var(--border)] rounded-xl text-lg font-semibold focus:outline-none focus:border-[var(--brand-cyan)] focus:ring-1 focus:ring-[var(--brand-cyan)] [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                  autoFocus
-                />
-              </div>
-              <button
-                type="button"
-                onClick={() => setAmount((prev) => ((parseFloat(prev) || 0) + 50).toString())}
-                className="p-3 rounded-xl bg-[var(--background-secondary)] border border-[var(--border)] hover:border-[var(--brand-cyan)] hover:bg-[var(--brand-cyan)]/10 transition-colors"
-              >
-                <Plus className="w-4 h-4" />
-              </button>
+            <div className="relative">
+              <Euro className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[var(--brand-gray)]" />
+              <input
+                type="number"
+                step="0.01"
+                min="0"
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
+                onWheel={(e) => e.currentTarget.blur()}
+                placeholder="0.00"
+                className="w-full pl-10 pr-4 py-3 bg-[var(--background-secondary)] border border-[var(--border)] rounded-xl text-lg font-semibold focus:outline-none focus:border-[var(--brand-cyan)] focus:ring-1 focus:ring-[var(--brand-cyan)] [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                autoFocus
+              />
             </div>
             <div className="flex gap-2 mt-2">
               {debt.monthly_payment && debt.monthly_payment > 0 && (

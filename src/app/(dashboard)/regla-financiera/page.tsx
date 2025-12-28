@@ -58,9 +58,9 @@ export default function ReglaFinancieraPage() {
       if (profileError) throw profileError;
 
       if (profileData) {
-        const initialRuleNeeds = profileData.rule_needs_percent || 50;
-        const initialRuleWants = profileData.rule_wants_percent || 30;
-        const initialRuleSavings = profileData.rule_savings_percent || 20;
+        const initialRuleNeeds = profileData.rule_needs_percent ?? 50;
+        const initialRuleWants = profileData.rule_wants_percent ?? 30;
+        const initialRuleSavings = profileData.rule_savings_percent ?? 20;
 
         setRuleNeeds(initialRuleNeeds);
         setRuleWants(initialRuleWants);

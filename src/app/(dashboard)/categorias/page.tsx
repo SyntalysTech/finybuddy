@@ -37,15 +37,14 @@ interface Category {
 }
 
 const CATEGORY_TYPES = [
-  { value: "expense", label: "Gasto", icon: TrendingDown, color: "text-[var(--danger)]" },
   { value: "income", label: "Ingreso", icon: TrendingUp, color: "text-[var(--success)]" },
+  { value: "expense", label: "Gasto", icon: TrendingDown, color: "text-[var(--danger)]" },
   { value: "savings", label: "Ahorro", icon: PiggyBank, color: "text-[var(--brand-cyan)]" },
 ];
 
 const SEGMENTS = [
-  { value: "needs", label: "Necesidades", description: "50% - Gastos esenciales", color: "#02EAFF" },
-  { value: "wants", label: "Deseos", description: "30% - Gastos opcionales", color: "#9945FF" },
-  { value: "savings", label: "Ahorro", description: "20% - Ahorro e inversión", color: "#14F195" },
+  { value: "needs", label: "Necesidades", description: "Gastos esenciales", color: "#02EAFF" },
+  { value: "wants", label: "Deseos", description: "Gastos opcionales", color: "#9945FF" },
 ];
 
 const ICON_OPTIONS = [
@@ -114,9 +113,9 @@ export default function CategoriasPage() {
 
       if (profileData) {
         setFinancialRule({
-          needs: profileData.rule_needs_percent || 50,
-          wants: profileData.rule_wants_percent || 30,
-          savings: profileData.rule_savings_percent || 20,
+          needs: profileData.rule_needs_percent ?? 50,
+          wants: profileData.rule_wants_percent ?? 30,
+          savings: profileData.rule_savings_percent ?? 20,
         });
       }
 
@@ -708,7 +707,7 @@ function CategoryModal({
       setIcon("📁");
       setColor("#9945FF");
       setType("expense");
-      setSegment(null);
+      setSegment("needs"); // Default to "needs" for new expense categories
     }
     setError("");
   }, [category, isOpen]);
@@ -728,13 +727,21 @@ function CategoryModal({
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("No autenticado");
 
+      // Determine segment based on type
+      let finalSegment: "needs" | "wants" | "savings" | null = null;
+      if (type === "expense") {
+        finalSegment = segment || "needs"; // Default to "needs" if not selected
+      } else if (type === "savings") {
+        finalSegment = "savings"; // Savings categories auto-assign to savings segment
+      }
+
       const categoryData = {
         user_id: user.id,
         name: name.trim(),
         icon,
         color,
         type,
-        segment: type === "expense" ? segment : null,
+        segment: finalSegment,
         updated_at: new Date().toISOString(),
       };
 
@@ -876,7 +883,7 @@ function CategoryModal({
           {type === "expense" && (
             <div>
               <label className="block text-sm font-medium mb-2">
-                Segmento (regla 50/30/20)
+                Segmento (regla financiera)
               </label>
               <div className="space-y-2">
                 {SEGMENTS.map((s) => (
@@ -902,19 +909,6 @@ function CategoryModal({
                     </div>
                   </button>
                 ))}
-                <button
-                  type="button"
-                  onClick={() => setSegment(null)}
-                  className={`w-full p-3 rounded-xl border-2 text-left transition-all ${
-                    segment === null
-                      ? "border-[var(--brand-purple)] bg-[var(--brand-purple)]/10"
-                      : "border-[var(--border)] hover:border-[var(--brand-gray)]"
-                  }`}
-                >
-                  <span className={`font-medium ${segment === null ? "text-[var(--brand-purple)]" : ""}`}>
-                    Sin segmento
-                  </span>
-                </button>
               </div>
             </div>
           )}

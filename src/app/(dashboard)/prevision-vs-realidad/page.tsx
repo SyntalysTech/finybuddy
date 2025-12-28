@@ -17,13 +17,6 @@ import {
 } from "lucide-react";
 import { format, subMonths, addMonths } from "date-fns";
 import { es } from "date-fns/locale";
-import {
-  PieChart,
-  Pie,
-  Cell,
-  ResponsiveContainer,
-  Tooltip,
-} from "recharts";
 
 interface Category {
   id: string;
@@ -179,12 +172,14 @@ export default function PrevisionVsRealidadPage() {
   const showDecimals = profile?.show_decimals ?? true;
 
   const formatCurrency = (amount: number) => {
+    // Normalize -0 to 0 to avoid displaying "-0€"
+    const normalizedAmount = Object.is(amount, -0) || (amount > -0.01 && amount < 0.01) ? 0 : amount;
     return new Intl.NumberFormat("es-ES", {
       style: "currency",
       currency: profile?.currency || "EUR",
       minimumFractionDigits: showDecimals ? 2 : 0,
       maximumFractionDigits: showDecimals ? 2 : 0,
-    }).format(amount);
+    }).format(normalizedAmount);
   };
 
   const handlePreviousMonth = () => {
@@ -223,24 +218,6 @@ export default function PrevisionVsRealidadPage() {
   const wantsActual = wantsData.reduce((sum, d) => sum + d.actual, 0);
   const savingsSegmentBudgeted = savingsSegmentData.reduce((sum, d) => sum + d.budgeted, 0);
   const savingsSegmentActual = savingsSegmentData.reduce((sum, d) => sum + d.actual, 0);
-
-  const ruleNeeds = profile?.rule_needs_percent || 50;
-  const ruleWants = profile?.rule_wants_percent || 30;
-  const ruleSavings = profile?.rule_savings_percent || 20;
-
-  // Pie chart data for budgeted
-  const budgetedPieData = [
-    { name: "Necesidades", value: needsBudgeted, color: "#10b981" },
-    { name: "Deseos", value: wantsBudgeted, color: "#f59e0b" },
-    { name: "Ahorro", value: budgetedSavings > 0 ? budgetedSavings : 0, color: "#8b5cf6" },
-  ].filter(d => d.value > 0);
-
-  // Pie chart data for actual
-  const actualPieData = [
-    { name: "Necesidades", value: needsActual, color: "#10b981" },
-    { name: "Deseos", value: wantsActual, color: "#f59e0b" },
-    { name: "Ahorro", value: actualSavings > 0 ? actualSavings : 0, color: "#8b5cf6" },
-  ].filter(d => d.value > 0);
 
   // Calcular desviaciones para los mensajes interpretativos
   const incomeDeviation = totalActualIncome - totalBudgetedIncome;
@@ -408,7 +385,7 @@ export default function PrevisionVsRealidadPage() {
               </div>
               <span className="text-lg font-semibold">Ingresos</span>
             </div>
-            <div className="grid grid-cols-3 gap-3 mb-4">
+            <div className="grid grid-cols-2 gap-3 mb-4">
               <div className="text-center p-3 rounded-lg bg-[var(--background-secondary)]">
                 <p className="text-xs text-[var(--brand-gray)] mb-1">Previsto</p>
                 <p className="text-lg font-bold">{formatCurrency(totalBudgetedIncome)}</p>
@@ -416,12 +393,6 @@ export default function PrevisionVsRealidadPage() {
               <div className="text-center p-3 rounded-lg bg-[var(--background-secondary)]">
                 <p className="text-xs text-[var(--brand-gray)] mb-1">Real</p>
                 <p className="text-lg font-bold text-[var(--success)]">{formatCurrency(totalActualIncome)}</p>
-              </div>
-              <div className="text-center p-3 rounded-lg bg-[var(--background-secondary)]">
-                <p className="text-xs text-[var(--brand-gray)] mb-1">Desviación</p>
-                <p className={`text-lg font-bold ${incomeDeviation >= 0 ? "text-[var(--success)]" : "text-[var(--danger)]"}`}>
-                  {incomeDeviation >= 0 ? "+" : ""}{formatCurrency(incomeDeviation)}
-                </p>
               </div>
             </div>
             {getIncomeMessage() && (
@@ -439,7 +410,7 @@ export default function PrevisionVsRealidadPage() {
               </div>
               <span className="text-lg font-semibold">Gastos</span>
             </div>
-            <div className="grid grid-cols-3 gap-3 mb-4">
+            <div className="grid grid-cols-2 gap-3 mb-4">
               <div className="text-center p-3 rounded-lg bg-[var(--background-secondary)]">
                 <p className="text-xs text-[var(--brand-gray)] mb-1">Previsto</p>
                 <p className="text-lg font-bold">{formatCurrency(totalBudgetedExpenses)}</p>
@@ -447,12 +418,6 @@ export default function PrevisionVsRealidadPage() {
               <div className="text-center p-3 rounded-lg bg-[var(--background-secondary)]">
                 <p className="text-xs text-[var(--brand-gray)] mb-1">Real</p>
                 <p className="text-lg font-bold text-[var(--danger)]">{formatCurrency(totalActualExpenses)}</p>
-              </div>
-              <div className="text-center p-3 rounded-lg bg-[var(--background-secondary)]">
-                <p className="text-xs text-[var(--brand-gray)] mb-1">Desviación</p>
-                <p className={`text-lg font-bold ${expenseDeviation <= 0 ? "text-[var(--success)]" : "text-[var(--danger)]"}`}>
-                  {expenseDeviation > 0 ? "+" : ""}{formatCurrency(expenseDeviation)}
-                </p>
               </div>
             </div>
             {getExpenseMessage() && (
@@ -470,7 +435,7 @@ export default function PrevisionVsRealidadPage() {
               </div>
               <span className="text-lg font-semibold">Ahorro</span>
             </div>
-            <div className="grid grid-cols-3 gap-3 mb-4">
+            <div className="grid grid-cols-2 gap-3 mb-4">
               <div className="text-center p-3 rounded-lg bg-[var(--background-secondary)]">
                 <p className="text-xs text-[var(--brand-gray)] mb-1">Previsto</p>
                 <p className="text-lg font-bold">{formatCurrency(budgetedSavings)}</p>
@@ -479,208 +444,12 @@ export default function PrevisionVsRealidadPage() {
                 <p className="text-xs text-[var(--brand-gray)] mb-1">Real</p>
                 <p className="text-lg font-bold text-[var(--brand-purple)]">{formatCurrency(actualSavings)}</p>
               </div>
-              <div className="text-center p-3 rounded-lg bg-[var(--background-secondary)]">
-                <p className="text-xs text-[var(--brand-gray)] mb-1">Desviación</p>
-                <p className={`text-lg font-bold ${savingsDeviation >= 0 ? "text-[var(--success)]" : "text-[var(--danger)]"}`}>
-                  {savingsDeviation >= 0 ? "+" : ""}{formatCurrency(savingsDeviation)}
-                </p>
-              </div>
             </div>
             {getSavingsMessage() && (
               <div className={`p-3 rounded-lg text-sm ${savingsDeviation >= 0 ? "bg-[var(--success)]/10 text-[var(--success)]" : "bg-[var(--warning)]/10 text-[var(--warning)]"}`}>
                 {getSavingsMessage()}
               </div>
             )}
-          </div>
-        </div>
-
-        {/* Charts Section */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Pie Charts Comparison */}
-          <div className="card p-6">
-            <h3 className="font-semibold mb-4">
-              Distribución: Regla {ruleNeeds}/{ruleWants}/{ruleSavings}
-            </h3>
-            <div className="grid grid-cols-2 gap-4">
-              {/* Budgeted Distribution */}
-              <div>
-                <p className="text-sm text-[var(--brand-gray)] text-center mb-2">Previsto</p>
-                {budgetedPieData.length > 0 ? (
-                  <div className="h-48">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <PieChart>
-                        <Pie
-                          data={budgetedPieData}
-                          cx="50%"
-                          cy="50%"
-                          innerRadius={30}
-                          outerRadius={60}
-                          paddingAngle={2}
-                          dataKey="value"
-                        >
-                          {budgetedPieData.map((entry, index) => (
-                            <Cell key={`cell-${index}`} fill={entry.color} />
-                          ))}
-                        </Pie>
-                        <Tooltip
-                          formatter={(value: number) => formatCurrency(value)}
-                          contentStyle={{
-                            backgroundColor: "var(--background)",
-                            border: "1px solid var(--border)",
-                            borderRadius: "8px",
-                          }}
-                        />
-                      </PieChart>
-                    </ResponsiveContainer>
-                  </div>
-                ) : (
-                  <div className="h-48 flex items-center justify-center text-[var(--brand-gray)]">
-                    Sin datos
-                  </div>
-                )}
-              </div>
-
-              {/* Actual Distribution */}
-              <div>
-                <p className="text-sm text-[var(--brand-gray)] text-center mb-2">Real</p>
-                {actualPieData.length > 0 ? (
-                  <div className="h-48">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <PieChart>
-                        <Pie
-                          data={actualPieData}
-                          cx="50%"
-                          cy="50%"
-                          innerRadius={30}
-                          outerRadius={60}
-                          paddingAngle={2}
-                          dataKey="value"
-                        >
-                          {actualPieData.map((entry, index) => (
-                            <Cell key={`cell-${index}`} fill={entry.color} />
-                          ))}
-                        </Pie>
-                        <Tooltip
-                          formatter={(value: number) => formatCurrency(value)}
-                          contentStyle={{
-                            backgroundColor: "var(--background)",
-                            border: "1px solid var(--border)",
-                            borderRadius: "8px",
-                          }}
-                        />
-                      </PieChart>
-                    </ResponsiveContainer>
-                  </div>
-                ) : (
-                  <div className="h-48 flex items-center justify-center text-[var(--brand-gray)]">
-                    Sin datos
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Legend */}
-            <div className="flex justify-center gap-6 mt-4">
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full bg-[#10b981]" />
-                <span className="text-sm">Necesidades</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full bg-[#f59e0b]" />
-                <span className="text-sm">Deseos</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full bg-[#8b5cf6]" />
-                <span className="text-sm">Ahorro</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Simple Bar Comparison */}
-          <div className="card p-6">
-            <h3 className="font-semibold mb-6">Comparativa General</h3>
-            <div className="space-y-6">
-              {/* Ingresos */}
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium">Ingresos</span>
-                  <div className="flex items-center gap-4 text-sm">
-                    <span className="text-[var(--brand-gray)]">Previsto: {formatCurrency(totalBudgetedIncome)}</span>
-                    <span className="text-[var(--success)] font-medium">Real: {formatCurrency(totalActualIncome)}</span>
-                  </div>
-                </div>
-                <div className="relative h-8 bg-[var(--background-secondary)] rounded-lg overflow-hidden">
-                  {totalBudgetedIncome > 0 && (
-                    <div
-                      className="absolute top-0 left-0 h-full bg-gray-400/30 rounded-lg"
-                      style={{ width: `${Math.min((totalBudgetedIncome / Math.max(totalBudgetedIncome, totalActualIncome)) * 100, 100)}%` }}
-                    />
-                  )}
-                  <div
-                    className="absolute top-0 left-0 h-full bg-[var(--success)] rounded-lg"
-                    style={{ width: `${totalBudgetedIncome > 0 || totalActualIncome > 0 ? Math.min((totalActualIncome / Math.max(totalBudgetedIncome, totalActualIncome)) * 100, 100) : 0}%` }}
-                  />
-                </div>
-              </div>
-
-              {/* Gastos */}
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium">Gastos</span>
-                  <div className="flex items-center gap-4 text-sm">
-                    <span className="text-[var(--brand-gray)]">Previsto: {formatCurrency(totalBudgetedExpenses)}</span>
-                    <span className="text-[var(--danger)] font-medium">Real: {formatCurrency(totalActualExpenses)}</span>
-                  </div>
-                </div>
-                <div className="relative h-8 bg-[var(--background-secondary)] rounded-lg overflow-hidden">
-                  {totalBudgetedExpenses > 0 && (
-                    <div
-                      className="absolute top-0 left-0 h-full bg-gray-400/30 rounded-lg"
-                      style={{ width: `${Math.min((totalBudgetedExpenses / Math.max(totalBudgetedExpenses, totalActualExpenses)) * 100, 100)}%` }}
-                    />
-                  )}
-                  <div
-                    className="absolute top-0 left-0 h-full bg-[var(--danger)] rounded-lg"
-                    style={{ width: `${totalBudgetedExpenses > 0 || totalActualExpenses > 0 ? Math.min((totalActualExpenses / Math.max(totalBudgetedExpenses, totalActualExpenses)) * 100, 100) : 0}%` }}
-                  />
-                </div>
-              </div>
-
-              {/* Ahorro */}
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium">Ahorro</span>
-                  <div className="flex items-center gap-4 text-sm">
-                    <span className="text-[var(--brand-gray)]">Previsto: {formatCurrency(budgetedSavings)}</span>
-                    <span className="text-[var(--brand-purple)] font-medium">Real: {formatCurrency(actualSavings)}</span>
-                  </div>
-                </div>
-                <div className="relative h-8 bg-[var(--background-secondary)] rounded-lg overflow-hidden">
-                  {budgetedSavings > 0 && (
-                    <div
-                      className="absolute top-0 left-0 h-full bg-gray-400/30 rounded-lg"
-                      style={{ width: `${Math.min((budgetedSavings / Math.max(budgetedSavings, actualSavings)) * 100, 100)}%` }}
-                    />
-                  )}
-                  <div
-                    className="absolute top-0 left-0 h-full bg-[var(--brand-purple)] rounded-lg"
-                    style={{ width: `${budgetedSavings > 0 || actualSavings > 0 ? Math.min((actualSavings / Math.max(budgetedSavings, actualSavings)) * 100, 100) : 0}%` }}
-                  />
-                </div>
-              </div>
-
-              {/* Leyenda */}
-              <div className="flex items-center justify-center gap-6 pt-2 border-t border-[var(--border)]">
-                <div className="flex items-center gap-2">
-                  <div className="w-4 h-3 rounded bg-gray-400/30" />
-                  <span className="text-xs text-[var(--brand-gray)]">Previsto</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-4 h-3 rounded bg-[var(--brand-cyan)]" />
-                  <span className="text-xs text-[var(--brand-gray)]">Real</span>
-                </div>
-              </div>
-            </div>
           </div>
         </div>
 
@@ -702,17 +471,24 @@ export default function PrevisionVsRealidadPage() {
             {incomeData.length > 0 && (
               <div className="card overflow-hidden">
                 <div className="px-6 py-4 border-b border-[var(--border)] bg-[var(--success)]/5">
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between mb-2">
                     <h3 className="font-semibold flex items-center gap-2">
                       <TrendingUp className="w-5 h-5 text-[var(--success)]" />
                       Ingresos
                     </h3>
-                    <div className="text-right">
-                      <span className="text-sm text-[var(--brand-gray)]">Real: </span>
+                    <div className="text-right text-sm">
                       <span className="font-bold text-[var(--success)]">{formatCurrency(totalActualIncome)}</span>
-                      <span className="text-sm text-[var(--brand-gray)]"> / Previsto: </span>
-                      <span className="font-medium">{formatCurrency(totalBudgetedIncome)}</span>
+                      <span className="text-[var(--brand-gray)]"> / {formatCurrency(totalBudgetedIncome)}</span>
+                      <span className="ml-2 font-medium">
+                        ({totalBudgetedIncome > 0 ? Math.min(Math.round((totalActualIncome / totalBudgetedIncome) * 100), 999) : totalActualIncome > 0 ? 100 : 0}%)
+                      </span>
                     </div>
+                  </div>
+                  <div className="h-2 bg-[var(--border)] rounded-full overflow-hidden">
+                    <div
+                      className={`h-full rounded-full transition-all ${totalActualIncome >= totalBudgetedIncome ? "bg-[var(--success)]" : "bg-[var(--warning)]"}`}
+                      style={{ width: `${totalBudgetedIncome > 0 ? Math.min((totalActualIncome / totalBudgetedIncome) * 100, 100) : totalActualIncome > 0 ? 100 : 0}%` }}
+                    />
                   </div>
                 </div>
                 <div className="divide-y divide-[var(--border)]">
@@ -725,14 +501,21 @@ export default function PrevisionVsRealidadPage() {
             {needsData.length > 0 && (
               <div className="card overflow-hidden">
                 <div className="px-6 py-4 border-b border-[var(--border)] bg-[var(--success)]/5">
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between mb-2">
                     <h3 className="font-semibold">Necesidades</h3>
-                    <div className="text-right">
-                      <span className="text-sm text-[var(--brand-gray)]">Real: </span>
+                    <div className="text-right text-sm">
                       <span className="font-bold">{formatCurrency(needsActual)}</span>
-                      <span className="text-sm text-[var(--brand-gray)]"> / Previsto: </span>
-                      <span className="font-medium">{formatCurrency(needsBudgeted)}</span>
+                      <span className="text-[var(--brand-gray)]"> / {formatCurrency(needsBudgeted)}</span>
+                      <span className="ml-2 font-medium">
+                        ({needsBudgeted > 0 ? Math.min(Math.round((needsActual / needsBudgeted) * 100), 999) : needsActual > 0 ? 100 : 0}%)
+                      </span>
                     </div>
+                  </div>
+                  <div className="h-2 bg-[var(--border)] rounded-full overflow-hidden">
+                    <div
+                      className={`h-full rounded-full transition-all ${needsActual <= needsBudgeted ? "bg-[var(--success)]" : "bg-[var(--danger)]"}`}
+                      style={{ width: `${needsBudgeted > 0 ? Math.min((needsActual / needsBudgeted) * 100, 100) : needsActual > 0 ? 100 : 0}%` }}
+                    />
                   </div>
                 </div>
                 <div className="divide-y divide-[var(--border)]">
@@ -744,14 +527,21 @@ export default function PrevisionVsRealidadPage() {
             {wantsData.length > 0 && (
               <div className="card overflow-hidden">
                 <div className="px-6 py-4 border-b border-[var(--border)] bg-[var(--warning)]/5">
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between mb-2">
                     <h3 className="font-semibold">Deseos</h3>
-                    <div className="text-right">
-                      <span className="text-sm text-[var(--brand-gray)]">Real: </span>
+                    <div className="text-right text-sm">
                       <span className="font-bold">{formatCurrency(wantsActual)}</span>
-                      <span className="text-sm text-[var(--brand-gray)]"> / Previsto: </span>
-                      <span className="font-medium">{formatCurrency(wantsBudgeted)}</span>
+                      <span className="text-[var(--brand-gray)]"> / {formatCurrency(wantsBudgeted)}</span>
+                      <span className="ml-2 font-medium">
+                        ({wantsBudgeted > 0 ? Math.min(Math.round((wantsActual / wantsBudgeted) * 100), 999) : wantsActual > 0 ? 100 : 0}%)
+                      </span>
                     </div>
+                  </div>
+                  <div className="h-2 bg-[var(--border)] rounded-full overflow-hidden">
+                    <div
+                      className={`h-full rounded-full transition-all ${wantsActual <= wantsBudgeted ? "bg-[var(--success)]" : "bg-[var(--danger)]"}`}
+                      style={{ width: `${wantsBudgeted > 0 ? Math.min((wantsActual / wantsBudgeted) * 100, 100) : wantsActual > 0 ? 100 : 0}%` }}
+                    />
                   </div>
                 </div>
                 <div className="divide-y divide-[var(--border)]">
@@ -763,18 +553,64 @@ export default function PrevisionVsRealidadPage() {
             {savingsSegmentData.length > 0 && (
               <div className="card overflow-hidden">
                 <div className="px-6 py-4 border-b border-[var(--border)] bg-[var(--brand-purple)]/5">
-                  <div className="flex items-center justify-between">
-                    <h3 className="font-semibold">Ahorro planificado</h3>
-                    <div className="text-right">
-                      <span className="text-sm text-[var(--brand-gray)]">Real: </span>
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="font-semibold">Ahorro planificado por categoría</h3>
+                    <div className="text-right text-sm">
                       <span className="font-bold text-[var(--brand-purple)]">{formatCurrency(savingsSegmentActual)}</span>
-                      <span className="text-sm text-[var(--brand-gray)]"> / Previsto: </span>
-                      <span className="font-medium">{formatCurrency(savingsSegmentBudgeted)}</span>
+                      <span className="text-[var(--brand-gray)]"> / {formatCurrency(savingsSegmentBudgeted)}</span>
+                      <span className="ml-2 font-medium">
+                        ({savingsSegmentBudgeted > 0 ? Math.min(Math.round((savingsSegmentActual / savingsSegmentBudgeted) * 100), 999) : savingsSegmentActual > 0 ? 100 : 0}%)
+                      </span>
                     </div>
+                  </div>
+                  <div className="h-2 bg-[var(--border)] rounded-full overflow-hidden">
+                    <div
+                      className={`h-full rounded-full transition-all ${savingsSegmentActual >= savingsSegmentBudgeted ? "bg-[var(--success)]" : "bg-[var(--brand-purple)]"}`}
+                      style={{ width: `${savingsSegmentBudgeted > 0 ? Math.min((savingsSegmentActual / savingsSegmentBudgeted) * 100, 100) : savingsSegmentActual > 0 ? 100 : 0}%` }}
+                    />
                   </div>
                 </div>
                 <div className="divide-y divide-[var(--border)]">
                   {savingsSegmentData.map(renderComparisonRow)}
+                </div>
+              </div>
+            )}
+
+            {/* Ahorro Global: Previsto vs Real */}
+            {(budgetedSavings > 0 || actualSavings > 0) && (
+              <div className="card overflow-hidden">
+                <div className="px-6 py-4 border-b border-[var(--border)] bg-[var(--brand-cyan)]/5">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <PiggyBank className="w-5 h-5 text-[var(--brand-cyan)]" />
+                      <h3 className="font-semibold">Ahorro total del mes</h3>
+                    </div>
+                    <div className="text-right text-sm">
+                      <span className="font-bold text-[var(--brand-cyan)]">{formatCurrency(actualSavings)}</span>
+                      <span className="text-[var(--brand-gray)]"> / {formatCurrency(budgetedSavings)}</span>
+                      <span className="ml-2 font-medium">
+                        ({budgetedSavings > 0 ? Math.min(Math.round((actualSavings / budgetedSavings) * 100), 999) : actualSavings > 0 ? 100 : 0}%)
+                      </span>
+                    </div>
+                  </div>
+                  <div className="h-2 bg-[var(--border)] rounded-full overflow-hidden">
+                    <div
+                      className={`h-full rounded-full transition-all ${actualSavings >= budgetedSavings ? "bg-[var(--success)]" : "bg-[var(--brand-cyan)]"}`}
+                      style={{ width: `${budgetedSavings > 0 ? Math.min((actualSavings / budgetedSavings) * 100, 100) : actualSavings > 0 ? 100 : 0}%` }}
+                    />
+                  </div>
+                </div>
+                <div className="p-4">
+                  {/* Message */}
+                  <p className={`text-sm text-center ${actualSavings >= budgetedSavings ? "text-[var(--success)]" : "text-[var(--brand-gray)]"}`}>
+                    {budgetedSavings === 0 && actualSavings === 0
+                      ? "No hay datos de ahorro para este mes"
+                      : budgetedSavings === 0
+                        ? `Has ahorrado ${formatCurrency(actualSavings)} sin previsión`
+                        : actualSavings >= budgetedSavings
+                          ? "Has alcanzado o superado tu meta de ahorro"
+                          : `Te faltan ${formatCurrency(budgetedSavings - actualSavings)} para alcanzar tu objetivo`}
+                  </p>
                 </div>
               </div>
             )}

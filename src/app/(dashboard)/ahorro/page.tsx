@@ -5,6 +5,7 @@ import Header from "@/components/layout/Header";
 import { createClient } from "@/lib/supabase/client";
 import {
   Plus,
+  Minus,
   Target,
   TrendingUp,
   Calendar,
@@ -61,6 +62,7 @@ export default function AhorroPage() {
   const [showGoalModal, setShowGoalModal] = useState(false);
   const [editingGoal, setEditingGoal] = useState<SavingsGoal | null>(null);
   const [showContributionModal, setShowContributionModal] = useState(false);
+  const [showWithdrawalModal, setShowWithdrawalModal] = useState(false);
   const [contributingGoal, setContributingGoal] = useState<SavingsGoal | null>(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deletingGoal, setDeletingGoal] = useState<SavingsGoal | null>(null);
@@ -447,6 +449,18 @@ export default function AhorroPage() {
                                 >
                                   <Plus className="w-4 h-4 text-[var(--success)]" />
                                 </button>
+                                {goal.current_amount > 0 && (
+                                  <button
+                                    onClick={() => {
+                                      setContributingGoal(goal);
+                                      setShowWithdrawalModal(true);
+                                    }}
+                                    className="p-2 rounded-lg hover:bg-[var(--danger)]/10 transition-colors"
+                                    title="Quitar ahorro"
+                                  >
+                                    <Minus className="w-4 h-4 text-[var(--danger)]" />
+                                  </button>
+                                )}
                                 <button
                                   onClick={() => handleToggleStatus(goal)}
                                   className="p-2 rounded-lg hover:bg-[var(--background-secondary)] transition-colors"
@@ -579,52 +593,61 @@ export default function AhorroPage() {
                           </p>
                         ) : (
                           <div className="space-y-2">
-                            {contributions.map((contrib) => (
-                              <div
-                                key={contrib.id}
-                                className="flex items-center justify-between p-3 rounded-lg bg-[var(--background-secondary)]"
-                              >
-                                <div className="flex items-center gap-3">
-                                  <div className="p-1.5 rounded-lg bg-[var(--success)]/10">
-                                    <Plus className="w-4 h-4 text-[var(--success)]" />
+                            {contributions.map((contrib) => {
+                              const isWithdrawal = contrib.amount < 0;
+                              return (
+                                <div
+                                  key={contrib.id}
+                                  className="flex items-center justify-between p-3 rounded-lg bg-[var(--background-secondary)]"
+                                >
+                                  <div className="flex items-center gap-3">
+                                    <div className={`p-1.5 rounded-lg ${isWithdrawal ? "bg-[var(--danger)]/10" : "bg-[var(--success)]/10"}`}>
+                                      {isWithdrawal ? (
+                                        <Minus className="w-4 h-4 text-[var(--danger)]" />
+                                      ) : (
+                                        <Plus className="w-4 h-4 text-[var(--success)]" />
+                                      )}
+                                    </div>
+                                    <div>
+                                      <p className={`text-sm font-medium ${isWithdrawal ? "text-[var(--danger)]" : "text-[var(--success)]"}`}>
+                                        {isWithdrawal ? "" : "+"}{formatCurrency(contrib.amount)}
+                                      </p>
+                                      {contrib.notes && (
+                                        <p className="text-xs text-[var(--brand-gray)]">{contrib.notes}</p>
+                                      )}
+                                    </div>
                                   </div>
-                                  <div>
-                                    <p className="text-sm font-medium text-[var(--success)]">
-                                      +{formatCurrency(contrib.amount)}
-                                    </p>
-                                    {contrib.notes && (
-                                      <p className="text-xs text-[var(--brand-gray)]">{contrib.notes}</p>
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-xs text-[var(--brand-gray)]">
+                                      {format(parseISO(contrib.contribution_date), "d MMM yyyy", { locale: es })}
+                                    </span>
+                                    {!isWithdrawal && (
+                                      <button
+                                        onClick={() => {
+                                          setEditingContribution(contrib);
+                                          setContributingGoal(goal);
+                                          setShowContributionModal(true);
+                                        }}
+                                        className="p-1.5 rounded-lg hover:bg-[var(--background)] transition-colors"
+                                        title="Editar aporte"
+                                      >
+                                        <Edit2 className="w-3.5 h-3.5 text-[var(--brand-gray)]" />
+                                      </button>
                                     )}
+                                    <button
+                                      onClick={() => {
+                                        setDeletingContribution(contrib);
+                                        setShowDeleteContributionModal(true);
+                                      }}
+                                      className="p-1.5 rounded-lg hover:bg-[var(--danger)]/10 transition-colors"
+                                      title={isWithdrawal ? "Eliminar retiro" : "Eliminar aporte"}
+                                    >
+                                      <Trash2 className="w-3.5 h-3.5 text-[var(--danger)]" />
+                                    </button>
                                   </div>
                                 </div>
-                                <div className="flex items-center gap-2">
-                                  <span className="text-xs text-[var(--brand-gray)]">
-                                    {format(parseISO(contrib.contribution_date), "d MMM yyyy", { locale: es })}
-                                  </span>
-                                  <button
-                                    onClick={() => {
-                                      setEditingContribution(contrib);
-                                      setContributingGoal(goal);
-                                      setShowContributionModal(true);
-                                    }}
-                                    className="p-1.5 rounded-lg hover:bg-[var(--background)] transition-colors"
-                                    title="Editar aporte"
-                                  >
-                                    <Edit2 className="w-3.5 h-3.5 text-[var(--brand-gray)]" />
-                                  </button>
-                                  <button
-                                    onClick={() => {
-                                      setDeletingContribution(contrib);
-                                      setShowDeleteContributionModal(true);
-                                    }}
-                                    className="p-1.5 rounded-lg hover:bg-[var(--danger)]/10 transition-colors"
-                                    title="Eliminar aporte"
-                                  >
-                                    <Trash2 className="w-3.5 h-3.5 text-[var(--danger)]" />
-                                  </button>
-                                </div>
-                              </div>
-                            ))}
+                              );
+                            })}
                           </div>
                         )}
                       </div>
@@ -669,6 +692,22 @@ export default function AhorroPage() {
         }}
         goal={contributingGoal}
         contribution={editingContribution}
+      />
+
+      {/* Withdrawal Modal */}
+      <WithdrawalModal
+        isOpen={showWithdrawalModal}
+        onClose={() => {
+          setShowWithdrawalModal(false);
+          setContributingGoal(null);
+        }}
+        onSave={() => {
+          setShowWithdrawalModal(false);
+          setContributingGoal(null);
+          fetchGoals();
+          if (expandedGoal) fetchContributions(expandedGoal);
+        }}
+        goal={contributingGoal}
       />
 
       {/* Delete Goal Confirmation */}
@@ -782,8 +821,9 @@ function GoalModal({
       return;
     }
 
-    // Si es una meta completada y se está modificando el ahorro actual, pedir confirmación
-    if (goal?.status === "completed" && current < target && !skipConfirmation) {
+    // Si se está modificando el ahorro actual de una meta existente, pedir confirmación
+    // Aplica a metas activas, pausadas y completadas
+    if (goal && goal.current_amount !== current && !skipConfirmation) {
       setShowConfirmReset(true);
       setPendingSubmit(true);
       return;
@@ -795,12 +835,12 @@ function GoalModal({
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("No autenticado");
 
-      // Si estamos reactivando una meta completada, eliminar el historial de aportes
-      if (goal?.status === "completed" && current < target) {
+      // Si se modificó el ahorro actual, eliminar el historial de aportes
+      if (goal && goal.current_amount !== current) {
         const { error: deleteContributionsError } = await supabase
           .from("savings_contributions")
           .delete()
-          .eq("goal_id", goal.id);
+          .eq("savings_goal_id", goal.id);
 
         if (deleteContributionsError) throw deleteContributionsError;
       }
@@ -1027,17 +1067,17 @@ function GoalModal({
             </div>
           )}
 
-          {/* Confirmation for resetting completed goal */}
+          {/* Confirmation for modifying current amount */}
           {showConfirmReset && (
             <div className="p-4 rounded-xl bg-[var(--warning)]/10 border border-[var(--warning)]/30">
               <div className="flex items-start gap-3">
                 <AlertTriangle className="w-5 h-5 text-[var(--warning)] shrink-0 mt-0.5" />
                 <div>
                   <p className="text-sm font-medium text-[var(--warning)]">
-                    Reactivar meta completada
+                    Modificar ahorro actual
                   </p>
                   <p className="text-sm text-[var(--brand-gray)] mt-1">
-                    Todos los aportes registrados hasta ahora se eliminarán si decides modificar el ahorro actual de una meta completada. ¿Deseas continuar?
+                    Todos los aportes y reducciones (quitar ahorro) registrados hasta ahora se eliminarán si modificas el ahorro actual. ¿Deseas continuar?
                   </p>
                   <div className="flex gap-2 mt-3">
                     <button
@@ -1367,6 +1407,232 @@ function ContributionModal({
               className="flex-1 px-4 py-3 rounded-xl gradient-brand text-white font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
             >
               {loading ? "Guardando..." : isEditing ? "Guardar cambios" : "Añadir aporte"}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+// Withdrawal Modal (Quitar ahorro)
+function WithdrawalModal({
+  isOpen,
+  onClose,
+  onSave,
+  goal,
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  onSave: () => void;
+  goal: SavingsGoal | null;
+}) {
+  const [amount, setAmount] = useState("");
+  const [note, setNote] = useState("");
+  const [withdrawalDate, setWithdrawalDate] = useState(format(new Date(), "yyyy-MM-dd"));
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  const supabase = createClient();
+
+  useEffect(() => {
+    if (isOpen) {
+      setAmount("");
+      setNote("");
+      setWithdrawalDate(format(new Date(), "yyyy-MM-dd"));
+      setError("");
+    }
+  }, [isOpen]);
+
+  // Prevent body scroll when modal is open
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+      return () => {
+        document.body.style.overflow = '';
+      };
+    }
+  }, [isOpen]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+
+    if (!goal) return;
+    if (!amount || parseFloat(amount) <= 0) {
+      setError("Introduce un importe válido");
+      return;
+    }
+
+    const withdrawAmount = parseFloat(amount);
+
+    // Validate that the withdrawal doesn't exceed current amount
+    if (withdrawAmount > goal.current_amount) {
+      setError("No puedes retirar más de lo que tienes ahorrado");
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("No autenticado");
+
+      // Insert negative contribution (withdrawal)
+      const { error: insertError } = await supabase
+        .from("savings_contributions")
+        .insert({
+          user_id: user.id,
+          savings_goal_id: goal.id,
+          amount: -withdrawAmount, // Negative amount for withdrawals
+          notes: note.trim() || null,
+          contribution_date: withdrawalDate,
+        });
+
+      if (insertError) throw insertError;
+
+      const newGoalAmount = goal.current_amount - withdrawAmount;
+
+      // Update goal current_amount
+      const { error: updateError } = await supabase
+        .from("savings_goals")
+        .update({
+          current_amount: newGoalAmount,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", goal.id);
+
+      if (updateError) throw updateError;
+
+      onSave();
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : "Error al guardar";
+      setError(errorMessage);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (!isOpen || !goal) return null;
+
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      <div className="bg-[var(--background)] rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
+        <div className="px-6 py-4 border-b border-[var(--border)] flex items-center justify-between">
+          <div>
+            <h2 className="text-lg font-semibold">Quitar ahorro</h2>
+            <p className="text-sm text-[var(--brand-gray)]">{goal.name}</p>
+          </div>
+          <button
+            onClick={onClose}
+            className="p-1 rounded-lg hover:bg-[var(--background-secondary)] transition-colors"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="p-6 space-y-5">
+          {/* Current Progress */}
+          <div className="p-4 rounded-xl bg-[var(--background-secondary)]">
+            <div className="flex items-center justify-between text-sm mb-2">
+              <span className="text-[var(--brand-gray)]">Ahorro actual</span>
+              <span className="font-semibold">
+                {new Intl.NumberFormat("es-ES", { style: "currency", currency: "EUR" }).format(goal.current_amount)}
+                {" / "}
+                {new Intl.NumberFormat("es-ES", { style: "currency", currency: "EUR" }).format(goal.target_amount)}
+              </span>
+            </div>
+            <div className="h-2 bg-[var(--border)] rounded-full overflow-hidden">
+              <div
+                className="h-full rounded-full"
+                style={{
+                  width: `${Math.min((goal.current_amount / goal.target_amount) * 100, 100)}%`,
+                  backgroundColor: goal.color,
+                }}
+              />
+            </div>
+            <p className="text-xs text-[var(--brand-gray)] mt-2">
+              Puedes retirar hasta {new Intl.NumberFormat("es-ES", { style: "currency", currency: "EUR" }).format(goal.current_amount)}
+            </p>
+          </div>
+
+          {/* Amount */}
+          <div>
+            <label className="block text-sm font-medium mb-2">Importe a retirar</label>
+            <div className="relative">
+              <Euro className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[var(--brand-gray)]" />
+              <input
+                type="number"
+                step="0.01"
+                min="0"
+                max={goal.current_amount}
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
+                onWheel={(e) => e.currentTarget.blur()}
+                placeholder="0.00"
+                className="w-full pl-10 pr-4 py-3 bg-[var(--background-secondary)] border border-[var(--border)] rounded-xl text-lg font-semibold focus:outline-none focus:border-[var(--brand-cyan)] focus:ring-1 focus:ring-[var(--brand-cyan)] [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                autoFocus
+              />
+            </div>
+            <button
+              type="button"
+              onClick={() => setAmount(goal.current_amount.toString())}
+              className="mt-2 text-xs text-[var(--danger)] hover:underline"
+            >
+              Retirar todo ({new Intl.NumberFormat("es-ES", { style: "currency", currency: "EUR" }).format(goal.current_amount)})
+            </button>
+          </div>
+
+          {/* Date */}
+          <div>
+            <label className="block text-sm font-medium mb-2">Fecha</label>
+            <div className="relative">
+              <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[var(--brand-gray)]" />
+              <input
+                type="date"
+                value={withdrawalDate}
+                onChange={(e) => setWithdrawalDate(e.target.value)}
+                className="w-full pl-10 pr-4 py-3 bg-[var(--background-secondary)] border border-[var(--border)] rounded-xl focus:outline-none focus:border-[var(--brand-cyan)] focus:ring-1 focus:ring-[var(--brand-cyan)]"
+              />
+            </div>
+          </div>
+
+          {/* Note */}
+          <div>
+            <label className="block text-sm font-medium mb-2">
+              Nota <span className="text-[var(--brand-gray)] font-normal">(opcional)</span>
+            </label>
+            <input
+              type="text"
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              placeholder="Ej: Retiro por emergencia"
+              className="w-full px-4 py-3 bg-[var(--background-secondary)] border border-[var(--border)] rounded-xl focus:outline-none focus:border-[var(--brand-cyan)] focus:ring-1 focus:ring-[var(--brand-cyan)]"
+            />
+          </div>
+
+          {/* Error */}
+          {error && (
+            <div className="p-3 rounded-lg bg-[var(--danger)]/10 text-[var(--danger)] text-sm">
+              {error}
+            </div>
+          )}
+
+          {/* Buttons */}
+          <div className="flex gap-3 pt-2">
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex-1 px-4 py-3 rounded-xl border border-[var(--border)] font-medium hover:bg-[var(--background-secondary)] transition-colors"
+            >
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              disabled={loading}
+              className="flex-1 px-4 py-3 rounded-xl bg-[var(--danger)] text-white font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
+            >
+              {loading ? "Procesando..." : "Quitar ahorro"}
             </button>
           </div>
         </form>

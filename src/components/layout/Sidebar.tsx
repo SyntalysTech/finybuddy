@@ -17,7 +17,6 @@ import {
   LogOut,
   ChevronLeft,
   ChevronRight,
-  GraduationCap,
   Bot,
   Scale,
 } from "lucide-react";
@@ -41,7 +40,6 @@ const mainNavItems: NavItem[] = [
   { name: "Ahorro", href: "/ahorro", icon: PiggyBank },
   { name: "Deuda", href: "/deuda", icon: CreditCard },
   { name: "FinyBot", href: "/chat", icon: Bot },
-  { name: "Aprender", href: "/aprender", icon: GraduationCap },
 ];
 
 const settingsNavItems: NavItem[] = [

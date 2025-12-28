@@ -37,8 +37,8 @@ export default function DeleteConfirmModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[60] p-4">
-      <div className="bg-[var(--background)] rounded-xl shadow-2xl w-full max-w-sm p-6">
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[60] p-4 overscroll-contain">
+      <div className="bg-[var(--background)] rounded-xl shadow-2xl w-full max-w-sm p-6 overscroll-contain">
         <div className="flex items-center gap-3 mb-4">
           <div className="p-2 rounded-lg bg-[var(--danger)]/10">
             <AlertTriangle className="w-5 h-5 text-[var(--danger)]" />

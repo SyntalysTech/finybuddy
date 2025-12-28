@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import Link from "next/link";
 import Header from "@/components/layout/Header";
 import { createClient } from "@/lib/supabase/client";
 import { useProfile } from "@/hooks/useProfile";
@@ -22,6 +23,7 @@ import {
   AlertTriangle,
   X,
   GripVertical,
+  Settings,
 } from "lucide-react";
 import { format, subMonths, addMonths } from "date-fns";
 import { es } from "date-fns/locale";
@@ -71,7 +73,8 @@ export default function PrevisionPage() {
   const [showDeleteCategoryModal, setShowDeleteCategoryModal] = useState<string | null>(null);
   const [savingCategory, setSavingCategory] = useState<string | null>(null);
 
-  // Check if next month has budget
+  // Check if adjacent months have budget
+  const [hasPreviousMonthBudget, setHasPreviousMonthBudget] = useState(false);
   const [hasNextMonthBudget, setHasNextMonthBudget] = useState(false);
 
   // Drag & drop state
@@ -138,6 +141,32 @@ export default function PrevisionPage() {
       setBudgets([]);
       setHasBudget(false);
     }
+
+    // Check if previous month has budget
+    const prevDate = subMonths(new Date(selectedYear, selectedMonth - 1), 1);
+    const prevYear = prevDate.getFullYear();
+    const prevMonth = prevDate.getMonth() + 1;
+
+    const { data: prevBudgetsData } = await supabase
+      .from("budgets")
+      .select("id")
+      .eq("user_id", user.id)
+      .eq("year", prevYear)
+      .eq("month", prevMonth)
+      .limit(1);
+
+    const { data: prevPlannedSavingsData } = await supabase
+      .from("planned_savings")
+      .select("id")
+      .eq("user_id", user.id)
+      .eq("year", prevYear)
+      .eq("month", prevMonth)
+      .limit(1);
+
+    setHasPreviousMonthBudget(
+      Boolean((prevBudgetsData && prevBudgetsData.length > 0) ||
+      (prevPlannedSavingsData && prevPlannedSavingsData.length > 0))
+    );
 
     // Check if next month has budget
     const nextDate = addMonths(new Date(selectedYear, selectedMonth - 1), 1);
@@ -216,9 +245,9 @@ export default function PrevisionPage() {
   const savingsPercent = totalIncome > 0 ? Math.round((plannedSavings / totalIncome) * 100) : 0;
 
   // Calculate deviation in euros
-  const ruleNeeds = profile?.rule_needs_percent || 50;
-  const ruleWants = profile?.rule_wants_percent || 30;
-  const ruleSavings = profile?.rule_savings_percent || 20;
+  const ruleNeeds = profile?.rule_needs_percent ?? 50;
+  const ruleWants = profile?.rule_wants_percent ?? 30;
+  const ruleSavings = profile?.rule_savings_percent ?? 20;
 
   const needsTarget = totalIncome * ruleNeeds / 100;
   const wantsTarget = totalIncome * ruleWants / 100;
@@ -625,6 +654,39 @@ export default function PrevisionPage() {
     setDragOverCategoryId(null);
   };
 
+  // Save reordered budgets immediately (without waiting for state update)
+  const saveReorderedBudgets = async (reorderedBudgets: BudgetWithCategory[]) => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    // Delete existing budgets for this month
+    await supabase
+      .from("budgets")
+      .delete()
+      .eq("user_id", user.id)
+      .eq("year", selectedYear)
+      .eq("month", selectedMonth);
+
+    // Insert budgets in new order
+    const budgetsToInsert = reorderedBudgets.map(b => ({
+      user_id: user.id,
+      category_id: b.category_id,
+      amount: b.amount,
+      month: selectedMonth,
+      year: selectedYear,
+    }));
+
+    if (budgetsToInsert.length > 0) {
+      const { error } = await supabase
+        .from("budgets")
+        .insert(budgetsToInsert);
+
+      if (error) {
+        console.error("Error saving reordered budgets:", error);
+      }
+    }
+  };
+
   const handleDrop = (e: React.DragEvent, targetCategoryId: string, segment: "income" | "needs" | "wants" | "savings") => {
     e.preventDefault();
     if (!draggedCategoryId || draggedCategoryId === targetCategoryId) {
@@ -660,17 +722,20 @@ export default function PrevisionPage() {
       });
 
       // Put segment budgets in their place
+      let newBudgets: BudgetWithCategory[];
       if (segment === "income") {
-        setBudgets([...newSegmentBudgets, ...otherBudgets]);
+        newBudgets = [...newSegmentBudgets, ...otherBudgets];
       } else {
         const incomeBudgets = budgets.filter(b => b.category?.type === "income");
         const needsBudgets = segment === "needs" ? newSegmentBudgets : budgets.filter(b => b.category?.segment === "needs");
         const wantsBudgets = segment === "wants" ? newSegmentBudgets : budgets.filter(b => b.category?.segment === "wants");
         const savingsBudgets = segment === "savings" ? newSegmentBudgets : budgets.filter(b => b.category?.segment === "savings");
-        setBudgets([...incomeBudgets, ...needsBudgets, ...wantsBudgets, ...savingsBudgets]);
+        newBudgets = [...incomeBudgets, ...needsBudgets, ...wantsBudgets, ...savingsBudgets];
       }
 
-      setHasChanges(true);
+      setBudgets(newBudgets);
+      // Auto-save the new order immediately
+      saveReorderedBudgets(newBudgets);
     }
 
     setDraggedCategoryId(null);
@@ -781,7 +846,7 @@ export default function PrevisionPage() {
     <>
       <Header
         title="Previsión"
-        subtitle="Configura tu presupuesto mensual por categorías"
+        subtitle="Configura tu plan mensual por categorías"
         actions={
           <div className="flex items-center gap-2">
             <button
@@ -893,13 +958,15 @@ export default function PrevisionPage() {
                 <Plus className="w-4 h-4" />
                 Crear presupuesto
               </button>
-              <button
-                onClick={copyFromPreviousMonth}
-                className="flex items-center gap-2 px-6 py-3 rounded-lg border border-[var(--border)] font-medium hover:bg-[var(--background-secondary)] transition-colors"
-              >
-                <Copy className="w-4 h-4" />
-                Copiar del mes anterior
-              </button>
+              {hasPreviousMonthBudget && (
+                <button
+                  onClick={copyFromPreviousMonth}
+                  className="flex items-center gap-2 px-6 py-3 rounded-lg border border-[var(--border)] font-medium hover:bg-[var(--background-secondary)] transition-colors"
+                >
+                  <Copy className="w-4 h-4" />
+                  Copiar del mes anterior
+                </button>
+              )}
               {hasNextMonthBudget && (
                 <button
                   onClick={copyFromNextMonth}
@@ -1141,16 +1208,25 @@ export default function PrevisionPage() {
         {/* Rule comparison card */}
         {hasBudget && totalIncome > 0 && (
           <div className="card p-6">
-            <div className="flex items-start gap-3 mb-4">
-              <div className="p-2 rounded-lg bg-[var(--brand-purple)]/10">
-                <Sparkles className="w-5 h-5 text-[var(--brand-purple)]" />
+            <div className="flex items-start justify-between gap-3 mb-4">
+              <div className="flex items-start gap-3">
+                <div className="p-2 rounded-lg bg-[var(--brand-purple)]/10">
+                  <Sparkles className="w-5 h-5 text-[var(--brand-purple)]" />
+                </div>
+                <div>
+                  <h3 className="font-semibold">Comparativa con tu regla {ruleNeeds}/{ruleWants}/{ruleSavings}</h3>
+                  <p className="text-sm text-[var(--brand-gray)]">
+                    Según tus ingresos previstos de {formatCurrency(totalIncome)}, deberías destinar:
+                  </p>
+                </div>
               </div>
-              <div>
-                <h3 className="font-semibold">Comparativa con tu regla {ruleNeeds}/{ruleWants}/{ruleSavings}</h3>
-                <p className="text-sm text-[var(--brand-gray)]">
-                  Según tus ingresos previstos de {formatCurrency(totalIncome)}, deberías destinar:
-                </p>
-              </div>
+              <Link
+                href="/regla-financiera"
+                className="flex items-center gap-1.5 text-sm text-[var(--brand-purple)] hover:underline whitespace-nowrap"
+              >
+                <Settings className="w-4 h-4" />
+                Configurar Mi Regla
+              </Link>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

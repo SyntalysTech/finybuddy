@@ -402,11 +402,21 @@ export default function CalendarioPage() {
     }
   };
 
+  // Prevent body scroll when day modal is open
+  useEffect(() => {
+    if (showDayModal) {
+      document.body.style.overflow = 'hidden';
+      return () => {
+        document.body.style.overflow = '';
+      };
+    }
+  }, [showDayModal]);
+
   return (
     <>
       <Header
         title="Calendario"
-        subtitle="Vista calendario de tus operaciones"
+        subtitle="Vista calendario de tus operaciones y recordatorios"
         actions={
           <div className="flex items-center gap-2">
             <button
