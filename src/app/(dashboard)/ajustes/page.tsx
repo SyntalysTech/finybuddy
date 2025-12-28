@@ -20,7 +20,6 @@ import {
   Calculator,
   Sun,
   Moon,
-  Monitor,
 } from "lucide-react";
 
 const START_PAGES = [
@@ -33,7 +32,6 @@ const START_PAGES = [
 const THEME_OPTIONS = [
   { value: "light", label: "Claro", icon: Sun },
   { value: "dark", label: "Oscuro", icon: Moon },
-  { value: "system", label: "Sistema", icon: Monitor },
 ];
 
 interface NotificationSettings {

@@ -17,8 +17,6 @@ import {
   AlertTriangle,
   CheckCircle,
   ChevronRight,
-  Building2,
-  FileText,
 } from "lucide-react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
@@ -28,20 +26,9 @@ interface Profile {
   email: string;
   full_name: string | null;
   avatar_url: string | null;
-  billing_type: string | null;
-  billing_name: string | null;
-  billing_tax_id: string | null;
-  billing_address: string | null;
-  billing_country: string | null;
   created_at: string;
   updated_at: string;
 }
-
-const BILLING_TYPES = [
-  { value: "individual", label: "Particular" },
-  { value: "autonomo", label: "Autónomo" },
-  { value: "empresa", label: "Empresa" },
-];
 
 export default function PerfilPage() {
   const router = useRouter();
@@ -53,21 +40,11 @@ export default function PerfilPage() {
 
   // Form states
   const [fullName, setFullName] = useState("");
-  const [billingType, setBillingType] = useState("");
-  const [billingName, setBillingName] = useState("");
-  const [billingTaxId, setBillingTaxId] = useState("");
-  const [billingAddress, setBillingAddress] = useState("");
-  const [billingCountry, setBillingCountry] = useState("");
 
   // Track if form has unsaved changes
   const [hasChanges, setHasChanges] = useState(false);
   const initialValuesRef = useRef<{
     fullName: string;
-    billingType: string;
-    billingName: string;
-    billingTaxId: string;
-    billingAddress: string;
-    billingCountry: string;
   } | null>(null);
 
   // Avatar
@@ -100,28 +77,13 @@ export default function PerfilPage() {
       if (profileData) {
         setProfile(profileData);
         const initialFullName = profileData.full_name || "";
-        const initialBillingType = profileData.billing_type || "";
-        const initialBillingName = profileData.billing_name || "";
-        const initialBillingTaxId = profileData.billing_tax_id || "";
-        const initialBillingAddress = profileData.billing_address || "";
-        const initialBillingCountry = profileData.billing_country || "";
 
         setFullName(initialFullName);
-        setBillingType(initialBillingType);
-        setBillingName(initialBillingName);
-        setBillingTaxId(initialBillingTaxId);
-        setBillingAddress(initialBillingAddress);
-        setBillingCountry(initialBillingCountry);
         setAvatarUrl(profileData.avatar_url);
 
         // Store initial values for change detection
         initialValuesRef.current = {
           fullName: initialFullName,
-          billingType: initialBillingType,
-          billingName: initialBillingName,
-          billingTaxId: initialBillingTaxId,
-          billingAddress: initialBillingAddress,
-          billingCountry: initialBillingCountry,
         };
         setHasChanges(false);
       }
@@ -140,16 +102,10 @@ export default function PerfilPage() {
   // Detect changes
   useEffect(() => {
     if (initialValuesRef.current) {
-      const changed =
-        fullName !== initialValuesRef.current.fullName ||
-        billingType !== initialValuesRef.current.billingType ||
-        billingName !== initialValuesRef.current.billingName ||
-        billingTaxId !== initialValuesRef.current.billingTaxId ||
-        billingAddress !== initialValuesRef.current.billingAddress ||
-        billingCountry !== initialValuesRef.current.billingCountry;
+      const changed = fullName !== initialValuesRef.current.fullName;
       setHasChanges(changed);
     }
-  }, [fullName, billingType, billingName, billingTaxId, billingAddress, billingCountry]);
+  }, [fullName]);
 
   const handleSaveProfile = async () => {
     if (!profile) return;
@@ -163,11 +119,6 @@ export default function PerfilPage() {
         .from("profiles")
         .update({
           full_name: fullName.trim() || null,
-          billing_type: billingType || null,
-          billing_name: billingName.trim() || null,
-          billing_tax_id: billingTaxId.trim() || null,
-          billing_address: billingAddress.trim() || null,
-          billing_country: billingCountry.trim() || null,
           updated_at: new Date().toISOString(),
         })
         .eq("id", profile.id);
@@ -177,11 +128,6 @@ export default function PerfilPage() {
       // Update initial values to current values after successful save
       initialValuesRef.current = {
         fullName,
-        billingType,
-        billingName,
-        billingTaxId,
-        billingAddress,
-        billingCountry,
       };
       setHasChanges(false);
 
@@ -264,7 +210,7 @@ export default function PerfilPage() {
   if (loading) {
     return (
       <>
-        <Header title="Perfil" subtitle="Gestiona tu cuenta y preferencias" />
+        <Header title="Perfil" subtitle="Gestiona los datos de tu perfil" />
         <div className="p-6">
           <div className="card p-12 text-center">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[var(--brand-cyan)] mx-auto"></div>
@@ -277,7 +223,7 @@ export default function PerfilPage() {
 
   return (
     <>
-      <Header title="Perfil" subtitle="Gestiona tu cuenta y preferencias" />
+      <Header title="Perfil" subtitle="Gestiona los datos de tu perfil" />
 
       <div className="p-6 space-y-6">
         {/* Messages */}
@@ -399,75 +345,6 @@ export default function PerfilPage() {
                     />
                   </div>
                   <p className="text-xs text-[var(--brand-gray)] mt-1">El email no se puede cambiar</p>
-                </div>
-              </div>
-            </div>
-
-            {/* Billing Info */}
-            <div className="card p-6">
-              <h3 className="font-semibold mb-4 flex items-center gap-2">
-                <Building2 className="w-5 h-5 text-[var(--brand-purple)]" />
-                Datos de facturación
-                <span className="text-xs font-normal text-[var(--brand-gray)]">(opcional)</span>
-              </h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium mb-2">Tipo</label>
-                  <select
-                    value={billingType}
-                    onChange={(e) => setBillingType(e.target.value)}
-                    className="w-full px-4 py-3 bg-[var(--background-secondary)] border border-[var(--border)] rounded-xl focus:outline-none focus:border-[var(--brand-cyan)] focus:ring-1 focus:ring-[var(--brand-cyan)] appearance-none"
-                  >
-                    <option value="">Seleccionar...</option>
-                    {BILLING_TYPES.map((type) => (
-                      <option key={type.value} value={type.value}>
-                        {type.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-2">Nombre/Razón social</label>
-                  <input
-                    type="text"
-                    value={billingName}
-                    onChange={(e) => setBillingName(e.target.value)}
-                    placeholder="Nombre completo o empresa"
-                    className="w-full px-4 py-3 bg-[var(--background-secondary)] border border-[var(--border)] rounded-xl focus:outline-none focus:border-[var(--brand-cyan)] focus:ring-1 focus:ring-[var(--brand-cyan)]"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-2">NIF/CIF/DNI</label>
-                  <div className="relative">
-                    <FileText className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[var(--brand-gray)]" />
-                    <input
-                      type="text"
-                      value={billingTaxId}
-                      onChange={(e) => setBillingTaxId(e.target.value)}
-                      placeholder="12345678A"
-                      className="w-full pl-10 pr-4 py-3 bg-[var(--background-secondary)] border border-[var(--border)] rounded-xl focus:outline-none focus:border-[var(--brand-cyan)] focus:ring-1 focus:ring-[var(--brand-cyan)]"
-                    />
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-2">País</label>
-                  <input
-                    type="text"
-                    value={billingCountry}
-                    onChange={(e) => setBillingCountry(e.target.value)}
-                    placeholder="España"
-                    className="w-full px-4 py-3 bg-[var(--background-secondary)] border border-[var(--border)] rounded-xl focus:outline-none focus:border-[var(--brand-cyan)] focus:ring-1 focus:ring-[var(--brand-cyan)]"
-                  />
-                </div>
-                <div className="sm:col-span-2">
-                  <label className="block text-sm font-medium mb-2">Dirección</label>
-                  <textarea
-                    value={billingAddress}
-                    onChange={(e) => setBillingAddress(e.target.value)}
-                    placeholder="Calle, número, piso, código postal, ciudad..."
-                    rows={2}
-                    className="w-full px-4 py-3 bg-[var(--background-secondary)] border border-[var(--border)] rounded-xl focus:outline-none focus:border-[var(--brand-cyan)] focus:ring-1 focus:ring-[var(--brand-cyan)] resize-none"
-                  />
                 </div>
               </div>
             </div>
