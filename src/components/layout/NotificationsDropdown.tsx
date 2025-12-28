@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { Bell, Check, CheckCheck, Sparkles, Info, AlertTriangle, AlertCircle, CheckCircle, X } from "lucide-react";
+import { Bell, Check, CheckCheck, Sparkles, Info, AlertTriangle, AlertCircle, CheckCircle, X, BarChart3 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { formatDistanceToNow, format } from "date-fns";
 import { es } from "date-fns/locale";
@@ -10,7 +10,7 @@ interface Notification {
   id: string;
   title: string;
   message: string;
-  type: "info" | "success" | "warning" | "error" | "welcome";
+  type: "info" | "success" | "warning" | "error" | "welcome" | "monthly_summary";
   icon: string | null;
   is_read: boolean;
   action_url: string | null;
@@ -23,6 +23,7 @@ const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   warning: AlertTriangle,
   error: AlertCircle,
   success: CheckCircle,
+  "bar-chart": BarChart3,
 };
 
 const typeColors: Record<string, string> = {
@@ -31,6 +32,7 @@ const typeColors: Record<string, string> = {
   warning: "text-[var(--warning)]",
   error: "text-[var(--danger)]",
   welcome: "text-[var(--brand-purple)]",
+  monthly_summary: "text-[var(--brand-cyan)]",
 };
 
 const typeBgColors: Record<string, string> = {
@@ -39,6 +41,7 @@ const typeBgColors: Record<string, string> = {
   warning: "bg-[var(--warning)]/10",
   error: "bg-[var(--danger)]/10",
   welcome: "bg-[var(--brand-purple)]/10",
+  monthly_summary: "bg-[var(--brand-cyan)]/10",
 };
 
 export default function NotificationsDropdown() {

@@ -1,175 +1,77 @@
-# Pendiente: Configurar Notificaciones
-
-> **Estado:** En espera hasta que el cliente tenga dominio comprado (solo para emails)
+# Notificaciones - Estado de Implementación
 
 ## Resumen de notificaciones
 
-| Notificación | Tipo | Requiere dominio/Resend |
-|--------------|------|-------------------------|
-| **Alerta de recordatorios** | Email (1 día antes del vencimiento) | ✅ Sí |
-| **Resumen mensual** | In-app (panel de campana, día 2 de cada mes) | ❌ No |
+| Notificación | Tipo | Estado |
+|--------------|------|--------|
+| **Resumen mensual** | In-app (panel de campana, día 2 de cada mes) | **IMPLEMENTADO** |
+| **Alerta de recordatorios** | Email (1 día antes del vencimiento) | Pendiente (requiere dominio) |
 
 ---
 
-# PARTE 1: Resumen mensual in-app (NO requiere dominio)
+# FASE 1: Resumen mensual in-app - IMPLEMENTADO
 
-Esta parte se puede implementar ya, sin necesidad de dominio ni Resend.
+## Archivos creados/modificados
 
-## 1.1 Crear tabla `notifications`
+- `supabase/migrations/012_notification_preferences.sql` - Migración con columnas de preferencias
+- `src/app/api/generate-monthly-summary/route.ts` - API route para generar resúmenes
+- `src/app/(dashboard)/ajustes/page.tsx` - Guarda preferencias en DB
+- `src/components/layout/NotificationsDropdown.tsx` - Soporte para tipo `monthly_summary`
+- `vercel.json` - Configuración de cron mensual
 
-```sql
-CREATE TABLE notifications (
-  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
-  user_id uuid REFERENCES auth.users(id) ON DELETE CASCADE,
-  title text NOT NULL,
-  message text NOT NULL,
-  type text DEFAULT 'info',
-  is_read boolean DEFAULT false,
-  created_at timestamptz DEFAULT now()
-);
+## Pendiente para activar en producción
 
--- RLS
-ALTER TABLE notifications ENABLE ROW LEVEL SECURITY;
+1. **Ejecutar migración en Supabase:**
+   ```sql
+   -- Ejecutar el contenido de supabase/migrations/012_notification_preferences.sql
+   ```
 
-CREATE POLICY "Users can view own notifications"
-  ON notifications FOR SELECT
-  USING (auth.uid() = user_id);
+2. **Añadir variables de entorno en Vercel Dashboard:**
+   ```
+   CRON_SECRET=un_secreto_largo_aleatorio
+   SUPABASE_SERVICE_ROLE_KEY=tu_service_role_key
+   ```
 
-CREATE POLICY "Users can update own notifications"
-  ON notifications FOR UPDATE
-  USING (auth.uid() = user_id);
-```
+3. **Deploy a producción** - El cron se activará automáticamente
 
-## 1.2 Crear API route para generar resumen mensual
+## Funcionamiento
 
-Crear `src/app/api/generate-monthly-summary/route.ts`:
-
-```typescript
-import { createClient } from '@supabase/supabase-js';
-
-export async function POST(request: Request) {
-  // Verificar que viene de Vercel Cron
-  const authHeader = request.headers.get('authorization');
-  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-    return Response.json({ error: 'Unauthorized' }, { status: 401 });
-  }
-
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  );
-
-  // Calcular mes anterior
-  const now = new Date();
-  const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-  const lastMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0);
-  const monthName = lastMonth.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' });
-
-  // Obtener usuarios con resumen mensual activado
-  const { data: users } = await supabase
-    .from('profiles')
-    .select('id, full_name, in_app_monthly_summary')
-    .eq('in_app_monthly_summary', true);
-
-  let created = 0;
-
-  for (const user of users || []) {
-    // Obtener operaciones del mes anterior
-    const { data: operations } = await supabase
-      .from('operations')
-      .select('type, amount')
-      .eq('user_id', user.id)
-      .gte('operation_date', lastMonth.toISOString().split('T')[0])
-      .lte('operation_date', lastMonthEnd.toISOString().split('T')[0]);
-
-    if (!operations || operations.length === 0) continue;
-
-    const income = operations
-      .filter(op => op.type === 'income')
-      .reduce((sum, op) => sum + op.amount, 0);
-    const expenses = operations
-      .filter(op => op.type === 'expense')
-      .reduce((sum, op) => sum + op.amount, 0);
-    const savings = operations
-      .filter(op => op.type === 'savings')
-      .reduce((sum, op) => sum + op.amount, 0);
-    const balance = income - expenses;
-
-    // Crear notificación
-    await supabase.from('notifications').insert({
-      user_id: user.id,
-      title: `Resumen de ${monthName}`,
-      message: `Ingresos: ${income.toFixed(2)}€ | Gastos: ${expenses.toFixed(2)}€ | Ahorro: ${savings.toFixed(2)}€ | Balance: ${balance >= 0 ? '+' : ''}${balance.toFixed(2)}€`,
-      type: 'monthly_summary',
-    });
-
-    created++;
-  }
-
-  return Response.json({ created });
-}
-```
-
-## 1.3 Configurar Vercel Cron para resumen mensual
-
-En `vercel.json`:
-
-```json
-{
-  "crons": [
-    {
-      "path": "/api/generate-monthly-summary",
-      "schedule": "0 9 2 * *"
-    }
-  ]
-}
-```
-
-Esto se ejecuta el día 2 de cada mes a las 9:00 AM UTC.
-
-## 1.4 Migrar preferencia a DB
-
-Añadir columna a `profiles`:
-
-```sql
-ALTER TABLE profiles
-ADD COLUMN in_app_monthly_summary boolean DEFAULT true;
-```
-
-Actualizar `ajustes/page.tsx` para guardar `in_app_monthly_summary` en DB en vez de localStorage.
-
-## 1.5 Mostrar notificaciones en el panel de campana
-
-Actualizar el componente de notificaciones del Header para leer de la tabla `notifications`.
+- El día 2 de cada mes a las 9:00 AM UTC, Vercel ejecuta `/api/generate-monthly-summary`
+- La API consulta usuarios con `in_app_monthly_summary = true`
+- Para cada usuario, calcula ingresos, gastos, ahorro y balance del mes anterior
+- Crea una notificación en la tabla `notifications` con tipo `monthly_summary`
+- Las notificaciones aparecen en el panel de campana del Header
 
 ---
 
-# PARTE 2: Alerta de recordatorios por email (REQUIERE dominio)
+# FASE 2: Alerta de recordatorios por email - PENDIENTE
 
-Esta parte requiere dominio comprado y verificado en Resend.
+> **Estado:** En espera hasta que el cliente tenga dominio comprado y verificado en Resend
 
 ## Requisitos previos
 
 1. **Dominio comprado y verificado** en Resend
 2. **Cuenta de Resend** (gratis hasta 3000 emails/mes)
 
-## 2.1 Configurar Resend
+## Pasos para implementar
+
+### 2.1 Configurar Resend
 
 1. Crear cuenta en https://resend.com
 2. Verificar dominio del cliente (DNS records)
 3. Obtener API Key
-4. Añadir a `.env.local` y Vercel:
+4. Añadir a Vercel:
    ```
    RESEND_API_KEY=re_xxxxxxxxxx
    ```
 
-## 2.2 Instalar dependencia
+### 2.2 Instalar dependencia
 
 ```bash
 npm install resend
 ```
 
-## 2.3 Crear API route para enviar emails
+### 2.3 Crear API route para enviar emails
 
 Crear `src/app/api/send-reminder-email/route.ts`:
 
@@ -235,9 +137,9 @@ export async function POST(request: Request) {
 }
 ```
 
-## 2.4 Configurar Vercel Cron para emails
+### 2.4 Actualizar vercel.json
 
-Añadir a `vercel.json`:
+Añadir el cron de emails:
 
 ```json
 {
@@ -256,45 +158,39 @@ Añadir a `vercel.json`:
 
 Esto ejecuta el envío de emails todos los días a las 8:00 AM UTC.
 
-## 2.5 Migrar preferencia a DB
+### 2.5 Deploy
 
-Añadir columna a `profiles`:
-
-```sql
-ALTER TABLE profiles
-ADD COLUMN email_reminder_alerts boolean DEFAULT true;
-```
-
-Actualizar `ajustes/page.tsx` para guardar `email_reminder_alerts` en DB en vez de localStorage.
+Una vez configurado todo:
+1. Hacer deploy a producción
+2. Probar con un recordatorio de prueba
 
 ---
 
-# Variables de entorno necesarias
+# Variables de entorno
 
-En `.env.local` y en Vercel Dashboard:
-
-```
-CRON_SECRET=un_secreto_largo_aleatorio
-SUPABASE_SERVICE_ROLE_KEY=tu_service_role_key
-RESEND_API_KEY=re_xxxxxxxxxx  # Solo cuando tengan dominio
-```
+| Variable | Fase 1 | Fase 2 | Descripción |
+|----------|--------|--------|-------------|
+| `CRON_SECRET` | Requerido | Requerido | Secreto para autenticar cron jobs |
+| `SUPABASE_SERVICE_ROLE_KEY` | Requerido | Requerido | Service role key de Supabase |
+| `RESEND_API_KEY` | - | Requerido | API key de Resend |
 
 ---
 
 # Checklist
 
-## Fase 1: Resumen mensual in-app (se puede hacer ya)
+## Fase 1: Resumen mensual in-app
 
-- [ ] Crear tabla `notifications` en Supabase
-- [ ] Crear API route `/api/generate-monthly-summary`
-- [ ] Añadir columna `in_app_monthly_summary` a `profiles`
-- [ ] Actualizar `ajustes/page.tsx` para guardar en DB
-- [ ] Actualizar componente de campana para leer notificaciones
-- [ ] Configurar `vercel.json` con cron mensual
+- [x] Crear migración para preferencias de notificaciones
+- [x] Crear API route `/api/generate-monthly-summary`
+- [x] Actualizar `ajustes/page.tsx` para guardar en DB
+- [x] Actualizar componente de campana para tipo `monthly_summary`
+- [x] Crear `vercel.json` con cron mensual
+- [ ] Ejecutar migración en producción
 - [ ] Añadir `CRON_SECRET` y `SUPABASE_SERVICE_ROLE_KEY` a Vercel
+- [ ] Deploy a producción
 - [ ] Probar en producción
 
-## Fase 2: Alertas de recordatorios por email (cuando tengan dominio)
+## Fase 2: Alertas de recordatorios por email
 
 - [ ] Comprar dominio
 - [ ] Crear cuenta Resend
@@ -302,8 +198,6 @@ RESEND_API_KEY=re_xxxxxxxxxx  # Solo cuando tengan dominio
 - [ ] Instalar `resend`
 - [ ] Añadir `RESEND_API_KEY` a Vercel
 - [ ] Crear API route `/api/send-reminder-email`
-- [ ] Añadir columna `email_reminder_alerts` a `profiles`
-- [ ] Actualizar `ajustes/page.tsx` para guardar en DB
 - [ ] Añadir cron diario a `vercel.json`
 - [ ] Probar envío de emails
 - [ ] Deploy a producción

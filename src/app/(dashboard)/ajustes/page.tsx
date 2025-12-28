@@ -75,21 +75,20 @@ export default function AjustesPage() {
         return;
       }
 
-      // Fetch profile preferences
+      // Fetch profile preferences including notification settings
       const { data: profileData } = await supabase
         .from("profiles")
-        .select("start_page, show_decimals")
+        .select("start_page, show_decimals, email_reminder_alerts, in_app_monthly_summary")
         .eq("id", user.id)
         .single();
 
       if (profileData) {
         setStartPage(profileData.start_page || "dashboard");
         setShowDecimals(profileData.show_decimals ?? true);
-      }
-
-      const savedNotifications = localStorage.getItem("finybuddy_notifications");
-      if (savedNotifications) {
-        setNotifications(JSON.parse(savedNotifications));
+        setNotifications({
+          email_reminder_alerts: profileData.email_reminder_alerts ?? true,
+          in_app_monthly_summary: profileData.in_app_monthly_summary ?? true,
+        });
       }
     } catch (error) {
       console.error("Error fetching settings:", error);
@@ -102,15 +101,36 @@ export default function AjustesPage() {
     fetchSettings();
   }, [fetchSettings]);
 
-  const handleNotificationChange = (key: keyof NotificationSettings) => {
+  const handleNotificationChange = async (key: keyof NotificationSettings) => {
+    const newValue = !notifications[key];
     const newNotifications = {
       ...notifications,
-      [key]: !notifications[key],
+      [key]: newValue,
     };
     setNotifications(newNotifications);
-    localStorage.setItem("finybuddy_notifications", JSON.stringify(newNotifications));
-    setSuccess("Preferencias actualizadas");
-    setTimeout(() => setSuccess(""), 2000);
+
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { error: updateError } = await supabase
+        .from("profiles")
+        .update({
+          [key]: newValue,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", user.id);
+
+      if (updateError) throw updateError;
+
+      setSuccess("Preferencias actualizadas");
+      setTimeout(() => setSuccess(""), 2000);
+    } catch (err) {
+      console.error("Error saving notification preference:", err);
+      setError("Error al guardar la preferencia");
+      // Revert on error
+      setNotifications(notifications);
+    }
   };
 
   const handlePreferenceChange = async (key: "start_page" | "show_decimals", value: string | boolean) => {
