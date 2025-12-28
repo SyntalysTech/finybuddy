@@ -265,16 +265,41 @@ export default function AjustesPage() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("No autenticado");
 
-      await supabase.from("savings_contributions").delete().eq("savings_goal_id", supabase.from("savings_goals").select("id").eq("user_id", user.id));
-      await supabase.from("debt_payments").delete().eq("debt_id", supabase.from("debts").select("id").eq("user_id", user.id));
+      // First, get IDs of savings goals and debts to delete their related records
+      const { data: savingsGoals } = await supabase
+        .from("savings_goals")
+        .select("id")
+        .eq("user_id", user.id);
+
+      const { data: debts } = await supabase
+        .from("debts")
+        .select("id")
+        .eq("user_id", user.id);
+
+      // Delete savings contributions for user's savings goals
+      if (savingsGoals && savingsGoals.length > 0) {
+        const goalIds = savingsGoals.map(g => g.id);
+        await supabase.from("savings_contributions").delete().in("savings_goal_id", goalIds);
+      }
+
+      // Delete debt payments for user's debts
+      if (debts && debts.length > 0) {
+        const debtIds = debts.map(d => d.id);
+        await supabase.from("debt_payments").delete().in("debt_id", debtIds);
+      }
+
+      // Delete all user data in correct order (respecting foreign keys)
       await supabase.from("savings_goals").delete().eq("user_id", user.id);
       await supabase.from("debts").delete().eq("user_id", user.id);
+      await supabase.from("reminders").delete().eq("user_id", user.id);
+      await supabase.from("planned_savings").delete().eq("user_id", user.id);
       await supabase.from("operations").delete().eq("user_id", user.id);
       await supabase.from("budgets").delete().eq("user_id", user.id);
       await supabase.from("categories").delete().eq("user_id", user.id);
       await supabase.from("notifications").delete().eq("user_id", user.id);
       await supabase.from("profiles").delete().eq("id", user.id);
 
+      // Sign out and redirect
       await supabase.auth.signOut();
       router.push("/login");
     } catch (err: unknown) {
