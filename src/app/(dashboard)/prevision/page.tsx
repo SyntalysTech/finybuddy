@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import Header from "@/components/layout/Header";
 import { createClient } from "@/lib/supabase/client";
 import { useProfile } from "@/hooks/useProfile";
@@ -256,6 +257,50 @@ export default function PrevisionPage() {
   const needsDeviation = needsTotal - needsTarget;
   const wantsDeviation = wantsTotal - wantsTarget;
   const savingsDeviation = plannedSavings - savingsTarget;
+
+  // FinyBuddy intelligent message
+  const getFinyBuddyMessage = (): string[] => {
+    if (!hasBudget || loading) return [];
+
+    const messages: string[] = [];
+
+    // Check balance
+    if (availableBalance < 0) {
+      messages.push(`Ojo, tu prevision no cuadra. Te pasas ${Math.abs(availableBalance).toLocaleString("es-ES")}e. Revisa gastos o ahorro.`);
+    } else if (availableBalance > totalIncome * 0.1) {
+      messages.push(`Te sobran ${availableBalance.toLocaleString("es-ES")}e sin asignar. Metelos al ahorro o tendras tentaciones.`);
+    }
+
+    // Check savings
+    if (savingsPercent < ruleSavings && plannedSavings > 0) {
+      messages.push(`El ahorro va flojo, solo ${savingsPercent}%. Intenta llegar al ${ruleSavings}% si puedes.`);
+    } else if (savingsPercent >= ruleSavings && plannedSavings > 0) {
+      messages.push(`Ahorro previsto al ${savingsPercent}%. Buen plan, crack.`);
+    } else if (plannedSavings === 0 && totalIncome > 0) {
+      messages.push(`No tienes ahorro previsto. Aunque sean 50 pavos, ponlo.`);
+    }
+
+    // Check needs
+    if (needsPercent > ruleNeeds + 10) {
+      messages.push(`Las necesidades se te van al ${needsPercent}%. Revisa si todo es realmente necesario.`);
+    }
+
+    // Check wants
+    if (wantsPercent > ruleWants + 10) {
+      messages.push(`Los caprichos al ${wantsPercent}%... eso se nota en el ahorro.`);
+    } else if (wantsPercent <= ruleWants && wantsTotal > 0) {
+      messages.push(`Deseos controlados al ${wantsPercent}%. Bien hecho.`);
+    }
+
+    // No budget set
+    if (totalIncome === 0 && budgets.length === 0) {
+      messages.push(`Sin prevision no hay control. Crea tu presupuesto para este mes.`);
+    }
+
+    return messages.length > 0 ? messages : [];
+  };
+
+  const finyBuddyMessages = getFinyBuddyMessage();
 
   // Start editing planned savings
   const startEditingPlannedSavings = () => {
@@ -872,6 +917,27 @@ export default function PrevisionPage() {
       />
 
       <div className="p-6 space-y-6">
+        {/* FinyBuddy Vineta */}
+        {finyBuddyMessages.length > 0 && (
+          <div className="flex items-start gap-3 p-4 rounded-xl bg-[var(--brand-purple)]/5 border border-[var(--brand-purple)]/20">
+            <div className="w-12 h-12 relative shrink-0">
+              <Image
+                src="/assets/finybuddy-mascot.png"
+                alt="FinyBuddy"
+                fill
+                className="object-contain"
+              />
+            </div>
+            <div className="flex-1">
+              {finyBuddyMessages.map((msg, i) => (
+                <p key={i} className="text-sm text-[var(--foreground)] mb-1 last:mb-0">
+                  {msg}
+                </p>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* KPI Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="card p-4">

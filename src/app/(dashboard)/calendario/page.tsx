@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import Image from "next/image";
 import Header from "@/components/layout/Header";
 import { createClient } from "@/lib/supabase/client";
 import {
@@ -340,6 +341,49 @@ export default function CalendarioPage() {
     }).format(amount);
   };
 
+  // FinyBuddy intelligent message
+  const getFinyBuddyMessage = (): string[] => {
+    if (loading) return [];
+
+    const messages: string[] = [];
+    const balance = monthSummary.totalIncome - monthSummary.totalExpenses;
+    const pendingReminders = calendarDays
+      .filter(d => isSameMonth(d.date, currentDate))
+      .flatMap(d => d.reminders)
+      .filter(r => !r.is_completed);
+
+    // Check balance
+    if (balance < 0) {
+      messages.push(`Este mes vas en rojo: ${Math.abs(balance).toLocaleString("es-ES")}e mas de gastos que ingresos. Cuidado.`);
+    } else if (balance > 0 && monthSummary.totalIncome > 0) {
+      const savingsRate = Math.round((balance / monthSummary.totalIncome) * 100);
+      if (savingsRate >= 20) {
+        messages.push(`Llevas ${savingsRate}% de margen este mes. Muy bien, crack.`);
+      } else if (savingsRate > 0) {
+        messages.push(`Margen del ${savingsRate}% este mes. No esta mal, pero se puede mejorar.`);
+      }
+    }
+
+    // Check pending reminders
+    if (pendingReminders.length > 0) {
+      const totalPending = pendingReminders.reduce((sum, r) => sum + (r.amount || 0), 0);
+      if (totalPending > 0) {
+        messages.push(`Tienes ${pendingReminders.length} recordatorio${pendingReminders.length > 1 ? "s" : ""} pendiente${pendingReminders.length > 1 ? "s" : ""} por ${totalPending.toLocaleString("es-ES")}e. No los pierdas de vista.`);
+      } else {
+        messages.push(`${pendingReminders.length} recordatorio${pendingReminders.length > 1 ? "s" : ""} pendiente${pendingReminders.length > 1 ? "s" : ""}. Revisa que no se te pase nada.`);
+      }
+    }
+
+    // Check if no operations this month
+    if (monthSummary.operationCount === 0 && isSameMonth(currentDate, new Date())) {
+      messages.push(`Sin operaciones este mes. Empieza a registrar para tener control.`);
+    }
+
+    return messages;
+  };
+
+  const finyBuddyMessages = getFinyBuddyMessage();
+
   const handleAddReminder = (date?: Date) => {
     if (date) {
       setPreselectedDate(format(date, "yyyy-MM-dd"));
@@ -438,6 +482,27 @@ export default function CalendarioPage() {
       />
 
       <div className="p-6 space-y-6">
+        {/* FinyBuddy Vineta */}
+        {finyBuddyMessages.length > 0 && (
+          <div className="flex items-start gap-3 p-4 rounded-xl bg-[var(--brand-purple)]/5 border border-[var(--brand-purple)]/20">
+            <div className="w-12 h-12 relative shrink-0">
+              <Image
+                src="/assets/finybuddy-mascot.png"
+                alt="FinyBuddy"
+                fill
+                className="object-contain"
+              />
+            </div>
+            <div className="flex-1">
+              {finyBuddyMessages.map((msg, i) => (
+                <p key={i} className="text-sm text-[var(--foreground)] mb-1 last:mb-0">
+                  {msg}
+                </p>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Month Navigation & Summary */}
         <div className="card p-4">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">

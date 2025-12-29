@@ -10,10 +10,10 @@ import {
   User,
   Loader2,
   Sparkles,
-  TrendingUp,
-  PiggyBank,
-  CreditCard,
-  HelpCircle,
+  Wallet,
+  Activity,
+  TrendingDown,
+  Target,
 } from "lucide-react";
 
 interface Message {
@@ -22,10 +22,10 @@ interface Message {
 }
 
 const QUICK_PROMPTS = [
-  { icon: TrendingUp, text: "¿Cómo van mis finanzas este mes?", color: "text-[var(--success)]" },
-  { icon: PiggyBank, text: "¿Cómo puedo ahorrar más?", color: "text-[var(--brand-purple)]" },
-  { icon: CreditCard, text: "Analiza mis gastos", color: "text-[var(--danger)]" },
-  { icon: HelpCircle, text: "Dame consejos personalizados", color: "text-[var(--brand-cyan)]" },
+  { icon: Wallet, text: "¿Cuánto puedo gastar hoy?", color: "text-[var(--success)]" },
+  { icon: Activity, text: "¿Cómo voy este mes?", color: "text-[var(--brand-cyan)]" },
+  { icon: TrendingDown, text: "¿Cuál es mi mayor fuga de dinero?", color: "text-[var(--danger)]" },
+  { icon: Target, text: "Reto semanal", color: "text-[var(--brand-purple)]" },
 ];
 
 export default function ChatPage() {

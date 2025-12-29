@@ -294,11 +294,11 @@ export default function DashboardPage() {
   const dailyQuote = getDailyQuote();
   const contextualPhrase = getContextualPhrase(monthlySummary, savingsSummary, debtsSummary);
 
-  // FinyBuddy interpretation based on financial data
+  // FinyBuddy interpretation based on financial data - Estilo "Colega Crack"
   const getFinyBuddyMessage = () => {
     if (!monthlySummary) return null;
 
-    const { total_income, total_expenses, total_savings, needs_total, wants_total, savings_total } = monthlySummary;
+    const { total_income, total_expenses, needs_total, wants_total, savings_total } = monthlySummary;
     const balance = total_income - total_expenses;
     const ruleNeeds = profile?.rule_needs_percent ?? 50;
     const ruleWants = profile?.rule_wants_percent ?? 30;
@@ -308,9 +308,11 @@ export default function DashboardPage() {
 
     // Analyze income vs expenses
     if (balance < 0) {
-      messages.push("Tus gastos superan tus ingresos. Revisa dónde puedes recortar para equilibrar tu presupuesto.");
+      messages.push(`Ojo, este mes vas ${Math.abs(balance).toLocaleString("es-ES")} pavos en rojo. Toca recortar algo.`);
     } else if (balance > total_income * 0.3) {
-      messages.push("Excelente control de gastos. Considera destinar parte del excedente a tus metas de ahorro.");
+      messages.push(`Vas muy bien, tienes ${balance.toLocaleString("es-ES")}e de margen. Mete algo a ahorro antes de que vuele.`);
+    } else if (balance > 0) {
+      messages.push(`Balance positivo de ${balance.toLocaleString("es-ES")}e. Vas muy bien.`);
     }
 
     // Analyze rule compliance
@@ -320,37 +322,39 @@ export default function DashboardPage() {
       const savingsActualPercent = (savings_total / total_income) * 100;
 
       if (needsActualPercent > ruleNeeds * 1.2) {
-        messages.push(`Tus necesidades superan el ${ruleNeeds}% recomendado. Analiza si algún gasto fijo puede optimizarse.`);
+        const excess = Math.round(needsActualPercent - ruleNeeds);
+        messages.push(`Los gastos fijos se te van un ${excess}% por encima. Revisa si hay algo recortable.`);
       }
       if (wantsActualPercent > ruleWants * 1.2) {
-        messages.push(`Tus gastos en deseos exceden lo planificado. Considera priorizar antes de compras impulsivas.`);
+        const excess = Math.round(wantsActualPercent - ruleWants);
+        messages.push(`Te has pasado con el ocio: +${excess}% del objetivo. A ver si aguantamos lo que queda de mes.`);
       }
       if (savingsActualPercent < ruleSavings * 0.5 && total_income > 0) {
-        messages.push(`Tu ahorro está por debajo del objetivo. Intenta automatizar transferencias a ahorro.`);
+        messages.push("El ahorro va flojo. Intenta meter aunque sea 50 pavos este mes.");
       } else if (savingsActualPercent >= ruleSavings) {
-        messages.push("Estás cumpliendo con tu objetivo de ahorro. ¡Sigue así!");
+        messages.push("Ahorro muy bien cubierto. Buen trabajo.");
       }
     }
 
     // Check savings goals
     if (savingsSummary && savingsSummary.active_goals > 0) {
       if (savingsSummary.overall_progress >= 90 && savingsSummary.overall_progress < 100) {
-        messages.push("Estás muy cerca de alcanzar tus metas de ahorro. Un pequeño empujón más.");
+        messages.push(`Metas de ahorro al ${savingsSummary.overall_progress}%. Un ultimo empujon mas y lo clavas.`);
       } else if (savingsSummary.overall_progress < 30) {
-        messages.push("Tus metas de ahorro avanzan lento. Considera aportes más frecuentes.");
+        messages.push("Las metas van flojas. Necesitan mas chicha.");
       }
     }
 
     // Check debts
     if (debtsSummary && debtsSummary.active_debts > 0) {
       if (debtsSummary.overall_progress >= 80) {
-        messages.push("Casi salidas tus deudas. Mantén el ritmo de pagos.");
+        messages.push(`Deudas al ${debtsSummary.overall_progress}%. Casi lo tienes, no aflojes ahora.`);
       } else if (debtsSummary.overall_progress < 20) {
-        messages.push("Prioriza el pago de deudas para reducir intereses a largo plazo.");
+        messages.push("Las deudas van lentas. Prioriza pagarlas para quitarte intereses de encima.");
       }
     }
 
-    return messages.length > 0 ? messages : ["Todo en orden. Sigue monitoreando tus finanzas regularmente."];
+    return messages.length > 0 ? messages : ["Todo controlado, sigue asi."];
   };
 
   // Calculate 50/30/20 percentages

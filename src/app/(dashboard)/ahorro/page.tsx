@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import Image from "next/image";
 import Header from "@/components/layout/Header";
 import { createClient } from "@/lib/supabase/client";
 import {
@@ -266,6 +267,55 @@ export default function AhorroPage() {
   const activeGoals = goals.filter(g => g.status === "active").length;
   const completedGoals = goals.filter(g => g.status === "completed").length;
 
+  // FinyBuddy intelligent message
+  const getFinyBuddyMessage = (): string[] => {
+    if (loading) return [];
+
+    const messages: string[] = [];
+
+    // Check for overdue goals
+    const overdueGoals = goals.filter(g => {
+      if (!g.target_date || g.status !== "active") return false;
+      return getDaysRemaining(g.target_date) !== null && getDaysRemaining(g.target_date)! < 0;
+    });
+
+    if (overdueGoals.length > 0) {
+      messages.push(`Tienes ${overdueGoals.length} meta${overdueGoals.length > 1 ? "s" : ""} vencida${overdueGoals.length > 1 ? "s" : ""}. Revisa si necesitas ajustar fechas.`);
+    }
+
+    // Check overall progress
+    if (totalTarget > 0) {
+      const overallProgress = Math.round((totalSaved / totalTarget) * 100);
+      if (overallProgress >= 80) {
+        messages.push(`Llevas el ${overallProgress}% de tus metas. Casi lo tienes, crack.`);
+      } else if (overallProgress >= 50) {
+        messages.push(`Vas por el ${overallProgress}% del total. Buen ritmo, sigue asi.`);
+      } else if (overallProgress < 30 && activeGoals > 0) {
+        messages.push(`Solo llevas el ${overallProgress}%. Dale cana al ahorro este mes.`);
+      }
+    }
+
+    // Check for paused goals
+    const pausedGoals = goals.filter(g => g.status === "paused").length;
+    if (pausedGoals > 0) {
+      messages.push(`${pausedGoals} meta${pausedGoals > 1 ? "s" : ""} pausada${pausedGoals > 1 ? "s" : ""}. No las olvides.`);
+    }
+
+    // No goals at all
+    if (goals.length === 0) {
+      messages.push(`Sin metas de ahorro. Crea una para empezar a controlar tu pasta.`);
+    }
+
+    // Completed goals celebration
+    if (completedGoals > 0 && completedGoals === goals.length) {
+      messages.push(`Todas las metas completadas. Eres una maquina del ahorro.`);
+    }
+
+    return messages;
+  };
+
+  const finyBuddyMessages = getFinyBuddyMessage();
+
   return (
     <>
       <Header
@@ -286,6 +336,27 @@ export default function AhorroPage() {
       />
 
       <div className="p-6 space-y-6">
+        {/* FinyBuddy Vineta */}
+        {finyBuddyMessages.length > 0 && (
+          <div className="flex items-start gap-3 p-4 rounded-xl bg-[var(--brand-purple)]/5 border border-[var(--brand-purple)]/20">
+            <div className="w-12 h-12 relative shrink-0">
+              <Image
+                src="/assets/finybuddy-mascot.png"
+                alt="FinyBuddy"
+                fill
+                className="object-contain"
+              />
+            </div>
+            <div className="flex-1">
+              {finyBuddyMessages.map((msg, i) => (
+                <p key={i} className="text-sm text-[var(--foreground)] mb-1 last:mb-0">
+                  {msg}
+                </p>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Summary Cards */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           <div className="card p-4">
