@@ -158,17 +158,13 @@ export default function HomePage() {
       {/* Fixed Header */}
       <header className="fixed top-0 left-0 right-0 z-50 bg-[var(--background)]/80 backdrop-blur-xl border-b border-[var(--border)]">
         <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2 group">
-            <div className="relative">
-              <Image
-                src="/assets/finybuddy-mascot.png"
-                alt="FinyBuddy"
-                width={40}
-                height={40}
-                className="transition-transform group-hover:scale-110"
-              />
-              <div className="absolute -inset-1 bg-gradient-to-r from-[var(--brand-cyan)] to-[var(--brand-purple)] rounded-full blur opacity-0 group-hover:opacity-50 transition-opacity" />
-            </div>
+          <Link href="/" className="flex items-center gap-2">
+            <Image
+              src="/assets/finybuddy-mascot.png"
+              alt="FinyBuddy"
+              width={40}
+              height={40}
+            />
             <Image
               src="/assets/logo-finybuddy-wordmark.png"
               alt="FinyBuddy"

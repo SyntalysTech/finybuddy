@@ -12,6 +12,8 @@ import {
   Activity,
   TrendingDown,
   Target,
+  Mic,
+  Square,
 } from "lucide-react";
 
 interface Message {
@@ -32,8 +34,12 @@ export default function ChatPage() {
   const [loading, setLoading] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
   const [userAvatar, setUserAvatar] = useState<string | null>(null);
+  const [isRecording, setIsRecording] = useState(false);
+  const [isTranscribing, setIsTranscribing] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
 
   const supabase = createClient();
 
@@ -123,6 +129,92 @@ export default function ChatPage() {
 
   const handleQuickPrompt = (text: string) => {
     sendMessage(text);
+  };
+
+  // Voice recording functions
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mediaRecorder = new MediaRecorder(stream, {
+        mimeType: MediaRecorder.isTypeSupported("audio/webm") ? "audio/webm" : "audio/mp4",
+      });
+
+      mediaRecorderRef.current = mediaRecorder;
+      audioChunksRef.current = [];
+
+      mediaRecorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          audioChunksRef.current.push(event.data);
+        }
+      };
+
+      mediaRecorder.onstop = async () => {
+        // Stop all tracks
+        stream.getTracks().forEach(track => track.stop());
+
+        // Create audio blob
+        const audioBlob = new Blob(audioChunksRef.current, {
+          type: mediaRecorder.mimeType
+        });
+
+        // Transcribe the audio
+        await transcribeAudio(audioBlob);
+      };
+
+      mediaRecorder.start();
+      setIsRecording(true);
+    } catch (error) {
+      console.error("Error accessing microphone:", error);
+      alert("No se pudo acceder al micrófono. Por favor, permite el acceso.");
+    }
+  };
+
+  const stopRecording = () => {
+    if (mediaRecorderRef.current && isRecording) {
+      mediaRecorderRef.current.stop();
+      setIsRecording(false);
+    }
+  };
+
+  const transcribeAudio = async (audioBlob: Blob) => {
+    setIsTranscribing(true);
+
+    try {
+      const formData = new FormData();
+      // Convert to a proper file with extension
+      const extension = audioBlob.type.includes("webm") ? "webm" : "mp4";
+      const audioFile = new File([audioBlob], `audio.${extension}`, { type: audioBlob.type });
+      formData.append("audio", audioFile);
+
+      const response = await fetch("/api/transcribe", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error("Transcription failed");
+      }
+
+      const data = await response.json();
+
+      if (data.text && data.text.trim()) {
+        // Send the transcribed text directly as a message
+        sendMessage(data.text.trim());
+      }
+    } catch (error) {
+      console.error("Transcription error:", error);
+      alert("Error al transcribir el audio. Por favor, inténtalo de nuevo.");
+    } finally {
+      setIsTranscribing(false);
+    }
+  };
+
+  const handleMicClick = () => {
+    if (isRecording) {
+      stopRecording();
+    } else {
+      startRecording();
+    }
   };
 
   return (
@@ -277,21 +369,42 @@ export default function ChatPage() {
       <div className="shrink-0 border-t border-[var(--border)] bg-[var(--background)] p-4">
         <form onSubmit={handleSubmit} className="max-w-4xl mx-auto">
           <div className="flex items-end gap-2">
+            {/* Mic button */}
+            <button
+              type="button"
+              onClick={handleMicClick}
+              disabled={loading || isTranscribing}
+              className={`p-3 rounded-2xl transition-all shrink-0 ${
+                isRecording
+                  ? "bg-[var(--danger)] text-white animate-pulse"
+                  : "bg-[var(--background-secondary)] border border-[var(--border)] text-[var(--brand-gray)] hover:text-[var(--foreground)] hover:border-[var(--brand-purple)]"
+              } disabled:opacity-50 disabled:cursor-not-allowed`}
+              title={isRecording ? "Detener grabación" : "Grabar mensaje de voz"}
+            >
+              {isTranscribing ? (
+                <Loader2 className="w-5 h-5 animate-spin" />
+              ) : isRecording ? (
+                <Square className="w-5 h-5" />
+              ) : (
+                <Mic className="w-5 h-5" />
+              )}
+            </button>
+
             <div className="flex-1 relative">
               <textarea
                 ref={inputRef}
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={handleKeyDown}
-                placeholder="Escribe tu mensaje..."
+                placeholder={isRecording ? "Grabando... pulsa el botón para enviar" : "Escribe tu mensaje..."}
                 rows={1}
                 className="w-full px-4 py-3 bg-[var(--background-secondary)] border border-[var(--border)] rounded-2xl resize-none focus:outline-none focus:border-[var(--brand-purple)] focus:ring-2 focus:ring-[var(--brand-purple)]/20 text-sm"
-                disabled={loading}
+                disabled={loading || isRecording}
               />
             </div>
             <button
               type="submit"
-              disabled={!input.trim() || loading}
+              disabled={!input.trim() || loading || isRecording}
               className="p-3 rounded-2xl gradient-brand text-white hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
             >
               {loading ? (
@@ -301,6 +414,11 @@ export default function ChatPage() {
               )}
             </button>
           </div>
+          {isRecording && (
+            <p className="text-xs text-[var(--danger)] mt-2 text-center animate-pulse">
+              Grabando audio... Pulsa el botón rojo para enviar
+            </p>
+          )}
         </form>
       </div>
     </div>
