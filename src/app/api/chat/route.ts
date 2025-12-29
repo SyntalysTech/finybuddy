@@ -44,6 +44,7 @@ interface FinancialContext {
     status: string;
   }[];
   recentOperations: {
+    id: string;
     concept: string;
     amount: number;
     type: string;
@@ -152,6 +153,7 @@ async function getFinancialContext(userId: string): Promise<FinancialContext> {
   const recentOps = operations.slice(0, 20).map(op => {
     const cat = Array.isArray(op.category) ? op.category[0] : op.category;
     return {
+      id: op.id,
       concept: op.concept,
       amount: op.amount,
       type: op.type,
@@ -256,15 +258,23 @@ ${context.debts.length > 0
     ? context.debts.map(d => `${d.name}: debe ${d.currentBalance.toLocaleString("es-ES")} de ${d.originalAmount.toLocaleString("es-ES")} euros (${d.progress}% pagado)`).join(" | ")
     : "Sin deudas"}
 
-ULTIMAS OPERACIONES:
-${context.recentOperations.slice(0, 8).map(op => `${op.date.slice(5)}: ${op.concept} ${op.type === "expense" ? "-" : "+"}${op.amount} euros`).join(" | ")}
+ULTIMAS OPERACIONES (con ID para poder eliminar):
+${context.recentOperations.slice(0, 8).map(op => `[ID:${op.id}] ${op.date.slice(5)}: ${op.concept} ${op.type === "expense" ? "-" : "+"}${op.amount} euros`).join(" | ")}
 
 CAPACIDADES DE ACCION:
-Tienes la capacidad de CREAR OPERACIONES (gastos, ingresos, ahorro) usando la funcion "create_operation".
+Tienes la capacidad de CREAR y ELIMINAR OPERACIONES usando las funciones disponibles.
+
+CREAR OPERACIONES (create_operation):
 Cuando el usuario te pida registrar un gasto, ingreso o ahorro, USA LA FUNCION para crearlo realmente en la base de datos.
 - Para gastos: type = "expense"
 - Para ingresos: type = "income"
 - Para ahorro: type = "savings"
+
+ELIMINAR OPERACIONES (delete_operation):
+Cuando el usuario quiera borrar, eliminar o quitar una operacion, USA LA FUNCION delete_operation.
+- Busca la operacion en las ULTIMAS OPERACIONES por concepto, cantidad o fecha.
+- Si hay varias coincidencias, pregunta al usuario cual quiere eliminar.
+- Si no encuentras la operacion, dile al usuario que no la has encontrado.
 
 IMPORTANTE SOBRE CATEGORIAS:
 - Usa SIEMPRE el category_id de la lista de categorias disponibles del usuario.
@@ -329,6 +339,23 @@ const tools = [
         required: ["amount", "concept", "type", "category_id", "operation_date"]
       }
     }
+  },
+  {
+    type: "function",
+    function: {
+      name: "delete_operation",
+      description: "Elimina una operacion financiera existente de la base de datos del usuario. Usa esta funcion cuando el usuario quiera borrar, eliminar o quitar un gasto, ingreso o movimiento que haya registrado previamente.",
+      parameters: {
+        type: "object",
+        properties: {
+          operation_id: {
+            type: "string",
+            description: "El ID de la operacion a eliminar. Busca el ID en las ULTIMAS OPERACIONES del contexto."
+          }
+        },
+        required: ["operation_id"]
+      }
+    }
   }
 ];
 
@@ -364,6 +391,50 @@ async function executeCreateOperation(
   }
 
   return { success: true, operation: data };
+}
+
+// Function to execute the delete_operation tool
+async function executeDeleteOperation(
+  userId: string,
+  args: {
+    operation_id: string;
+  }
+) {
+  const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+  // First verify the operation belongs to the user
+  const { data: existingOp, error: fetchError } = await supabase
+    .from("operations")
+    .select("id, concept, amount, type")
+    .eq("id", args.operation_id)
+    .eq("user_id", userId)
+    .single();
+
+  if (fetchError || !existingOp) {
+    console.error("Error fetching operation:", fetchError);
+    return { success: false, error: "No se encontro la operacion o no te pertenece" };
+  }
+
+  // Delete the operation
+  const { error } = await supabase
+    .from("operations")
+    .delete()
+    .eq("id", args.operation_id)
+    .eq("user_id", userId);
+
+  if (error) {
+    console.error("Error deleting operation:", error);
+    return { success: false, error: error.message };
+  }
+
+  return {
+    success: true,
+    deleted: {
+      concept: existingOp.concept,
+      amount: existingOp.amount,
+      type: existingOp.type
+    }
+  };
 }
 
 export async function POST(request: NextRequest) {
@@ -416,9 +487,16 @@ export async function POST(request: NextRequest) {
       const toolResults = [];
 
       for (const toolCall of assistantMessage.tool_calls) {
+        const args = JSON.parse(toolCall.function.arguments);
+        let result;
+
         if (toolCall.function.name === "create_operation") {
-          const args = JSON.parse(toolCall.function.arguments);
-          const result = await executeCreateOperation(userId, args);
+          result = await executeCreateOperation(userId, args);
+        } else if (toolCall.function.name === "delete_operation") {
+          result = await executeDeleteOperation(userId, args);
+        }
+
+        if (result) {
           toolResults.push({
             tool_call_id: toolCall.id,
             role: "tool",
