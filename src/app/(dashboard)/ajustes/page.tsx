@@ -20,6 +20,7 @@ import {
   Calculator,
   Sun,
   Moon,
+  RefreshCw,
 } from "lucide-react";
 
 const START_PAGES = [
@@ -60,9 +61,12 @@ export default function AjustesPage() {
 
   // Modals
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showResetDataModal, setShowResetDataModal] = useState(false);
   const [showExportModal, setShowExportModal] = useState(false);
   const [deleteConfirmText, setDeleteConfirmText] = useState("");
+  const [resetConfirmText, setResetConfirmText] = useState("");
   const [deleting, setDeleting] = useState(false);
+  const [resettingData, setResettingData] = useState(false);
 
   const supabase = createClient();
 
@@ -249,6 +253,63 @@ export default function AjustesPage() {
       setError(errorMessage);
     } finally {
       setExporting(false);
+    }
+  };
+
+  const handleResetData = async () => {
+    if (resetConfirmText !== "BORRAR") {
+      setError("Escribe BORRAR para confirmar");
+      return;
+    }
+
+    setResettingData(true);
+    setError("");
+
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("No autenticado");
+
+      // First, get IDs of savings goals and debts to delete their related records
+      const { data: savingsGoals } = await supabase
+        .from("savings_goals")
+        .select("id")
+        .eq("user_id", user.id);
+
+      const { data: debts } = await supabase
+        .from("debts")
+        .select("id")
+        .eq("user_id", user.id);
+
+      // Delete savings contributions for user's savings goals
+      if (savingsGoals && savingsGoals.length > 0) {
+        const goalIds = savingsGoals.map(g => g.id);
+        await supabase.from("savings_contributions").delete().in("savings_goal_id", goalIds);
+      }
+
+      // Delete debt payments for user's debts
+      if (debts && debts.length > 0) {
+        const debtIds = debts.map(d => d.id);
+        await supabase.from("debt_payments").delete().in("debt_id", debtIds);
+      }
+
+      // Delete all financial data (NOT the profile/account)
+      await supabase.from("savings_goals").delete().eq("user_id", user.id);
+      await supabase.from("debts").delete().eq("user_id", user.id);
+      await supabase.from("reminders").delete().eq("user_id", user.id);
+      await supabase.from("planned_savings").delete().eq("user_id", user.id);
+      await supabase.from("operations").delete().eq("user_id", user.id);
+      await supabase.from("budgets").delete().eq("user_id", user.id);
+      await supabase.from("categories").delete().eq("user_id", user.id);
+      await supabase.from("notifications").delete().eq("user_id", user.id);
+
+      setSuccess("Todos los datos financieros han sido eliminados. Tu cuenta sigue activa.");
+      setShowResetDataModal(false);
+      setResetConfirmText("");
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : "Error al borrar datos";
+      setError(errorMessage);
+    } finally {
+      setResettingData(false);
     }
   };
 
@@ -510,6 +571,19 @@ export default function AjustesPage() {
               </button>
 
               <button
+                onClick={() => setShowResetDataModal(true)}
+                className="w-full flex items-center gap-4 p-4 rounded-xl bg-[var(--warning)]/5 hover:bg-[var(--warning)]/10 transition-colors"
+              >
+                <div className="p-2 rounded-lg bg-[var(--warning)]/10">
+                  <RefreshCw className="w-5 h-5 text-[var(--warning)]" />
+                </div>
+                <div className="text-left">
+                  <p className="font-medium text-sm text-[var(--warning)]">Borrar datos financieros</p>
+                  <p className="text-xs text-[var(--brand-gray)]">Elimina operaciones, metas y deudas. Mantiene tu cuenta</p>
+                </div>
+              </button>
+
+              <button
                 onClick={() => setShowDeleteModal(true)}
                 className="w-full flex items-center gap-4 p-4 rounded-xl bg-[var(--danger)]/5 hover:bg-[var(--danger)]/10 transition-colors"
               >
@@ -578,6 +652,73 @@ export default function AjustesPage() {
                   <p className="text-sm text-[var(--brand-gray)]">Exportando datos...</p>
                 </div>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Reset Data Modal */}
+      {showResetDataModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-[var(--background)] rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
+            <div className="px-6 py-4 border-b border-[var(--border)] flex items-center justify-between">
+              <h2 className="text-lg font-semibold text-[var(--warning)]">Borrar datos financieros</h2>
+              <button
+                onClick={() => {
+                  setShowResetDataModal(false);
+                  setResetConfirmText("");
+                }}
+                className="p-1 rounded-lg hover:bg-[var(--background-secondary)] transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-4">
+              <div className="p-4 rounded-xl bg-[var(--warning)]/10">
+                <div className="flex items-start gap-3">
+                  <AlertTriangle className="w-5 h-5 text-[var(--warning)] shrink-0 mt-0.5" />
+                  <div>
+                    <p className="font-medium text-sm text-[var(--warning)] mb-1">Se borrarán todos tus datos financieros</p>
+                    <p className="text-xs text-[var(--brand-gray)]">
+                      Esto incluye: operaciones, categorías, presupuestos, metas de ahorro, deudas, recordatorios y notificaciones.
+                      Tu cuenta y preferencias se mantendrán intactas.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-2">
+                  Escribe <span className="font-mono font-bold">BORRAR</span> para confirmar
+                </label>
+                <input
+                  type="text"
+                  value={resetConfirmText}
+                  onChange={(e) => setResetConfirmText(e.target.value)}
+                  placeholder="BORRAR"
+                  className="w-full px-4 py-3 bg-[var(--background-secondary)] border border-[var(--border)] rounded-xl focus:outline-none focus:border-[var(--warning)] focus:ring-1 focus:ring-[var(--warning)]"
+                />
+              </div>
+
+              <div className="flex gap-3 pt-2">
+                <button
+                  onClick={() => {
+                    setShowResetDataModal(false);
+                    setResetConfirmText("");
+                  }}
+                  className="flex-1 px-4 py-3 rounded-xl border border-[var(--border)] font-medium hover:bg-[var(--background-secondary)] transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={handleResetData}
+                  disabled={resetConfirmText !== "BORRAR" || resettingData}
+                  className="flex-1 px-4 py-3 rounded-xl bg-[var(--warning)] text-white font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
+                >
+                  {resettingData ? "Borrando..." : "Borrar datos"}
+                </button>
+              </div>
             </div>
           </div>
         </div>
