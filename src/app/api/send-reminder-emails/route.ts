@@ -95,10 +95,16 @@ export async function POST(request: Request) {
         maximumFractionDigits: 2,
       });
 
+    const colors = ["#3b82f6", "#8b5cf6", "#10b981", "#f59e0b", "#ef4444"];
     const remindersList = userReminders
       .map(
-        (r) =>
-          `<li><strong>${r.concept}</strong> - ${formatAmount(Number(r.amount))} €</li>`
+        (r, i) =>
+          `<div style="background: #1e293b; border-radius: 10px; padding: 16px; margin: 8px; border-left: 4px solid ${colors[i % colors.length]};">
+            <table style="width: 100%;"><tr>
+              <td style="color: #f1f5f9; font-weight: 600; font-size: 15px;">${r.concept}</td>
+              <td style="color: ${colors[i % colors.length]}; font-weight: 700; font-size: 18px; text-align: right;">${formatAmount(Number(r.amount))} €</td>
+            </tr></table>
+          </div>`
       )
       .join("");
 
@@ -106,6 +112,12 @@ export async function POST(request: Request) {
       (sum, r) => sum + Number(r.amount),
       0
     );
+
+    const tomorrowFormatted = new Date(tomorrowStr).toLocaleDateString("es-ES", {
+      weekday: "long",
+      day: "numeric",
+      month: "long",
+    });
 
     try {
       await resend.emails.send({
@@ -122,35 +134,62 @@ export async function POST(request: Request) {
             <meta charset="utf-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
           </head>
-          <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #f5f5f5; margin: 0; padding: 20px;">
-            <div style="max-width: 500px; margin: 0 auto; background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
-              <div style="background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); padding: 24px; text-align: center;">
-                <h1 style="color: white; margin: 0; font-size: 24px;">FinyBuddy</h1>
+          <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #0f172a; margin: 0; padding: 24px;">
+            <div style="max-width: 480px; margin: 0 auto;">
+              <!-- Header con logo -->
+              <div style="text-align: center; padding: 32px 0;">
+                <img src="https://finybuddy.com/assets/logo-finybuddy-wordmark.png" alt="FinyBuddy" style="height: 48px; width: auto;">
               </div>
-              <div style="padding: 24px;">
-                <h2 style="color: #1f2937; margin: 0 0 16px 0; font-size: 18px;">
-                  Hola${profile.full_name ? ` ${profile.full_name}` : ""}! 👋
-                </h2>
-                <p style="color: #4b5563; margin: 0 0 16px 0; line-height: 1.5;">
-                  Te recordamos que mañana <strong>(${new Date(tomorrowStr).toLocaleDateString("es-ES", { weekday: "long", day: "numeric", month: "long" })})</strong> vence${userReminders.length === 1 ? "" : "n"}:
-                </p>
-                <ul style="color: #1f2937; padding-left: 20px; margin: 0 0 16px 0; line-height: 1.8;">
-                  ${remindersList}
-                </ul>
-                ${
-                  userReminders.length > 1
-                    ? `<p style="color: #6b7280; margin: 0 0 16px 0; font-size: 14px; border-top: 1px solid #e5e7eb; padding-top: 12px;">
-                    <strong>Total: ${formatAmount(totalAmount)} €</strong>
-                  </p>`
-                    : ""
-                }
-                <a href="https://finybuddy.com/calendario" style="display: inline-block; background: #3b82f6; color: white; text-decoration: none; padding: 12px 24px; border-radius: 8px; font-weight: 500;">
-                  Ver calendario
-                </a>
+
+              <!-- Card principal -->
+              <div style="background: linear-gradient(145deg, #1e293b 0%, #334155 100%); border-radius: 20px; overflow: hidden; border: 1px solid #475569;">
+                <!-- Alerta -->
+                <div style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); padding: 16px 24px; text-align: center;">
+                  <span style="color: white; font-size: 16px; font-weight: 600;">⏰ Recordatorio de vencimientos</span>
+                </div>
+
+                <!-- Contenido -->
+                <div style="padding: 28px;">
+                  <div style="text-align: center; margin-bottom: 20px;">
+                    <img src="https://finybuddy.com/assets/finybuddy-mascot.png" alt="FinyBuddy" style="height: 80px; width: auto;">
+                  </div>
+
+                  <h2 style="color: #f1f5f9; margin: 0 0 8px 0; font-size: 22px; font-weight: 600; text-align: center;">
+                    ¡Hola${profile.full_name ? ` ${profile.full_name}` : ""}! 👋
+                  </h2>
+                  <p style="color: #94a3b8; margin: 0 0 24px 0; font-size: 15px; line-height: 1.6; text-align: center;">
+                    Te recordamos que mañana <strong style="color: #f1f5f9;">${tomorrowFormatted}</strong> vence${userReminders.length === 1 ? "" : "n"}:
+                  </p>
+
+                  <!-- Recordatorios -->
+                  <div style="background: #0f172a; border-radius: 12px; padding: 4px; margin-bottom: 20px;">
+                    ${remindersList}
+                  </div>
+
+                  <!-- Total -->
+                  ${
+                    userReminders.length > 1
+                      ? `<div style="background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); border-radius: 12px; padding: 16px; text-align: center; margin-bottom: 24px;">
+                      <div style="color: rgba(255,255,255,0.8); font-size: 13px; text-transform: uppercase; letter-spacing: 1px;">Total a pagar mañana</div>
+                      <div style="color: white; font-size: 32px; font-weight: 700; margin-top: 4px;">${formatAmount(totalAmount)} €</div>
+                    </div>`
+                      : ""
+                  }
+
+                  <!-- Botón -->
+                  <a href="https://finybuddy.com/calendario" style="display: block; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); color: white; text-decoration: none; padding: 16px 24px; border-radius: 12px; font-weight: 600; text-align: center; font-size: 15px;">
+                    📅 Ver mi calendario
+                  </a>
+                </div>
               </div>
-              <div style="background: #f9fafb; padding: 16px 24px; text-align: center; border-top: 1px solid #e5e7eb;">
-                <p style="color: #9ca3af; margin: 0; font-size: 12px;">
+
+              <!-- Footer -->
+              <div style="text-align: center; padding: 24px 0;">
+                <p style="color: #64748b; margin: 0 0 8px 0; font-size: 13px;">
                   Puedes desactivar estos emails desde Ajustes en tu cuenta.
+                </p>
+                <p style="color: #475569; margin: 0; font-size: 12px;">
+                  © 2025 FinyBuddy · Tu asistente financiero personal
                 </p>
               </div>
             </div>
