@@ -292,17 +292,17 @@ export default function AjustesPage() {
         await supabase.from("debt_payments").delete().in("debt_id", debtIds);
       }
 
-      // Delete all financial data (NOT the profile/account)
+      // Delete all financial data (NOT the profile/account, NOT the categories)
       await supabase.from("savings_goals").delete().eq("user_id", user.id);
       await supabase.from("debts").delete().eq("user_id", user.id);
       await supabase.from("reminders").delete().eq("user_id", user.id);
       await supabase.from("planned_savings").delete().eq("user_id", user.id);
       await supabase.from("operations").delete().eq("user_id", user.id);
       await supabase.from("budgets").delete().eq("user_id", user.id);
-      await supabase.from("categories").delete().eq("user_id", user.id);
       await supabase.from("notifications").delete().eq("user_id", user.id);
+      // Categories are kept - they are part of user configuration, not financial data
 
-      setSuccess("Todos los datos financieros han sido eliminados. Tu cuenta sigue activa.");
+      setSuccess("Todos los datos financieros han sido eliminados. Tu cuenta y categorías siguen intactas.");
       setShowResetDataModal(false);
       setResetConfirmText("");
     } catch (err: unknown) {
@@ -681,8 +681,8 @@ export default function AjustesPage() {
                   <div>
                     <p className="font-medium text-sm text-[var(--warning)] mb-1">Se borrarán todos tus datos financieros</p>
                     <p className="text-xs text-[var(--brand-gray)]">
-                      Esto incluye: operaciones, categorías, presupuestos, metas de ahorro, deudas, recordatorios y notificaciones.
-                      Tu cuenta y preferencias se mantendrán intactas.
+                      Esto incluye: operaciones, presupuestos, metas de ahorro, deudas, recordatorios y notificaciones.
+                      Tu cuenta, categorías y preferencias se mantendrán intactas.
                     </p>
                   </div>
                 </div>

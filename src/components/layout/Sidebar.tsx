@@ -19,8 +19,9 @@ import {
   ChevronRight,
   Bot,
   Scale,
+  ShieldCheck,
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import { useSidebar } from "@/contexts/SidebarContext";
@@ -54,6 +55,25 @@ export default function Sidebar() {
   const router = useRouter();
   const { collapsed, toggle } = useSidebar();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  const supabase = createClient();
+
+  // Check if user is admin
+  useEffect(() => {
+    const checkAdmin = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("is_admin")
+          .eq("id", user.id)
+          .single();
+        setIsAdmin(profile?.is_admin || false);
+      }
+    };
+    checkAdmin();
+  }, [supabase]);
 
   const handleLogout = async () => {
     setIsLoggingOut(true);
@@ -204,6 +224,54 @@ export default function Sidebar() {
             })}
           </ul>
         </div>
+
+        {/* Admin Navigation - Only visible for admins */}
+        {isAdmin && (
+          <div className="px-3 mt-6">
+            <div
+              className={`px-3 mb-2 overflow-hidden transition-all duration-300 ease-in-out ${
+                collapsed ? "h-0 opacity-0" : "h-5 opacity-60"
+              }`}
+            >
+              <p className="text-xs font-semibold uppercase tracking-wider text-[var(--sidebar-text)] whitespace-nowrap">
+                Administración
+              </p>
+            </div>
+            <ul className="space-y-1">
+              <li>
+                <Link
+                  href="/admin"
+                  className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors duration-200 group overflow-hidden ${
+                    isActive("/admin")
+                      ? "bg-[var(--sidebar-active)] text-[var(--brand-cyan)]"
+                      : "hover:bg-[var(--sidebar-hover)] hover:text-[var(--sidebar-text-active)]"
+                  }`}
+                  title={collapsed ? "Admin" : undefined}
+                >
+                  <ShieldCheck
+                    className={`w-5 h-5 flex-shrink-0 transition-colors duration-200 ${
+                      isActive("/admin") ? "text-[var(--brand-cyan)]" : "group-hover:text-[var(--brand-cyan)]"
+                    }`}
+                  />
+                  <span
+                    className={`text-sm font-medium whitespace-nowrap transition-all duration-300 ease-in-out ${
+                      isActive("/admin") ? "text-white" : ""
+                    } ${collapsed ? "w-0 opacity-0" : "w-auto opacity-100"}`}
+                  >
+                    Admin
+                  </span>
+                  {isActive("/admin") && (
+                    <div
+                      className={`ml-auto w-1.5 h-1.5 rounded-full bg-[var(--brand-cyan)] flex-shrink-0 transition-all duration-300 ease-in-out ${
+                        collapsed ? "opacity-0 scale-0" : "opacity-100 scale-100"
+                      }`}
+                    />
+                  )}
+                </Link>
+              </li>
+            </ul>
+          </div>
+        )}
       </nav>
 
       {/* Footer */}
