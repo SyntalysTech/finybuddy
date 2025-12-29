@@ -16,8 +16,8 @@ export const metadata: Metadata = {
   title: "FinyBuddy - Tu asistente financiero personal",
   description: "Gestiona tus finanzas de forma inteligente con la regla 50/30/20. Control de gastos, presupuestos, metas de ahorro y más.",
   icons: {
-    icon: "/assets/favicon.png",
-    apple: "/assets/favicon.png",
+    icon: "/assets/favicon.png?v=2",
+    apple: "/assets/favicon.png?v=2",
   },
 };
 
