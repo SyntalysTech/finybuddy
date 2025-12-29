@@ -3,6 +3,10 @@
     {
       "path": "/api/generate-monthly-summary",
       "schedule": "0 9 2 * *"
+    },
+    {
+      "path": "/api/send-reminder-emails",
+      "schedule": "0 8 * * *"
     }
   ]
 }

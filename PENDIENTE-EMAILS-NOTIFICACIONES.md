@@ -5,7 +5,7 @@
 | Notificación | Tipo | Estado |
 |--------------|------|--------|
 | **Resumen mensual** | In-app (panel de campana, día 2 de cada mes) | **IMPLEMENTADO** |
-| **Alerta de recordatorios** | Email (1 día antes del vencimiento) | Pendiente (requiere dominio) |
+| **Alerta de recordatorios** | Email (1 día antes del vencimiento) | **IMPLEMENTADO** |
 
 ---
 
@@ -44,9 +44,9 @@
 
 ---
 
-# FASE 2: Alerta de recordatorios por email - PENDIENTE
+# FASE 2: Alerta de recordatorios por email - IMPLEMENTADO
 
-> **Estado:** En espera hasta que el cliente tenga dominio comprado y verificado en Resend
+> **Estado:** Código implementado. Pendiente verificar dominio en Resend y añadir variable de entorno.
 
 ## Requisitos previos
 
@@ -192,12 +192,12 @@ Una vez configurado todo:
 
 ## Fase 2: Alertas de recordatorios por email
 
-- [ ] Comprar dominio
-- [ ] Crear cuenta Resend
+- [x] Comprar dominio (finybuddy.com)
+- [x] Crear cuenta Resend
 - [ ] Verificar dominio en Resend (DNS)
-- [ ] Instalar `resend`
+- [x] Instalar `resend`
 - [ ] Añadir `RESEND_API_KEY` a Vercel
-- [ ] Crear API route `/api/send-reminder-email`
-- [ ] Añadir cron diario a `vercel.json`
-- [ ] Probar envío de emails
+- [x] Crear API route `/api/send-reminder-emails`
+- [x] Añadir cron diario a `vercel.json`
 - [ ] Deploy a producción
+- [ ] Probar envío de emails
