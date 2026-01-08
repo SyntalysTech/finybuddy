@@ -579,7 +579,7 @@ export default function AjustesPage() {
                 </div>
                 <div className="text-left">
                   <p className="font-medium text-sm text-[var(--warning)]">Borrar datos financieros</p>
-                  <p className="text-xs text-[var(--brand-gray)]">Elimina operaciones, metas y deudas. Mantiene tu cuenta</p>
+                  <p className="text-xs text-[var(--brand-gray)]">Elimina tus datos financieros sin borrar tu cuenta</p>
                 </div>
               </button>
 
@@ -681,8 +681,8 @@ export default function AjustesPage() {
                   <div>
                     <p className="font-medium text-sm text-[var(--warning)] mb-1">Se borrarán todos tus datos financieros</p>
                     <p className="text-xs text-[var(--brand-gray)]">
-                      Esto incluye: operaciones, presupuestos, metas de ahorro, deudas, recordatorios y notificaciones.
-                      Tu cuenta, categorías y preferencias se mantendrán intactas.
+                      Esto incluye: operaciones, presupuestos, recordatorios, notificaciones, metas de ahorro y deudas.
+                      Tus datos de configuración (mis categorías, mi regla financiera, perfil y ajustes) se mantendrán intactos.
                     </p>
                   </div>
                 </div>

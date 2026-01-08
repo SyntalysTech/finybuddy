@@ -442,7 +442,7 @@ export default function CategoriasPage() {
           </div>
 
           <p className="text-sm text-[var(--brand-gray)] mb-4">
-            Asigna un segmento a tus categorías de gastos para distribuir tu presupuesto según tu regla financiera personalizada.
+            Asigna un segmento a tus categorías de gasto, indicando si se trata de un gasto por necesidad o por deseo, para poder distribuir tu presupuesto correctamente según tu regla financiera personalizada.
           </p>
 
           {/* Visual bar */}

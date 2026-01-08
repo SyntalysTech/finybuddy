@@ -377,7 +377,7 @@ export default function PrevisionPage() {
   // Check if budget is effectively empty
   const isBudgetEmpty = budgets.length === 0 && plannedSavings === 0;
 
-  // Copy from previous month
+  // Copy from previous month (with auto-save)
   const copyFromPreviousMonth = async () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
@@ -403,19 +403,49 @@ export default function PrevisionPage() {
       .single();
 
     if ((prevBudgets && prevBudgets.length > 0) || prevPlannedSavings) {
+      // Insert budgets directly to database
       if (prevBudgets && prevBudgets.length > 0) {
-        const newBudgets = prevBudgets.map(b => ({
+        const budgetsToInsert = prevBudgets.map(b => ({
+          user_id: user.id,
+          category_id: b.category_id,
+          amount: b.amount,
+          month: selectedMonth,
+          year: selectedYear,
+        }));
+
+        const { data: insertedBudgets, error } = await supabase
+          .from("budgets")
+          .insert(budgetsToInsert)
+          .select();
+
+        if (error) {
+          console.error("Error copying budgets:", error);
+          alert("Error al copiar el presupuesto");
+          return;
+        }
+
+        const newBudgets = prevBudgets.map((b, index) => ({
           ...b,
-          id: undefined,
+          id: insertedBudgets[index]?.id,
           year: selectedYear,
           month: selectedMonth,
         }));
         setBudgets(newBudgets as BudgetWithCategory[]);
       }
+
+      // Insert planned savings
       if (prevPlannedSavings) {
+        await supabase
+          .from("planned_savings")
+          .insert({
+            user_id: user.id,
+            amount: prevPlannedSavings.amount,
+            month: selectedMonth,
+            year: selectedYear,
+          });
         setPlannedSavings(prevPlannedSavings.amount);
       }
-      setHasChanges(true);
+
       setHasBudget(true);
     } else {
       alert("No hay presupuesto del mes anterior para copiar");
@@ -467,8 +497,11 @@ export default function PrevisionPage() {
     }
   };
 
-  // Create new budget from all active categories
-  const createNewBudget = () => {
+  // Create new budget from all active categories (with auto-save)
+  const createNewBudget = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
     const newBudgets: BudgetWithCategory[] = categories.map(cat => ({
       category_id: cat.id,
       amount: 0,
@@ -476,20 +509,67 @@ export default function PrevisionPage() {
       year: selectedYear,
       category: cat,
     }));
-    setBudgets(newBudgets);
-    setHasChanges(true);
+
+    // Insert all budgets to database
+    const budgetsToInsert = newBudgets.map(b => ({
+      user_id: user.id,
+      category_id: b.category_id,
+      amount: 0,
+      month: selectedMonth,
+      year: selectedYear,
+    }));
+
+    const { data, error } = await supabase
+      .from("budgets")
+      .insert(budgetsToInsert)
+      .select();
+
+    if (error) {
+      console.error("Error creating budget:", error);
+      return;
+    }
+
+    // Update local state with IDs from database
+    const budgetsWithIds = newBudgets.map((b, index) => ({
+      ...b,
+      id: data[index]?.id,
+    }));
+
+    setBudgets(budgetsWithIds);
     setHasBudget(true);
   };
 
-  // Add category to budget
-  const addCategoryToBudget = (categoryId: string) => {
+  // Add category to budget (with auto-save)
+  const addCategoryToBudget = async (categoryId: string) => {
     const category = categories.find(c => c.id === categoryId);
     if (!category) return;
 
     const exists = budgets.find(b => b.category_id === categoryId);
     if (exists) return;
 
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    // Insert new budget directly to database
+    const { data, error } = await supabase
+      .from("budgets")
+      .insert({
+        user_id: user.id,
+        category_id: categoryId,
+        amount: 0,
+        month: selectedMonth,
+        year: selectedYear,
+      })
+      .select()
+      .single();
+
+    if (error) {
+      console.error("Error adding category to budget:", error);
+      return;
+    }
+
     const newBudget: BudgetWithCategory = {
+      id: data.id,
       category_id: categoryId,
       amount: 0,
       month: selectedMonth,
@@ -498,7 +578,6 @@ export default function PrevisionPage() {
     };
 
     setBudgets([...budgets, newBudget]);
-    setHasChanges(true);
     setShowAddCategory(false);
   };
 
@@ -961,11 +1040,6 @@ export default function PrevisionPage() {
                 <p className="text-xl font-bold text-[var(--danger)]">
                   {formatCurrency(totalExpenses)}
                 </p>
-                {hasBudget && totalIncome > 0 && (
-                  <p className="text-xs text-[var(--brand-gray)] mt-1">
-                    {Math.round((totalExpenses / totalIncome) * 100)}% de tus ingresos
-                  </p>
-                )}
               </div>
               <div className="p-2 rounded-lg bg-[var(--danger)]/10">
                 <TrendingDown className="w-5 h-5 text-[var(--danger)]" />
@@ -980,11 +1054,6 @@ export default function PrevisionPage() {
                 <p className={`text-xl font-bold ${plannedSavings >= 0 ? "text-[var(--brand-purple)]" : "text-[var(--danger)]"}`}>
                   {formatCurrency(plannedSavings)}
                 </p>
-                {hasBudget && totalIncome > 0 && (
-                  <p className="text-xs text-[var(--brand-gray)] mt-1">
-                    {savingsPercent}% de tus ingresos
-                  </p>
-                )}
               </div>
               <div className="p-2 rounded-lg bg-[var(--brand-purple)]/10">
                 <PiggyBank className="w-5 h-5 text-[var(--brand-purple)]" />
@@ -992,6 +1061,124 @@ export default function PrevisionPage() {
             </div>
           </div>
         </div>
+
+        {/* Rule comparison card - moved here after cards */}
+        {hasBudget && totalIncome > 0 && (
+          <div className="card p-6">
+            <div className="flex items-start justify-between gap-3 mb-4">
+              <div className="flex items-start gap-3">
+                <div className="p-2 rounded-lg bg-[var(--brand-purple)]/10">
+                  <Sparkles className="w-5 h-5 text-[var(--brand-purple)]" />
+                </div>
+                <div>
+                  <h3 className="font-semibold">Comparativa con tu regla {ruleNeeds}/{ruleWants}/{ruleSavings}</h3>
+                  <p className="text-sm text-[var(--brand-gray)]">
+                    Según tus ingresos previstos de {formatCurrency(totalIncome)}, deberías destinar:
+                  </p>
+                </div>
+              </div>
+              <Link
+                href="/regla-financiera"
+                className="flex items-center gap-1.5 text-sm text-[var(--brand-purple)] hover:underline whitespace-nowrap"
+              >
+                <Settings className="w-4 h-4" />
+                Configurar Mi Regla
+              </Link>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {/* Needs comparison */}
+              <div className={`p-4 rounded-lg ${needsPercent <= ruleNeeds ? "bg-[var(--success)]/10" : "bg-[var(--danger)]/10"}`}>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="font-medium">Necesidades</span>
+                  {needsPercent <= ruleNeeds ? (
+                    <CheckCircle className="w-4 h-4 text-[var(--success)]" />
+                  ) : (
+                    <AlertCircle className="w-4 h-4 text-[var(--danger)]" />
+                  )}
+                </div>
+                <p className="text-sm text-[var(--brand-gray)]">
+                  Objetivo: {formatCurrency(needsTarget)} ({ruleNeeds}%)
+                </p>
+                <p className="text-sm">
+                  Previsto: <span className="font-semibold">{formatCurrency(needsTotal)}</span> ({needsPercent}%)
+                </p>
+                <p className={`text-sm font-semibold mt-2 ${needsPercent <= ruleNeeds ? "text-[var(--success)]" : "text-[var(--danger)]"}`}>
+                  {needsDeviation === 0 ? (
+                    "En el objetivo"
+                  ) : needsDeviation < 0 ? (
+                    <>-{Math.abs(needsPercent - ruleNeeds)}% / {formatCurrency(Math.abs(needsDeviation))}</>
+                  ) : (
+                    <>+{needsPercent - ruleNeeds}% / +{formatCurrency(needsDeviation)}</>
+                  )}
+                </p>
+                <p className="text-xs text-[var(--brand-gray)] mt-1">
+                  {needsPercent <= ruleNeeds ? "Por debajo del objetivo" : "Por encima del objetivo"}
+                </p>
+              </div>
+
+              {/* Wants comparison */}
+              <div className={`p-4 rounded-lg ${wantsPercent <= ruleWants ? "bg-[var(--success)]/10" : "bg-[var(--danger)]/10"}`}>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="font-medium">Deseos</span>
+                  {wantsPercent <= ruleWants ? (
+                    <CheckCircle className="w-4 h-4 text-[var(--success)]" />
+                  ) : (
+                    <AlertCircle className="w-4 h-4 text-[var(--danger)]" />
+                  )}
+                </div>
+                <p className="text-sm text-[var(--brand-gray)]">
+                  Objetivo: {formatCurrency(wantsTarget)} ({ruleWants}%)
+                </p>
+                <p className="text-sm">
+                  Previsto: <span className="font-semibold">{formatCurrency(wantsTotal)}</span> ({wantsPercent}%)
+                </p>
+                <p className={`text-sm font-semibold mt-2 ${wantsPercent <= ruleWants ? "text-[var(--success)]" : "text-[var(--danger)]"}`}>
+                  {wantsDeviation === 0 ? (
+                    "En el objetivo"
+                  ) : wantsDeviation < 0 ? (
+                    <>-{Math.abs(wantsPercent - ruleWants)}% / {formatCurrency(Math.abs(wantsDeviation))}</>
+                  ) : (
+                    <>+{wantsPercent - ruleWants}% / +{formatCurrency(wantsDeviation)}</>
+                  )}
+                </p>
+                <p className="text-xs text-[var(--brand-gray)] mt-1">
+                  {wantsPercent <= ruleWants ? "Por debajo del objetivo" : "Por encima del objetivo"}
+                </p>
+              </div>
+
+              {/* Savings comparison */}
+              <div className={`p-4 rounded-lg ${savingsPercent >= ruleSavings ? "bg-[var(--success)]/10" : "bg-[var(--warning)]/10"}`}>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="font-medium">Ahorro</span>
+                  {savingsPercent >= ruleSavings ? (
+                    <CheckCircle className="w-4 h-4 text-[var(--success)]" />
+                  ) : (
+                    <AlertCircle className="w-4 h-4 text-[var(--warning)]" />
+                  )}
+                </div>
+                <p className="text-sm text-[var(--brand-gray)]">
+                  Objetivo: {formatCurrency(savingsTarget)} ({ruleSavings}%)
+                </p>
+                <p className="text-sm">
+                  Previsto: <span className="font-semibold">{formatCurrency(plannedSavings)}</span> ({savingsPercent}%)
+                </p>
+                <p className={`text-sm font-semibold mt-2 ${savingsPercent >= ruleSavings ? "text-[var(--success)]" : "text-[var(--warning)]"}`}>
+                  {savingsDeviation === 0 ? (
+                    "En el objetivo"
+                  ) : savingsDeviation > 0 ? (
+                    <>+{savingsPercent - ruleSavings}% / +{formatCurrency(savingsDeviation)}</>
+                  ) : (
+                    <>-{Math.abs(savingsPercent - ruleSavings)}% / {formatCurrency(Math.abs(savingsDeviation))}</>
+                  )}
+                </p>
+                <p className="text-xs text-[var(--brand-gray)] mt-1">
+                  {savingsPercent >= ruleSavings ? "Por encima del objetivo" : "Por debajo del objetivo"}
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Balance warning if negative */}
         {hasBudget && availableBalance < 0 && (
@@ -1031,15 +1218,6 @@ export default function PrevisionPage() {
                 >
                   <Copy className="w-4 h-4" />
                   Copiar del mes anterior
-                </button>
-              )}
-              {hasNextMonthBudget && (
-                <button
-                  onClick={copyFromNextMonth}
-                  className="flex items-center gap-2 px-6 py-3 rounded-lg border border-[var(--border)] font-medium hover:bg-[var(--background-secondary)] transition-colors"
-                >
-                  <Copy className="w-4 h-4" />
-                  Copiar del mes posterior
                 </button>
               )}
             </div>
@@ -1271,144 +1449,7 @@ export default function PrevisionPage() {
           </div>
         )}
 
-        {/* Rule comparison card */}
-        {hasBudget && totalIncome > 0 && (
-          <div className="card p-6">
-            <div className="flex items-start justify-between gap-3 mb-4">
-              <div className="flex items-start gap-3">
-                <div className="p-2 rounded-lg bg-[var(--brand-purple)]/10">
-                  <Sparkles className="w-5 h-5 text-[var(--brand-purple)]" />
-                </div>
-                <div>
-                  <h3 className="font-semibold">Comparativa con tu regla {ruleNeeds}/{ruleWants}/{ruleSavings}</h3>
-                  <p className="text-sm text-[var(--brand-gray)]">
-                    Según tus ingresos previstos de {formatCurrency(totalIncome)}, deberías destinar:
-                  </p>
-                </div>
-              </div>
-              <Link
-                href="/regla-financiera"
-                className="flex items-center gap-1.5 text-sm text-[var(--brand-purple)] hover:underline whitespace-nowrap"
-              >
-                <Settings className="w-4 h-4" />
-                Configurar Mi Regla
-              </Link>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {/* Needs comparison */}
-              <div className={`p-4 rounded-lg ${needsPercent <= ruleNeeds ? "bg-[var(--success)]/10" : "bg-[var(--danger)]/10"}`}>
-                <div className="flex items-center justify-between mb-2">
-                  <span className="font-medium">Necesidades</span>
-                  {needsPercent <= ruleNeeds ? (
-                    <CheckCircle className="w-4 h-4 text-[var(--success)]" />
-                  ) : (
-                    <AlertCircle className="w-4 h-4 text-[var(--danger)]" />
-                  )}
-                </div>
-                <p className="text-sm text-[var(--brand-gray)]">
-                  Objetivo: {formatCurrency(needsTarget)} ({ruleNeeds}%)
-                </p>
-                <p className="text-sm">
-                  Previsto: <span className="font-semibold">{formatCurrency(needsTotal)}</span> ({needsPercent}%)
-                </p>
-                <p className={`text-sm font-semibold mt-2 ${needsPercent <= ruleNeeds ? "text-[var(--success)]" : "text-[var(--danger)]"}`}>
-                  {needsDeviation === 0 ? (
-                    "En el objetivo"
-                  ) : needsDeviation < 0 ? (
-                    <>-{Math.abs(needsPercent - ruleNeeds)}% / {formatCurrency(Math.abs(needsDeviation))}</>
-                  ) : (
-                    <>+{needsPercent - ruleNeeds}% / +{formatCurrency(needsDeviation)}</>
-                  )}
-                </p>
-                <p className="text-xs text-[var(--brand-gray)] mt-1">
-                  {needsPercent <= ruleNeeds ? "Por debajo del objetivo" : "Por encima del objetivo"}
-                </p>
-              </div>
-
-              {/* Wants comparison */}
-              <div className={`p-4 rounded-lg ${wantsPercent <= ruleWants ? "bg-[var(--success)]/10" : "bg-[var(--danger)]/10"}`}>
-                <div className="flex items-center justify-between mb-2">
-                  <span className="font-medium">Deseos</span>
-                  {wantsPercent <= ruleWants ? (
-                    <CheckCircle className="w-4 h-4 text-[var(--success)]" />
-                  ) : (
-                    <AlertCircle className="w-4 h-4 text-[var(--danger)]" />
-                  )}
-                </div>
-                <p className="text-sm text-[var(--brand-gray)]">
-                  Objetivo: {formatCurrency(wantsTarget)} ({ruleWants}%)
-                </p>
-                <p className="text-sm">
-                  Previsto: <span className="font-semibold">{formatCurrency(wantsTotal)}</span> ({wantsPercent}%)
-                </p>
-                <p className={`text-sm font-semibold mt-2 ${wantsPercent <= ruleWants ? "text-[var(--success)]" : "text-[var(--danger)]"}`}>
-                  {wantsDeviation === 0 ? (
-                    "En el objetivo"
-                  ) : wantsDeviation < 0 ? (
-                    <>-{Math.abs(wantsPercent - ruleWants)}% / {formatCurrency(Math.abs(wantsDeviation))}</>
-                  ) : (
-                    <>+{wantsPercent - ruleWants}% / +{formatCurrency(wantsDeviation)}</>
-                  )}
-                </p>
-                <p className="text-xs text-[var(--brand-gray)] mt-1">
-                  {wantsPercent <= ruleWants ? "Por debajo del objetivo" : "Por encima del objetivo"}
-                </p>
-              </div>
-
-              {/* Savings comparison */}
-              <div className={`p-4 rounded-lg ${savingsPercent >= ruleSavings ? "bg-[var(--success)]/10" : "bg-[var(--warning)]/10"}`}>
-                <div className="flex items-center justify-between mb-2">
-                  <span className="font-medium">Ahorro</span>
-                  {savingsPercent >= ruleSavings ? (
-                    <CheckCircle className="w-4 h-4 text-[var(--success)]" />
-                  ) : (
-                    <AlertCircle className="w-4 h-4 text-[var(--warning)]" />
-                  )}
-                </div>
-                <p className="text-sm text-[var(--brand-gray)]">
-                  Objetivo: {formatCurrency(savingsTarget)} ({ruleSavings}%)
-                </p>
-                <p className="text-sm">
-                  Previsto: <span className="font-semibold">{formatCurrency(plannedSavings)}</span> ({savingsPercent}%)
-                </p>
-                <p className={`text-sm font-semibold mt-2 ${savingsPercent >= ruleSavings ? "text-[var(--success)]" : "text-[var(--warning)]"}`}>
-                  {savingsDeviation === 0 ? (
-                    "En el objetivo"
-                  ) : savingsDeviation > 0 ? (
-                    <>+{savingsPercent - ruleSavings}% / +{formatCurrency(savingsDeviation)}</>
-                  ) : (
-                    <>-{Math.abs(savingsPercent - ruleSavings)}% / {formatCurrency(Math.abs(savingsDeviation))}</>
-                  )}
-                </p>
-                <p className="text-xs text-[var(--brand-gray)] mt-1">
-                  {savingsPercent >= ruleSavings ? "Por encima del objetivo" : "Por debajo del objetivo"}
-                </p>
-              </div>
-            </div>
-
-            {/* AI Message */}
-            {(needsPercent > ruleNeeds || wantsPercent > ruleWants || savingsPercent < ruleSavings) && (
-              <div className="mt-4 p-4 rounded-lg bg-[var(--brand-purple)]/5 border border-[var(--brand-purple)]/20">
-                <p className="text-sm text-[var(--foreground)]">
-                  <strong className="text-[var(--brand-purple)]">Consejo:</strong>{" "}
-                  {needsPercent > ruleNeeds && (
-                    <>Tus necesidades superan tu objetivo en {formatCurrency(needsDeviation)} (+{needsPercent - ruleNeeds}%). </>
-                  )}
-                  {wantsPercent > ruleWants && (
-                    <>Tus deseos superan tu objetivo en {formatCurrency(wantsDeviation)} (+{wantsPercent - ruleWants}%). </>
-                  )}
-                  {savingsPercent < ruleSavings && (
-                    <>Tu ahorro está {formatCurrency(Math.abs(savingsDeviation))} por debajo de tu meta (-{ruleSavings - savingsPercent}%). </>
-                  )}
-                  Si esto se repite varios meses, puede afectar tus objetivos de ahorro a largo plazo. Revisa si puedes ajustar alguna categoría.
-                </p>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Delete budget button */}
+{/* Delete budget button */}
         {hasBudget && !hasChanges && (
           <div className="flex justify-center">
             <button

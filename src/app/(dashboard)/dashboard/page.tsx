@@ -100,7 +100,14 @@ interface MonthlyEvolution {
   month_name: string;
   total_income: number;
   total_expenses: number;
+  total_savings: number;
   balance: number;
+}
+
+interface BudgetSummary {
+  total_budgeted_income: number;
+  total_budgeted_expenses: number;
+  total_budgeted_savings: number;
 }
 
 // Obtener frase del día basada en la fecha
@@ -112,12 +119,12 @@ const getDailyQuote = () => {
   return motivationalQuotes[dayOfYear % motivationalQuotes.length];
 };
 
-// Obtener saludo según la hora
+// Obtener saludo según la hora (horario español)
 const getGreeting = () => {
   const hour = new Date().getHours();
-  if (hour < 12) return "Buenos días";
-  if (hour < 20) return "Buenas tardes";
-  return "Buenas noches";
+  if (hour >= 6 && hour < 12) return "Buenos días";
+  if (hour >= 12 && hour < 20) return "Buenas tardes";
+  return "Buenas noches"; // 20:00 - 05:59
 };
 
 // Frase contextual dinámica basada en los datos del mes
@@ -182,6 +189,7 @@ export default function DashboardPage() {
   const [debtsSummary, setDebtsSummary] = useState<DebtsSummary | null>(null);
   const [recentOperations, setRecentOperations] = useState<RecentOperation[]>([]);
   const [monthlyEvolution, setMonthlyEvolution] = useState<MonthlyEvolution[]>([]);
+  const [budgetSummary, setBudgetSummary] = useState<BudgetSummary | null>(null);
   const [loading, setLoading] = useState(true);
 
   const supabase = createClient();
@@ -241,6 +249,38 @@ export default function DashboardPage() {
 
     if (evolutionData) {
       setMonthlyEvolution(evolutionData);
+    }
+
+    // Fetch budget summary for the month
+    const { data: budgetsData } = await supabase
+      .from("budgets")
+      .select(`
+        amount,
+        category:categories(type, segment)
+      `)
+      .eq("user_id", user.id)
+      .eq("year", selectedYear)
+      .eq("month", selectedMonth);
+
+    if (budgetsData) {
+      let totalBudgetedExpenses = 0;
+      let totalBudgetedSavings = 0;
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      budgetsData.forEach((budget: any) => {
+        const category = Array.isArray(budget.category) ? budget.category[0] : budget.category;
+        if (category?.segment === 'savings') {
+          totalBudgetedSavings += budget.amount || 0;
+        } else {
+          totalBudgetedExpenses += budget.amount || 0;
+        }
+      });
+
+      setBudgetSummary({
+        total_budgeted_income: 0, // No se presupuestan ingresos
+        total_budgeted_expenses: totalBudgetedExpenses,
+        total_budgeted_savings: totalBudgetedSavings,
+      });
     }
 
     // Fetch recent operations (last 5)
@@ -378,12 +418,12 @@ export default function DashboardPage() {
     }
   };
 
-  // Data for bar chart - include savings from monthly summary
+  // Data for bar chart - using real savings from operations
   const barData = monthlyEvolution.map(item => ({
     name: item.month_name,
     Ingresos: item.total_income,
     Gastos: item.total_expenses,
-    Ahorro: Math.max(0, item.total_income - item.total_expenses), // Balance as savings indicator
+    Ahorro: item.total_savings || 0,
   }));
 
   const handlePreviousMonth = () => {
@@ -480,6 +520,18 @@ export default function DashboardPage() {
                 <p className="text-2xl font-bold text-[var(--danger)]">
                   {loading ? "..." : formatCurrency(monthlySummary?.total_expenses || 0)}
                 </p>
+                {!loading && budgetSummary && budgetSummary.total_budgeted_expenses > 0 && (
+                  <p className={`text-xs mt-1 ${
+                    (monthlySummary?.total_expenses || 0) > budgetSummary.total_budgeted_expenses
+                      ? "text-[var(--danger)]"
+                      : "text-[var(--success)]"
+                  }`}>
+                    {(monthlySummary?.total_expenses || 0) > budgetSummary.total_budgeted_expenses
+                      ? `+${formatCurrency((monthlySummary?.total_expenses || 0) - budgetSummary.total_budgeted_expenses)} vs plan`
+                      : `${formatCurrency(budgetSummary.total_budgeted_expenses - (monthlySummary?.total_expenses || 0))} bajo plan`
+                    }
+                  </p>
+                )}
               </div>
               <div className="p-3 rounded-xl bg-[var(--danger)]/10">
                 <TrendingDown className="w-6 h-6 text-[var(--danger)]" />
@@ -495,6 +547,18 @@ export default function DashboardPage() {
                 <p className="text-2xl font-bold text-[var(--brand-cyan)]">
                   {loading ? "..." : formatCurrency(monthlySummary?.total_savings || 0)}
                 </p>
+                {!loading && budgetSummary && budgetSummary.total_budgeted_savings > 0 && (
+                  <p className={`text-xs mt-1 ${
+                    (monthlySummary?.total_savings || 0) >= budgetSummary.total_budgeted_savings
+                      ? "text-[var(--success)]"
+                      : "text-[var(--warning)]"
+                  }`}>
+                    {(monthlySummary?.total_savings || 0) >= budgetSummary.total_budgeted_savings
+                      ? `+${formatCurrency((monthlySummary?.total_savings || 0) - budgetSummary.total_budgeted_savings)} vs plan`
+                      : `${formatCurrency(budgetSummary.total_budgeted_savings - (monthlySummary?.total_savings || 0))} bajo plan`
+                    }
+                  </p>
+                )}
               </div>
               <div className="p-3 rounded-xl bg-[var(--brand-cyan)]/10">
                 <PiggyBank className="w-6 h-6 text-[var(--brand-cyan)]" />
@@ -503,27 +567,6 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Plan Compliance Indicator */}
-        {!loading && monthlySummary && monthlySummary.total_income > 0 && (
-          <div className="card p-4">
-            <div className="flex items-center justify-center gap-2">
-              {(() => {
-                const balance = (monthlySummary.total_income || 0) - (monthlySummary.total_expenses || 0);
-                const isPositive = balance >= 0;
-                return (
-                  <>
-                    <span className={`text-lg font-bold ${isPositive ? "text-[var(--success)]" : "text-[var(--danger)]"}`}>
-                      {isPositive ? "+" : ""}{formatCurrency(balance)}
-                    </span>
-                    <span className="text-sm text-[var(--brand-gray)]">
-                      {isPositive ? "a favor este mes" : "por encima del presupuesto"}
-                    </span>
-                  </>
-                );
-              })()}
-            </div>
-          </div>
-        )}
 
         {/* Evolución Mensual Chart - 3 barras por mes */}
         {barData.length > 0 && (

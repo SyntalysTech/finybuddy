@@ -446,16 +446,6 @@ export default function CalendarioPage() {
     }
   };
 
-  // Prevent body scroll when day modal is open
-  useEffect(() => {
-    if (showDayModal) {
-      document.body.style.overflow = 'hidden';
-      return () => {
-        document.body.style.overflow = '';
-      };
-    }
-  }, [showDayModal]);
-
   return (
     <>
       <Header
@@ -515,11 +505,17 @@ export default function CalendarioPage() {
                 <ChevronLeft className="w-5 h-5" />
               </button>
 
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
                 <CalendarIcon className="w-5 h-5 text-[var(--brand-cyan)]" />
-                <h2 className="text-xl font-semibold capitalize">
-                  {format(currentDate, "MMMM yyyy", { locale: es })}
-                </h2>
+                <input
+                  type="month"
+                  value={format(currentDate, "yyyy-MM")}
+                  onChange={(e) => {
+                    const [year, month] = e.target.value.split("-");
+                    setCurrentDate(new Date(parseInt(year), parseInt(month) - 1, 1));
+                  }}
+                  className="px-3 py-2 bg-[var(--background-secondary)] border border-[var(--border)] rounded-lg text-sm font-semibold focus:outline-none focus:border-[var(--brand-cyan)] focus:ring-1 focus:ring-[var(--brand-cyan)]"
+                />
               </div>
 
               <button
@@ -736,8 +732,8 @@ export default function CalendarioPage() {
 
       {/* Day Detail Modal */}
       {showDayModal && selectedDay && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-[var(--background)] rounded-2xl shadow-2xl w-full max-w-lg max-h-[80vh] flex flex-col">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 overflow-y-auto">
+          <div className="bg-[var(--background)] rounded-2xl shadow-2xl w-full max-w-lg max-h-[80vh] flex flex-col my-auto">
             {/* Header */}
             <div className="px-6 py-4 border-b border-[var(--border)] flex items-center justify-between shrink-0">
               <div>
@@ -1070,16 +1066,6 @@ function ReminderModal({
     setError("");
   }, [reminder, preselectedDate, isOpen]);
 
-  // Prevent body scroll when modal is open
-  useEffect(() => {
-    if (isOpen) {
-      document.body.style.overflow = 'hidden';
-      return () => {
-        document.body.style.overflow = '';
-      };
-    }
-  }, [isOpen]);
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
@@ -1134,8 +1120,8 @@ function ReminderModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-[var(--background)] rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 overflow-y-auto">
+      <div className="bg-[var(--background)] rounded-2xl shadow-2xl w-full max-w-md overflow-hidden my-auto">
         <div className="px-6 py-4 border-b border-[var(--border)] flex items-center justify-between">
           <h2 className="text-lg font-semibold">
             {reminder ? "Editar recordatorio" : "Nuevo recordatorio"}

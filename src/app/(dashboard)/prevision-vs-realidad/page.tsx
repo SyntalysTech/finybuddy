@@ -8,6 +8,8 @@ import {
   Calendar,
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
+  ChevronUp,
   TrendingUp,
   TrendingDown,
   PiggyBank,
@@ -49,6 +51,19 @@ export default function PrevisionVsRealidadPage() {
   // Ahorro: previsto (desde planned_savings) y real (desde operaciones tipo "savings")
   const [plannedSavings, setPlannedSavings] = useState(0);
   const [actualSavingsFromOps, setActualSavingsFromOps] = useState(0);
+
+  // Collapsible panels state
+  const [expandedPanels, setExpandedPanels] = useState<Record<string, boolean>>({
+    income: true,
+    needs: true,
+    wants: true,
+    savingsSegment: true,
+    savingsTotal: true,
+  });
+
+  const togglePanel = (panel: string) => {
+    setExpandedPanels(prev => ({ ...prev, [panel]: !prev[panel] }));
+  };
 
   const supabase = createClient();
   const selectedYear = selectedDate.getFullYear();
@@ -470,11 +485,19 @@ export default function PrevisionVsRealidadPage() {
             {/* Income Table */}
             {incomeData.length > 0 && (
               <div className="card overflow-hidden">
-                <div className="px-6 py-4 border-b border-[var(--border)] bg-[var(--success)]/5">
+                <button
+                  onClick={() => togglePanel('income')}
+                  className="w-full px-6 py-4 border-b border-[var(--border)] bg-[var(--success)]/5 hover:bg-[var(--success)]/10 transition-colors"
+                >
                   <div className="flex items-center justify-between mb-2">
                     <h3 className="font-semibold flex items-center gap-2">
                       <TrendingUp className="w-5 h-5 text-[var(--success)]" />
                       Ingresos
+                      {expandedPanels.income ? (
+                        <ChevronUp className="w-4 h-4 text-[var(--brand-gray)]" />
+                      ) : (
+                        <ChevronDown className="w-4 h-4 text-[var(--brand-gray)]" />
+                      )}
                     </h3>
                     <div className="text-right text-sm">
                       <span className="font-bold text-[var(--success)]">{formatCurrency(totalActualIncome)}</span>
@@ -490,19 +513,31 @@ export default function PrevisionVsRealidadPage() {
                       style={{ width: `${totalBudgetedIncome > 0 ? Math.min((totalActualIncome / totalBudgetedIncome) * 100, 100) : totalActualIncome > 0 ? 100 : 0}%` }}
                     />
                   </div>
-                </div>
-                <div className="divide-y divide-[var(--border)]">
-                  {incomeData.map(renderComparisonRow)}
-                </div>
+                </button>
+                {expandedPanels.income && (
+                  <div className="divide-y divide-[var(--border)]">
+                    {incomeData.map(renderComparisonRow)}
+                  </div>
+                )}
               </div>
             )}
 
             {/* Expenses by Segment */}
             {needsData.length > 0 && (
               <div className="card overflow-hidden">
-                <div className="px-6 py-4 border-b border-[var(--border)] bg-[var(--success)]/5">
+                <button
+                  onClick={() => togglePanel('needs')}
+                  className="w-full px-6 py-4 border-b border-[var(--border)] bg-[var(--success)]/5 hover:bg-[var(--success)]/10 transition-colors"
+                >
                   <div className="flex items-center justify-between mb-2">
-                    <h3 className="font-semibold">Necesidades</h3>
+                    <h3 className="font-semibold flex items-center gap-2">
+                      Necesidades
+                      {expandedPanels.needs ? (
+                        <ChevronUp className="w-4 h-4 text-[var(--brand-gray)]" />
+                      ) : (
+                        <ChevronDown className="w-4 h-4 text-[var(--brand-gray)]" />
+                      )}
+                    </h3>
                     <div className="text-right text-sm">
                       <span className="font-bold">{formatCurrency(needsActual)}</span>
                       <span className="text-[var(--brand-gray)]"> / {formatCurrency(needsBudgeted)}</span>
@@ -517,18 +552,30 @@ export default function PrevisionVsRealidadPage() {
                       style={{ width: `${needsBudgeted > 0 ? Math.min((needsActual / needsBudgeted) * 100, 100) : needsActual > 0 ? 100 : 0}%` }}
                     />
                   </div>
-                </div>
-                <div className="divide-y divide-[var(--border)]">
-                  {needsData.map(renderComparisonRow)}
-                </div>
+                </button>
+                {expandedPanels.needs && (
+                  <div className="divide-y divide-[var(--border)]">
+                    {needsData.map(renderComparisonRow)}
+                  </div>
+                )}
               </div>
             )}
 
             {wantsData.length > 0 && (
               <div className="card overflow-hidden">
-                <div className="px-6 py-4 border-b border-[var(--border)] bg-[var(--warning)]/5">
+                <button
+                  onClick={() => togglePanel('wants')}
+                  className="w-full px-6 py-4 border-b border-[var(--border)] bg-[var(--warning)]/5 hover:bg-[var(--warning)]/10 transition-colors"
+                >
                   <div className="flex items-center justify-between mb-2">
-                    <h3 className="font-semibold">Deseos</h3>
+                    <h3 className="font-semibold flex items-center gap-2">
+                      Deseos
+                      {expandedPanels.wants ? (
+                        <ChevronUp className="w-4 h-4 text-[var(--brand-gray)]" />
+                      ) : (
+                        <ChevronDown className="w-4 h-4 text-[var(--brand-gray)]" />
+                      )}
+                    </h3>
                     <div className="text-right text-sm">
                       <span className="font-bold">{formatCurrency(wantsActual)}</span>
                       <span className="text-[var(--brand-gray)]"> / {formatCurrency(wantsBudgeted)}</span>
@@ -543,18 +590,30 @@ export default function PrevisionVsRealidadPage() {
                       style={{ width: `${wantsBudgeted > 0 ? Math.min((wantsActual / wantsBudgeted) * 100, 100) : wantsActual > 0 ? 100 : 0}%` }}
                     />
                   </div>
-                </div>
-                <div className="divide-y divide-[var(--border)]">
-                  {wantsData.map(renderComparisonRow)}
-                </div>
+                </button>
+                {expandedPanels.wants && (
+                  <div className="divide-y divide-[var(--border)]">
+                    {wantsData.map(renderComparisonRow)}
+                  </div>
+                )}
               </div>
             )}
 
             {savingsSegmentData.length > 0 && (
               <div className="card overflow-hidden">
-                <div className="px-6 py-4 border-b border-[var(--border)] bg-[var(--brand-purple)]/5">
+                <button
+                  onClick={() => togglePanel('savingsSegment')}
+                  className="w-full px-6 py-4 border-b border-[var(--border)] bg-[var(--brand-purple)]/5 hover:bg-[var(--brand-purple)]/10 transition-colors"
+                >
                   <div className="flex items-center justify-between mb-2">
-                    <h3 className="font-semibold">Ahorro planificado por categoría</h3>
+                    <h3 className="font-semibold flex items-center gap-2">
+                      Ahorro planificado por categoría
+                      {expandedPanels.savingsSegment ? (
+                        <ChevronUp className="w-4 h-4 text-[var(--brand-gray)]" />
+                      ) : (
+                        <ChevronDown className="w-4 h-4 text-[var(--brand-gray)]" />
+                      )}
+                    </h3>
                     <div className="text-right text-sm">
                       <span className="font-bold text-[var(--brand-purple)]">{formatCurrency(savingsSegmentActual)}</span>
                       <span className="text-[var(--brand-gray)]"> / {formatCurrency(savingsSegmentBudgeted)}</span>
@@ -569,21 +628,31 @@ export default function PrevisionVsRealidadPage() {
                       style={{ width: `${savingsSegmentBudgeted > 0 ? Math.min((savingsSegmentActual / savingsSegmentBudgeted) * 100, 100) : savingsSegmentActual > 0 ? 100 : 0}%` }}
                     />
                   </div>
-                </div>
-                <div className="divide-y divide-[var(--border)]">
-                  {savingsSegmentData.map(renderComparisonRow)}
-                </div>
+                </button>
+                {expandedPanels.savingsSegment && (
+                  <div className="divide-y divide-[var(--border)]">
+                    {savingsSegmentData.map(renderComparisonRow)}
+                  </div>
+                )}
               </div>
             )}
 
             {/* Ahorro Global: Previsto vs Real */}
             {(budgetedSavings > 0 || actualSavings > 0) && (
               <div className="card overflow-hidden">
-                <div className="px-6 py-4 border-b border-[var(--border)] bg-[var(--brand-cyan)]/5">
+                <button
+                  onClick={() => togglePanel('savingsTotal')}
+                  className="w-full px-6 py-4 border-b border-[var(--border)] bg-[var(--brand-cyan)]/5 hover:bg-[var(--brand-cyan)]/10 transition-colors"
+                >
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-2">
                       <PiggyBank className="w-5 h-5 text-[var(--brand-cyan)]" />
                       <h3 className="font-semibold">Ahorro total del mes</h3>
+                      {expandedPanels.savingsTotal ? (
+                        <ChevronUp className="w-4 h-4 text-[var(--brand-gray)]" />
+                      ) : (
+                        <ChevronDown className="w-4 h-4 text-[var(--brand-gray)]" />
+                      )}
                     </div>
                     <div className="text-right text-sm">
                       <span className="font-bold text-[var(--brand-cyan)]">{formatCurrency(actualSavings)}</span>
@@ -599,19 +668,21 @@ export default function PrevisionVsRealidadPage() {
                       style={{ width: `${budgetedSavings > 0 ? Math.min((actualSavings / budgetedSavings) * 100, 100) : actualSavings > 0 ? 100 : 0}%` }}
                     />
                   </div>
-                </div>
-                <div className="p-4">
-                  {/* Message */}
-                  <p className={`text-sm text-center ${actualSavings >= budgetedSavings ? "text-[var(--success)]" : "text-[var(--brand-gray)]"}`}>
-                    {budgetedSavings === 0 && actualSavings === 0
-                      ? "No hay datos de ahorro para este mes"
-                      : budgetedSavings === 0
-                        ? `Has ahorrado ${formatCurrency(actualSavings)} sin previsión`
-                        : actualSavings >= budgetedSavings
-                          ? "Has alcanzado o superado tu meta de ahorro"
-                          : `Te faltan ${formatCurrency(budgetedSavings - actualSavings)} para alcanzar tu objetivo`}
-                  </p>
-                </div>
+                </button>
+                {expandedPanels.savingsTotal && (
+                  <div className="p-4">
+                    {/* Message */}
+                    <p className={`text-sm text-center ${actualSavings >= budgetedSavings ? "text-[var(--success)]" : "text-[var(--brand-gray)]"}`}>
+                      {budgetedSavings === 0 && actualSavings === 0
+                        ? "No hay datos de ahorro para este mes"
+                        : budgetedSavings === 0
+                          ? `Has ahorrado ${formatCurrency(actualSavings)} sin previsión`
+                          : actualSavings >= budgetedSavings
+                            ? "Has alcanzado o superado tu meta de ahorro"
+                            : `Te faltan ${formatCurrency(budgetedSavings - actualSavings)} para alcanzar tu objetivo`}
+                    </p>
+                  </div>
+                )}
               </div>
             )}
           </div>

@@ -860,16 +860,6 @@ function GoalModal({
     setPendingSubmit(false);
   }, [goal, isOpen]);
 
-  // Prevent body scroll when modal is open
-  useEffect(() => {
-    if (isOpen) {
-      document.body.style.overflow = 'hidden';
-      return () => {
-        document.body.style.overflow = '';
-      };
-    }
-  }, [isOpen]);
-
   const handleSubmit = async (e: React.FormEvent, skipConfirmation = false) => {
     e.preventDefault();
     setError("");
@@ -979,8 +969,8 @@ function GoalModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-[var(--background)] rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-hidden">
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 overflow-y-auto">
+      <div className="bg-[var(--background)] rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-hidden my-auto">
         <div className="px-6 py-4 border-b border-[var(--border)] flex items-center justify-between">
           <h2 className="text-lg font-semibold">
             {goal ? "Editar meta" : "Nueva meta de ahorro"}
@@ -1236,16 +1226,6 @@ function ContributionModal({
     }
   }, [isOpen, contribution]);
 
-  // Prevent body scroll when modal is open
-  useEffect(() => {
-    if (isOpen) {
-      document.body.style.overflow = 'hidden';
-      return () => {
-        document.body.style.overflow = '';
-      };
-    }
-  }, [isOpen]);
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
@@ -1358,8 +1338,8 @@ function ContributionModal({
     : goal.target_amount - goal.current_amount;
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-[var(--background)] rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 overflow-y-auto">
+      <div className="bg-[var(--background)] rounded-2xl shadow-2xl w-full max-w-md overflow-hidden my-auto">
         <div className="px-6 py-4 border-b border-[var(--border)] flex items-center justify-between">
           <div>
             <h2 className="text-lg font-semibold">{isEditing ? "Editar aporte" : "Añadir aporte"}</h2>
@@ -1515,16 +1495,6 @@ function WithdrawalModal({
     }
   }, [isOpen]);
 
-  // Prevent body scroll when modal is open
-  useEffect(() => {
-    if (isOpen) {
-      document.body.style.overflow = 'hidden';
-      return () => {
-        document.body.style.overflow = '';
-      };
-    }
-  }, [isOpen]);
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
@@ -1587,8 +1557,8 @@ function WithdrawalModal({
   if (!isOpen || !goal) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-[var(--background)] rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 overflow-y-auto">
+      <div className="bg-[var(--background)] rounded-2xl shadow-2xl w-full max-w-md overflow-hidden my-auto">
         <div className="px-6 py-4 border-b border-[var(--border)] flex items-center justify-between">
           <div>
             <h2 className="text-lg font-semibold">Quitar ahorro</h2>

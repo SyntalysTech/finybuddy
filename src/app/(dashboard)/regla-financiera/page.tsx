@@ -13,7 +13,9 @@ import {
   X,
   Minus,
   Plus,
+  ArrowRight,
 } from "lucide-react";
+import Link from "next/link";
 
 export default function ReglaFinancieraPage() {
   const router = useRouter();
@@ -183,18 +185,27 @@ export default function ReglaFinancieraPage() {
           <div className="flex items-center justify-between mb-4">
             <h3 className="font-semibold flex items-center gap-2">
               <Scale className="w-5 h-5 text-[var(--brand-purple)]" />
-              Regla 50/30/20
+              Regla {ruleNeeds}/{ruleWants}/{ruleSavings}
             </h3>
-            <button
-              onClick={() => {
-                setRuleNeeds(50);
-                setRuleWants(30);
-                setRuleSavings(20);
-              }}
-              className="text-sm text-[var(--brand-cyan)] hover:underline"
-            >
-              Restaurar valores por defecto
-            </button>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => {
+                  setRuleNeeds(50);
+                  setRuleWants(30);
+                  setRuleSavings(20);
+                }}
+                className="text-sm text-[var(--brand-cyan)] hover:underline"
+              >
+                Restaurar valores por defecto
+              </button>
+              <Link
+                href="/prevision"
+                className="flex items-center gap-1 text-sm text-[var(--brand-purple)] hover:underline"
+              >
+                Ir a previsión
+                <ArrowRight className="w-4 h-4" />
+              </Link>
+            </div>
           </div>
 
           <div className="p-4 rounded-xl bg-[var(--background-secondary)] mb-6">
@@ -202,8 +213,7 @@ export default function ReglaFinancieraPage() {
               <Info className="w-5 h-5 text-[var(--brand-cyan)] shrink-0 mt-0.5" />
               <p className="text-sm text-[var(--brand-gray)]">
                 Personaliza los porcentajes de distribución de tus ingresos. La suma debe ser 100%.
-                Los valores por defecto son 50% necesidades, 30% deseos y 20% ahorro. Esta configuración
-                se aplica en Dashboard, Previsión y Previsión vs Realidad.
+                Los valores por defecto son 50% necesidades, 30% deseos y 20% ahorro.
               </p>
             </div>
           </div>

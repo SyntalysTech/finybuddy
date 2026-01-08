@@ -66,16 +66,6 @@ export default function OperationModal({ isOpen, onClose, onSave, operation, pre
 
   const supabase = createClient();
 
-  // Lock body scroll when modal is open
-  useEffect(() => {
-    if (isOpen) {
-      document.body.style.overflow = 'hidden';
-      return () => {
-        document.body.style.overflow = '';
-      };
-    }
-  }, [isOpen]);
-
   // Cargar categorías
   useEffect(() => {
     const fetchCategories = async () => {

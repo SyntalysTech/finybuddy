@@ -992,21 +992,11 @@ function DebtModal({
     handleSubmit({ preventDefault: () => {} } as React.FormEvent, true);
   };
 
-  // Prevent body scroll when modal is open
-  useEffect(() => {
-    if (isOpen) {
-      document.body.style.overflow = 'hidden';
-      return () => {
-        document.body.style.overflow = '';
-      };
-    }
-  }, [isOpen]);
-
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-[var(--background)] rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-hidden">
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 overflow-y-auto">
+      <div className="bg-[var(--background)] rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-hidden my-auto">
         <div className="px-6 py-4 border-b border-[var(--border)] flex items-center justify-between">
           <h2 className="text-lg font-semibold">
             {debt ? "Editar deuda" : "Nueva deuda"}
@@ -1337,16 +1327,6 @@ function PaymentModal({
     }
   }, [isOpen, debt, payment]);
 
-  // Prevent body scroll when modal is open
-  useEffect(() => {
-    if (isOpen) {
-      document.body.style.overflow = 'hidden';
-      return () => {
-        document.body.style.overflow = '';
-      };
-    }
-  }, [isOpen]);
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
@@ -1452,8 +1432,8 @@ function PaymentModal({
   if (!isOpen || !debt) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-[var(--background)] rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 overflow-y-auto">
+      <div className="bg-[var(--background)] rounded-2xl shadow-2xl w-full max-w-md overflow-hidden my-auto">
         <div className="px-6 py-4 border-b border-[var(--border)] flex items-center justify-between">
           <div>
             <h2 className="text-lg font-semibold">{isEditing ? "Editar pago" : "Registrar pago"}</h2>
