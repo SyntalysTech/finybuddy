@@ -2,6 +2,9 @@
 -- ACTUALIZAR FUNCIÓN get_monthly_evolution PARA INCLUIR AHORRO REAL
 -- =====================================================
 
+-- Primero eliminamos la función existente porque cambia el tipo de retorno
+DROP FUNCTION IF EXISTS get_monthly_evolution(UUID, INTEGER);
+
 CREATE OR REPLACE FUNCTION get_monthly_evolution(
     p_user_id UUID,
     p_months INTEGER DEFAULT 12
