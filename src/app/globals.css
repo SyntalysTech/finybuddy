@@ -159,12 +159,29 @@ body {
 .card {
   background: var(--background);
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: 8px;
   box-shadow: var(--shadow-sm);
+}
+
+@media (min-width: 640px) {
+  .card {
+    border-radius: 12px;
+  }
 }
 
 .card:hover {
   box-shadow: var(--shadow-md);
+}
+
+/* Responsive page container utility */
+.page-container {
+  padding: 0.75rem;
+}
+
+@media (min-width: 640px) {
+  .page-container {
+    padding: 1.5rem;
+  }
 }
 
 /* Botones */

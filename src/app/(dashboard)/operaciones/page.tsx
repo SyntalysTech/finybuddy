@@ -284,55 +284,55 @@ export default function OperacionesPage() {
         }
       />
 
-      <div className="p-6 space-y-6">
+      <div className="p-3 sm:p-6 space-y-3 sm:space-y-6">
         {/* Resumen del mes */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="card p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-[var(--brand-gray)]">Ingresos del mes</p>
-                <p className="text-xl font-bold text-[var(--success)]">{formatCurrency(monthTotals.income)}</p>
+        <div className="grid grid-cols-3 gap-2 sm:gap-4">
+          <div className="card p-2 sm:p-4">
+            <div className="flex items-center justify-between gap-1">
+              <div className="min-w-0">
+                <p className="text-[10px] sm:text-sm text-[var(--brand-gray)] truncate">Ingresos</p>
+                <p className="text-sm sm:text-xl font-bold text-[var(--success)] truncate">{formatCurrency(monthTotals.income)}</p>
               </div>
-              <div className="p-2 rounded-lg bg-[var(--success)]/10">
-                <TrendingUp className="w-5 h-5 text-[var(--success)]" />
-              </div>
-            </div>
-          </div>
-          <div className="card p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-[var(--brand-gray)]">Gastos del mes</p>
-                <p className="text-xl font-bold text-[var(--danger)]">{formatCurrency(monthTotals.expense)}</p>
-              </div>
-              <div className="p-2 rounded-lg bg-[var(--danger)]/10">
-                <TrendingDown className="w-5 h-5 text-[var(--danger)]" />
+              <div className="p-1.5 sm:p-2 rounded-lg bg-[var(--success)]/10 shrink-0">
+                <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 text-[var(--success)]" />
               </div>
             </div>
           </div>
-          <div className="card p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-[var(--brand-gray)]">Ahorro del mes</p>
-                <p className="text-xl font-bold text-[var(--brand-cyan)]">{formatCurrency(monthTotals.savings)}</p>
+          <div className="card p-2 sm:p-4">
+            <div className="flex items-center justify-between gap-1">
+              <div className="min-w-0">
+                <p className="text-[10px] sm:text-sm text-[var(--brand-gray)] truncate">Gastos</p>
+                <p className="text-sm sm:text-xl font-bold text-[var(--danger)] truncate">{formatCurrency(monthTotals.expense)}</p>
               </div>
-              <div className="p-2 rounded-lg bg-[var(--brand-cyan)]/10">
-                <PiggyBank className="w-5 h-5 text-[var(--brand-cyan)]" />
+              <div className="p-1.5 sm:p-2 rounded-lg bg-[var(--danger)]/10 shrink-0">
+                <TrendingDown className="w-4 h-4 sm:w-5 sm:h-5 text-[var(--danger)]" />
+              </div>
+            </div>
+          </div>
+          <div className="card p-2 sm:p-4">
+            <div className="flex items-center justify-between gap-1">
+              <div className="min-w-0">
+                <p className="text-[10px] sm:text-sm text-[var(--brand-gray)] truncate">Ahorro</p>
+                <p className="text-sm sm:text-xl font-bold text-[var(--brand-cyan)] truncate">{formatCurrency(monthTotals.savings)}</p>
+              </div>
+              <div className="p-1.5 sm:p-2 rounded-lg bg-[var(--brand-cyan)]/10 shrink-0">
+                <PiggyBank className="w-4 h-4 sm:w-5 sm:h-5 text-[var(--brand-cyan)]" />
               </div>
             </div>
           </div>
         </div>
 
         {/* Filtros */}
-        <div className="card p-4">
-          <div className="flex flex-wrap items-center gap-4">
+        <div className="card p-2 sm:p-4">
+          <div className="flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center gap-2 sm:gap-4">
             {/* Selector de mes */}
-            <div className="flex items-center gap-2">
-              <Calendar className="w-4 h-4 text-[var(--brand-gray)]" />
+            <div className="flex items-center gap-1 sm:gap-2">
+              <Calendar className="w-4 h-4 text-[var(--brand-gray)] hidden sm:block" />
               <input
                 type="month"
                 value={filterMonth}
                 onChange={(e) => setFilterMonth(e.target.value)}
-                className="px-3 py-2 bg-[var(--background-secondary)] border border-[var(--border)] rounded-lg text-sm focus:outline-none focus:border-[var(--brand-cyan)] focus:ring-1 focus:ring-[var(--brand-cyan)]"
+                className="flex-1 sm:flex-initial px-2 sm:px-3 py-1.5 sm:py-2 bg-[var(--background-secondary)] border border-[var(--border)] rounded-lg text-xs sm:text-sm focus:outline-none focus:border-[var(--brand-cyan)] focus:ring-1 focus:ring-[var(--brand-cyan)]"
               />
             </div>
 
@@ -404,57 +404,56 @@ export default function OperacionesPage() {
                 return (
                   <div
                     key={operation.id}
-                    className="flex items-center gap-4 p-4 hover:bg-[var(--background-secondary)] transition-colors"
+                    className="flex items-center gap-2 sm:gap-4 p-2 sm:p-4 hover:bg-[var(--background-secondary)] transition-colors"
                   >
                     {/* Icono tipo */}
-                    <div className={`p-2 rounded-lg ${config.bg}`}>
-                      <Icon className={`w-5 h-5 ${config.color}`} />
+                    <div className={`p-1.5 sm:p-2 rounded-lg ${config.bg} shrink-0`}>
+                      <Icon className={`w-4 h-4 sm:w-5 sm:h-5 ${config.color}`} />
                     </div>
 
                     {/* Info */}
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <p className="font-medium truncate">{operation.concept}</p>
+                      <div className="flex items-center gap-1 sm:gap-2 flex-wrap">
+                        <p className="text-xs sm:text-sm font-medium truncate">{operation.concept}</p>
                         {operation.category && (
                           <span
-                            className="text-xs px-2 py-0.5 rounded-full bg-[var(--background-secondary)]"
+                            className="hidden sm:inline text-xs px-2 py-0.5 rounded-full bg-[var(--background-secondary)]"
                             style={{ color: operation.category.color }}
                           >
                             {operation.category.icon} {operation.category.name}
                           </span>
                         )}
                       </div>
-                      <p className="text-sm text-[var(--brand-gray)]">
-                        {format(new Date(operation.operation_date), "d MMM yyyy", { locale: es })}
+                      <p className="text-[10px] sm:text-sm text-[var(--brand-gray)]">
+                        {format(new Date(operation.operation_date), "d MMM", { locale: es })}
+                        {operation.category && (
+                          <span className="sm:hidden" style={{ color: operation.category.color }}>
+                            {" "}{operation.category.icon}
+                          </span>
+                        )}
                       </p>
-                      {/* Mostrar descripción debajo si existe */}
-                      {operation.description && (
-                        <p className="text-sm text-[var(--brand-gray)] mt-1 italic">
-                          {operation.description}
-                        </p>
-                      )}
                     </div>
 
                     {/* Importe */}
-                    <div className={`text-right font-semibold ${config.color}`}>
+                    <div className={`text-right text-xs sm:text-sm font-semibold ${config.color} shrink-0`}>
                       {operation.type === "expense" ? "-" : "+"}{formatCurrency(operation.amount)}
                     </div>
 
                     {/* Botones de acción */}
-                    <div className="flex items-center gap-1">
+                    <div className="flex items-center shrink-0">
                       <button
                         onClick={() => handleEdit(operation)}
-                        className="p-2 rounded-lg hover:bg-[var(--background-secondary)] transition-colors"
+                        className="p-1.5 sm:p-2 rounded-lg hover:bg-[var(--background-secondary)] transition-colors"
                         title="Editar"
                       >
-                        <Edit2 className="w-4 h-4 text-[var(--brand-gray)]" />
+                        <Edit2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[var(--brand-gray)]" />
                       </button>
                       <button
                         onClick={() => handleDeleteClick(operation.id)}
-                        className="p-2 rounded-lg hover:bg-[var(--danger)]/10 transition-colors"
+                        className="p-1.5 sm:p-2 rounded-lg hover:bg-[var(--danger)]/10 transition-colors"
                         title="Eliminar"
                       >
-                        <Trash2 className="w-4 h-4 text-[var(--danger)]" />
+                        <Trash2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[var(--danger)]" />
                       </button>
                     </div>
                   </div>
@@ -465,39 +464,39 @@ export default function OperacionesPage() {
 
           {/* Pagination */}
           {totalPages > 1 && (
-            <div className="flex items-center justify-between p-4 border-t border-[var(--border)]">
-              <div className="text-sm text-[var(--brand-gray)]">
-                Mostrando {((currentPage - 1) * itemsPerPage) + 1} - {Math.min(currentPage * itemsPerPage, totalCount)} de {totalCount}
+            <div className="flex flex-col sm:flex-row items-center justify-between p-2 sm:p-4 border-t border-[var(--border)] gap-2">
+              <div className="text-xs sm:text-sm text-[var(--brand-gray)] order-2 sm:order-1">
+                {((currentPage - 1) * itemsPerPage) + 1}-{Math.min(currentPage * itemsPerPage, totalCount)} de {totalCount}
               </div>
-              <div className="flex items-center gap-1">
+              <div className="flex items-center gap-0.5 sm:gap-1 order-1 sm:order-2">
                 {/* First page */}
                 <button
                   onClick={() => goToPage(1)}
                   disabled={!canGoPrevious}
-                  className="p-2 rounded-lg hover:bg-[var(--background-secondary)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="p-1.5 sm:p-2 rounded-lg hover:bg-[var(--background-secondary)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   title="Primera página"
                 >
-                  <ChevronsLeft className="w-4 h-4" />
+                  <ChevronsLeft className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                 </button>
                 {/* Previous page */}
                 <button
                   onClick={() => goToPage(currentPage - 1)}
                   disabled={!canGoPrevious}
-                  className="p-2 rounded-lg hover:bg-[var(--background-secondary)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="p-1.5 sm:p-2 rounded-lg hover:bg-[var(--background-secondary)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   title="Página anterior"
                 >
-                  <ChevronLeft className="w-4 h-4" />
+                  <ChevronLeft className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                 </button>
 
                 {/* Page numbers */}
                 {getPageNumbers().map((page, index) => (
                   page === "..." ? (
-                    <span key={`ellipsis-${index}`} className="px-2 text-[var(--brand-gray)]">...</span>
+                    <span key={`ellipsis-${index}`} className="px-1 sm:px-2 text-[var(--brand-gray)] text-xs sm:text-sm">...</span>
                   ) : (
                     <button
                       key={page}
                       onClick={() => goToPage(page as number)}
-                      className={`w-8 h-8 rounded-lg text-sm font-medium transition-colors ${
+                      className={`w-7 h-7 sm:w-8 sm:h-8 rounded-lg text-xs sm:text-sm font-medium transition-colors ${
                         currentPage === page
                           ? "bg-[var(--brand-cyan)] text-white"
                           : "hover:bg-[var(--background-secondary)]"
@@ -512,19 +511,19 @@ export default function OperacionesPage() {
                 <button
                   onClick={() => goToPage(currentPage + 1)}
                   disabled={!canGoNext}
-                  className="p-2 rounded-lg hover:bg-[var(--background-secondary)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="p-1.5 sm:p-2 rounded-lg hover:bg-[var(--background-secondary)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   title="Página siguiente"
                 >
-                  <ChevronRight className="w-4 h-4" />
+                  <ChevronRight className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                 </button>
                 {/* Last page */}
                 <button
                   onClick={() => goToPage(totalPages)}
                   disabled={!canGoNext}
-                  className="p-2 rounded-lg hover:bg-[var(--background-secondary)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="p-1.5 sm:p-2 rounded-lg hover:bg-[var(--background-secondary)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   title="Última página"
                 >
-                  <ChevronsRight className="w-4 h-4" />
+                  <ChevronsRight className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                 </button>
               </div>
             </div>

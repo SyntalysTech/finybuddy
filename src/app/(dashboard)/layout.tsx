@@ -5,14 +5,18 @@ import { SidebarProvider, useSidebar } from "@/contexts/SidebarContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 
 function DashboardContent({ children }: { children: React.ReactNode }) {
-  const { collapsed } = useSidebar();
+  const { collapsed, isMobile } = useSidebar();
 
   return (
     <div className="min-h-screen bg-[var(--background-secondary)]">
       <Sidebar />
       <main
         className={`min-h-screen transition-[margin-left] duration-300 ease-in-out ${
-          collapsed ? "ml-20" : "ml-[280px]"
+          isMobile
+            ? "ml-0 pt-16"
+            : collapsed
+              ? "ml-20"
+              : "ml-[280px]"
         }`}
       >
         {children}

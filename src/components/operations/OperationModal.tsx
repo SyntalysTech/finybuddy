@@ -235,11 +235,11 @@ export default function OperationModal({ isOpen, onClose, onSave, operation, pre
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 overflow-y-auto overscroll-contain">
+    <div className="fixed inset-0 bg-black/50 flex items-end sm:items-center justify-center z-50 overflow-y-auto overscroll-contain">
       {/* Exit Confirmation Dialog */}
       {showExitConfirm && (
-        <div className="absolute inset-0 bg-black/30 flex items-center justify-center z-60 overscroll-contain">
-          <div className="bg-[var(--background)] rounded-xl shadow-2xl w-full max-w-sm p-6">
+        <div className="absolute inset-0 bg-black/30 flex items-center justify-center z-60 overscroll-contain p-4">
+          <div className="bg-[var(--background)] rounded-xl shadow-2xl w-full max-w-sm p-4 sm:p-6">
             <div className="flex items-center gap-3 mb-4">
               <div className="p-2 rounded-lg bg-[var(--warning)]/10">
                 <AlertTriangle className="w-5 h-5 text-[var(--warning)]" />
@@ -268,26 +268,26 @@ export default function OperationModal({ isOpen, onClose, onSave, operation, pre
       )}
 
       {/* Main Modal - NO onClick on backdrop to prevent accidental close */}
-      <div className="bg-[var(--background)] rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto overscroll-contain">
+      <div className="bg-[var(--background)] rounded-t-2xl sm:rounded-2xl shadow-2xl w-full sm:max-w-lg max-h-[85vh] sm:max-h-[90vh] overflow-y-auto overscroll-contain sm:m-4">
         {/* Header */}
-        <div className="px-6 py-4 border-b border-[var(--border)] flex items-center justify-between sticky top-0 bg-[var(--background)] z-10">
-          <h2 className="text-lg font-semibold">
+        <div className="px-4 sm:px-6 py-3 sm:py-4 border-b border-[var(--border)] flex items-center justify-between sticky top-0 bg-[var(--background)] z-10">
+          <h2 className="text-base sm:text-lg font-semibold">
             {operation ? "Editar operación" : "Nueva operación"}
           </h2>
           <button
             onClick={handleClose}
-            className="p-1 rounded-lg hover:bg-[var(--background-secondary)] transition-colors"
+            className="p-1.5 sm:p-1 rounded-lg hover:bg-[var(--background-secondary)] transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-5">
+        <form onSubmit={handleSubmit} className="p-4 sm:p-6 space-y-4 sm:space-y-5">
           {/* Tipo de operación - Siempre ocupa todo el ancho */}
           <div>
-            <label className="block text-sm font-medium mb-2">Tipo de operación</label>
-            <div className="grid grid-cols-3 gap-2">
+            <label className="block text-xs sm:text-sm font-medium mb-2">Tipo de operación</label>
+            <div className="grid grid-cols-3 gap-1.5 sm:gap-2">
               {operationTypes.map((op) => {
                 const Icon = op.icon;
                 const isSelected = type === op.value;
@@ -299,14 +299,14 @@ export default function OperationModal({ isOpen, onClose, onSave, operation, pre
                       setType(op.value as "income" | "expense" | "savings");
                       setCategoryId("");
                     }}
-                    className={`flex flex-col items-center gap-1 p-3 rounded-xl border-2 transition-all ${
+                    className={`flex flex-col items-center gap-0.5 sm:gap-1 p-2 sm:p-3 rounded-lg sm:rounded-xl border-2 transition-all ${
                       isSelected
                         ? `border-current ${op.color} ${op.bg}`
                         : "border-[var(--border)] hover:border-[var(--brand-gray)]"
                     }`}
                   >
-                    <Icon className={`w-5 h-5 ${isSelected ? op.color : "text-[var(--brand-gray)]"}`} />
-                    <span className={`text-xs font-medium ${isSelected ? op.color : ""}`}>
+                    <Icon className={`w-4 h-4 sm:w-5 sm:h-5 ${isSelected ? op.color : "text-[var(--brand-gray)]"}`} />
+                    <span className={`text-[10px] sm:text-xs font-medium ${isSelected ? op.color : ""}`}>
                       {op.label}
                     </span>
                   </button>
@@ -316,16 +316,16 @@ export default function OperationModal({ isOpen, onClose, onSave, operation, pre
           </div>
 
           {/* Grid de 2 columnas para pantallas medianas y grandes */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
             {/* Categoría */}
             <div>
-              <label className="block text-sm font-medium mb-2">Categoría</label>
+              <label className="block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2">Categoría</label>
               <div className="relative">
-                <Tag className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[var(--brand-gray)]" />
+                <Tag className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5 text-[var(--brand-gray)]" />
                 <select
                   value={categoryId}
                   onChange={(e) => setCategoryId(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 bg-[var(--background-secondary)] border border-[var(--border)] rounded-xl focus:outline-none focus:border-[var(--brand-cyan)] focus:ring-1 focus:ring-[var(--brand-cyan)] appearance-none"
+                  className="w-full pl-9 sm:pl-10 pr-4 py-2.5 sm:py-3 bg-[var(--background-secondary)] border border-[var(--border)] rounded-lg sm:rounded-xl text-sm focus:outline-none focus:border-[var(--brand-cyan)] focus:ring-1 focus:ring-[var(--brand-cyan)] appearance-none"
                 >
                   <option value="">Sin categoría</option>
                   {filteredCategories.map((cat) => (
@@ -339,24 +339,24 @@ export default function OperationModal({ isOpen, onClose, onSave, operation, pre
 
             {/* Concepto */}
             <div>
-              <label className="block text-sm font-medium mb-2">Concepto</label>
+              <label className="block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2">Concepto</label>
               <div className="relative">
-                <FileText className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[var(--brand-gray)]" />
+                <FileText className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5 text-[var(--brand-gray)]" />
                 <input
                   type="text"
                   value={concept}
                   onChange={(e) => setConcept(e.target.value)}
                   placeholder="Ej: Compra supermercado"
-                  className="w-full pl-10 pr-4 py-3 bg-[var(--background-secondary)] border border-[var(--border)] rounded-xl focus:outline-none focus:border-[var(--brand-cyan)] focus:ring-1 focus:ring-[var(--brand-cyan)]"
+                  className="w-full pl-9 sm:pl-10 pr-4 py-2.5 sm:py-3 bg-[var(--background-secondary)] border border-[var(--border)] rounded-lg sm:rounded-xl text-sm focus:outline-none focus:border-[var(--brand-cyan)] focus:ring-1 focus:ring-[var(--brand-cyan)]"
                 />
               </div>
             </div>
 
             {/* Importe */}
             <div>
-              <label className="block text-sm font-medium mb-2">Importe</label>
+              <label className="block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2">Importe</label>
               <div className="relative">
-                <Euro className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[var(--brand-gray)]" />
+                <Euro className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5 text-[var(--brand-gray)]" />
                 <input
                   type="number"
                   step="0.01"
@@ -365,24 +365,24 @@ export default function OperationModal({ isOpen, onClose, onSave, operation, pre
                   onChange={(e) => setAmount(e.target.value)}
                   onWheel={(e) => e.currentTarget.blur()}
                   placeholder="0.00"
-                  className="w-full pl-10 pr-4 py-3 bg-[var(--background-secondary)] border border-[var(--border)] rounded-xl text-lg font-semibold focus:outline-none focus:border-[var(--brand-cyan)] focus:ring-1 focus:ring-[var(--brand-cyan)] [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                  className="w-full pl-9 sm:pl-10 pr-4 py-2.5 sm:py-3 bg-[var(--background-secondary)] border border-[var(--border)] rounded-lg sm:rounded-xl text-base sm:text-lg font-semibold focus:outline-none focus:border-[var(--brand-cyan)] focus:ring-1 focus:ring-[var(--brand-cyan)] [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                 />
               </div>
             </div>
 
             {/* Fecha */}
             <div>
-              <label className="block text-sm font-medium mb-2">Fecha</label>
+              <label className="block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2">Fecha</label>
               <div className="relative">
-                <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[var(--brand-gray)]" />
+                <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5 text-[var(--brand-gray)]" />
                 <input
                   type="date"
                   value={operationDate}
                   onChange={(e) => setOperationDate(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 bg-[var(--background-secondary)] border border-[var(--border)] rounded-xl focus:outline-none focus:border-[var(--brand-cyan)] focus:ring-1 focus:ring-[var(--brand-cyan)]"
+                  className="w-full pl-9 sm:pl-10 pr-4 py-2.5 sm:py-3 bg-[var(--background-secondary)] border border-[var(--border)] rounded-lg sm:rounded-xl text-sm focus:outline-none focus:border-[var(--brand-cyan)] focus:ring-1 focus:ring-[var(--brand-cyan)]"
                 />
               </div>
-              <p className="text-xs text-[var(--brand-gray)] mt-1">
+              <p className="text-[10px] sm:text-xs text-[var(--brand-gray)] mt-1 hidden sm:block">
                 La fecha se recordará para la próxima operación
               </p>
             </div>
@@ -390,7 +390,7 @@ export default function OperationModal({ isOpen, onClose, onSave, operation, pre
 
           {/* Descripción - Siempre ocupa todo el ancho */}
           <div>
-            <label className="block text-sm font-medium mb-2">
+            <label className="block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2">
               Descripción <span className="text-[var(--brand-gray)] font-normal">(opcional)</span>
             </label>
             <textarea
@@ -398,32 +398,32 @@ export default function OperationModal({ isOpen, onClose, onSave, operation, pre
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Añade más detalles..."
               rows={2}
-              className="w-full px-4 py-3 bg-[var(--background-secondary)] border border-[var(--border)] rounded-xl focus:outline-none focus:border-[var(--brand-cyan)] focus:ring-1 focus:ring-[var(--brand-cyan)] resize-none"
+              className="w-full px-3 sm:px-4 py-2.5 sm:py-3 bg-[var(--background-secondary)] border border-[var(--border)] rounded-lg sm:rounded-xl text-sm focus:outline-none focus:border-[var(--brand-cyan)] focus:ring-1 focus:ring-[var(--brand-cyan)] resize-none"
             />
           </div>
 
           {/* Error */}
           {error && (
-            <div className="p-3 rounded-lg bg-[var(--danger)]/10 text-[var(--danger)] text-sm">
+            <div className="p-2 sm:p-3 rounded-lg bg-[var(--danger)]/10 text-[var(--danger)] text-xs sm:text-sm">
               {error}
             </div>
           )}
 
           {/* Botones */}
-          <div className="flex gap-3 pt-2">
+          <div className="flex gap-2 sm:gap-3 pt-2">
             <button
               type="button"
               onClick={handleClose}
-              className="flex-1 px-4 py-3 rounded-xl border border-[var(--border)] font-medium hover:bg-[var(--background-secondary)] transition-colors"
+              className="flex-1 px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg sm:rounded-xl border border-[var(--border)] text-sm font-medium hover:bg-[var(--background-secondary)] transition-colors"
             >
               Cancelar
             </button>
             <button
               type="submit"
               disabled={loading}
-              className="flex-1 px-4 py-3 rounded-xl gradient-brand text-white font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
+              className="flex-1 px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg sm:rounded-xl gradient-brand text-white text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
             >
-              {loading ? "Guardando..." : operation ? "Guardar cambios" : "Crear operación"}
+              {loading ? "Guardando..." : operation ? "Guardar" : "Crear"}
             </button>
           </div>
         </form>

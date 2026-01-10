@@ -342,24 +342,40 @@ export default function ChatPage() {
   };
 
   return (
-    <div className="flex h-screen">
+    <div className="flex h-[calc(100vh-64px)] lg:h-screen">
+      {/* Overlay móvil para historial */}
+      {showHistory && (
+        <div
+          className="lg:hidden fixed inset-0 bg-black/50 z-40"
+          onClick={() => setShowHistory(false)}
+        />
+      )}
+
       {/* Panel lateral de historial */}
       <div
-        className={`${
-          showHistory ? "w-72" : "w-0"
+        className={`fixed lg:relative lg:translate-x-0 top-0 left-0 h-full z-50 lg:z-auto ${
+          showHistory ? "translate-x-0 w-72" : "-translate-x-full lg:w-0"
         } transition-all duration-300 border-r border-[var(--border)] bg-[var(--background-secondary)] overflow-hidden shrink-0`}
       >
         <div className="w-72 h-full flex flex-col">
           {/* Header del historial */}
           <div className="p-4 border-b border-[var(--border)] flex items-center justify-between">
             <h2 className="font-semibold text-sm">Historial</h2>
-            <button
-              onClick={startNewChat}
-              className="p-2 rounded-lg hover:bg-[var(--background)] transition-colors"
-              title="Nueva conversación"
-            >
-              <Plus className="w-4 h-4" />
-            </button>
+            <div className="flex items-center gap-1">
+              <button
+                onClick={startNewChat}
+                className="p-2 rounded-lg hover:bg-[var(--background)] transition-colors"
+                title="Nueva conversación"
+              >
+                <Plus className="w-4 h-4" />
+              </button>
+              <button
+                onClick={() => setShowHistory(false)}
+                className="p-2 rounded-lg hover:bg-[var(--background)] transition-colors lg:hidden"
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </button>
+            </div>
           </div>
 
           {/* Lista de conversaciones */}
@@ -410,14 +426,14 @@ export default function ChatPage() {
       </div>
 
       {/* Contenido principal del chat */}
-      <div className="flex-1 flex flex-col h-screen min-w-0">
+      <div className="flex-1 flex flex-col h-full min-w-0">
         {/* Header integrado */}
         <div className="shrink-0 border-b border-[var(--border)] bg-[var(--background)]">
-          <div className="px-6 py-4 flex items-center gap-4">
+          <div className="px-3 sm:px-6 py-3 sm:py-4 flex items-center gap-2 sm:gap-4">
             {/* Botón toggle historial */}
             <button
               onClick={() => setShowHistory(!showHistory)}
-              className={`p-2 rounded-lg transition-colors ${
+              className={`p-1.5 sm:p-2 rounded-lg transition-colors ${
                 showHistory
                   ? "bg-[var(--brand-purple)]/10 text-[var(--brand-purple)]"
                   : "hover:bg-[var(--background-secondary)]"
@@ -431,7 +447,7 @@ export default function ChatPage() {
               )}
             </button>
 
-            <div className="w-10 h-10 relative shrink-0">
+            <div className="w-8 h-8 sm:w-10 sm:h-10 relative shrink-0">
               <Image
                 src="/assets/finybuddy-mascot.png"
                 alt="FinyBot"
@@ -439,23 +455,24 @@ export default function ChatPage() {
                 className="object-contain"
               />
             </div>
-            <div>
-              <h1 className="text-lg font-bold">FinyBot</h1>
-              <p className="text-xs text-[var(--brand-gray)]">Tu asistente financiero personal</p>
+            <div className="min-w-0 flex-1">
+              <h1 className="text-base sm:text-lg font-bold">FinyBot</h1>
+              <p className="text-xs text-[var(--brand-gray)] truncate hidden sm:block">Tu asistente financiero personal</p>
             </div>
-            <div className="ml-auto flex items-center gap-2">
+            <div className="flex items-center gap-1 sm:gap-2">
               {/* Botón nueva conversación */}
               <button
                 onClick={startNewChat}
-                className="p-2 rounded-lg hover:bg-[var(--background-secondary)] transition-colors"
+                className="p-1.5 sm:p-2 rounded-lg hover:bg-[var(--background-secondary)] transition-colors"
                 title="Nueva conversación"
               >
-                <Plus className="w-5 h-5" />
+                <Plus className="w-4 h-4 sm:w-5 sm:h-5" />
               </button>
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-[var(--success)]/10 text-[var(--success)]">
+              <span className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-[var(--success)]/10 text-[var(--success)]">
                 <span className="w-1.5 h-1.5 rounded-full bg-[var(--success)] animate-pulse" />
                 Online
               </span>
+              <span className="sm:hidden w-2 h-2 rounded-full bg-[var(--success)] animate-pulse" />
             </div>
           </div>
         </div>
@@ -464,8 +481,8 @@ export default function ChatPage() {
       <div className="flex-1 overflow-y-auto">
         {messages.length === 0 ? (
           // Welcome screen - centrado vertical y horizontal
-          <div className="h-full flex flex-col items-center justify-center px-6 py-12">
-            <div className="w-20 h-20 relative mb-5">
+          <div className="h-full flex flex-col items-center justify-center px-4 sm:px-6 py-8 sm:py-12">
+            <div className="w-16 h-16 sm:w-20 sm:h-20 relative mb-4 sm:mb-5">
               <Image
                 src="/assets/finybuddy-mascot.png"
                 alt="FinyBot"
@@ -473,25 +490,25 @@ export default function ChatPage() {
                 className="object-contain"
               />
             </div>
-            <h2 className="text-xl font-bold mb-2">¿En qué te puedo ayudar?</h2>
-            <p className="text-[var(--brand-gray)] text-sm mb-8 max-w-md text-center">
+            <h2 className="text-lg sm:text-xl font-bold mb-2 text-center">¿En qué te puedo ayudar?</h2>
+            <p className="text-[var(--brand-gray)] text-xs sm:text-sm mb-6 sm:mb-8 max-w-md text-center px-4">
               Tengo acceso a todos tus datos financieros para darte consejos personalizados.
             </p>
 
             {/* Quick prompts - grid responsive */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 w-full max-w-4xl">
+            <div className="grid grid-cols-2 gap-2 sm:gap-3 w-full max-w-4xl px-2 sm:px-0">
               {QUICK_PROMPTS.map((prompt, index) => {
                 const Icon = prompt.icon;
                 return (
                   <button
                     key={index}
                     onClick={() => handleQuickPrompt(prompt.text)}
-                    className="flex flex-col items-center gap-2 p-4 rounded-xl bg-[var(--background-secondary)] border border-[var(--border)] hover:border-[var(--brand-purple)] hover:bg-[var(--brand-purple)]/5 transition-all text-center group"
+                    className="flex flex-col items-center gap-1.5 sm:gap-2 p-3 sm:p-4 rounded-xl bg-[var(--background-secondary)] border border-[var(--border)] hover:border-[var(--brand-purple)] hover:bg-[var(--brand-purple)]/5 transition-all text-center group"
                   >
-                    <div className={`p-2 rounded-lg bg-[var(--background)] group-hover:scale-110 transition-transform`}>
-                      <Icon className={`w-5 h-5 ${prompt.color}`} />
+                    <div className={`p-1.5 sm:p-2 rounded-lg bg-[var(--background)] group-hover:scale-110 transition-transform`}>
+                      <Icon className={`w-4 h-4 sm:w-5 sm:h-5 ${prompt.color}`} />
                     </div>
-                    <span className="text-xs font-medium leading-tight">{prompt.text}</span>
+                    <span className="text-[10px] sm:text-xs font-medium leading-tight">{prompt.text}</span>
                   </button>
                 );
               })}
@@ -499,17 +516,17 @@ export default function ChatPage() {
           </div>
         ) : (
           // Chat messages - full width con padding adaptativo
-          <div className="px-4 sm:px-6 lg:px-8 py-6 space-y-4">
+          <div className="px-3 sm:px-6 lg:px-8 py-4 sm:py-6 space-y-3 sm:space-y-4">
             {messages.map((message, index) => (
               <div
                 key={index}
-                className={`flex gap-3 max-w-4xl ${
+                className={`flex gap-2 sm:gap-3 max-w-4xl ${
                   message.role === "user" ? "ml-auto flex-row-reverse" : ""
                 }`}
               >
                 {/* Avatar */}
                 {message.role === "user" ? (
-                  <div className="w-8 h-8 rounded-full shrink-0 bg-[var(--brand-purple)] overflow-hidden relative">
+                  <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full shrink-0 bg-[var(--brand-purple)] overflow-hidden relative">
                     {userAvatar ? (
                       <Image
                         src={userAvatar}
@@ -519,12 +536,12 @@ export default function ChatPage() {
                       />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center">
-                        <User className="w-4 h-4 text-white" />
+                        <User className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white" />
                       </div>
                     )}
                   </div>
                 ) : (
-                  <div className="w-8 h-8 relative shrink-0">
+                  <div className="w-7 h-7 sm:w-8 sm:h-8 relative shrink-0">
                     <Image
                       src="/assets/finybuddy-mascot.png"
                       alt="FinyBot"
@@ -536,16 +553,16 @@ export default function ChatPage() {
 
                 {/* Message content */}
                 <div
-                  className={`px-4 py-3 rounded-2xl max-w-[85%] sm:max-w-[75%] ${
+                  className={`px-3 sm:px-4 py-2 sm:py-3 rounded-2xl max-w-[85%] sm:max-w-[75%] ${
                     message.role === "user"
                       ? "bg-[var(--brand-purple)] text-white rounded-br-md"
                       : "bg-[var(--background-secondary)] border border-[var(--border)] rounded-bl-md"
                   }`}
                 >
                   {message.role === "user" ? (
-                    <p className="text-sm text-white">{message.content}</p>
+                    <p className="text-xs sm:text-sm text-white">{message.content}</p>
                   ) : (
-                    <div className="text-sm leading-relaxed [&_p]:mb-2 [&_p:last-child]:mb-0 [&_strong]:text-[var(--brand-cyan)] [&_strong]:font-semibold [&_ul]:list-disc [&_ul]:pl-4 [&_ul]:my-2 [&_ol]:list-decimal [&_ol]:pl-4 [&_ol]:my-2 [&_li]:my-0.5">
+                    <div className="text-xs sm:text-sm leading-relaxed [&_p]:mb-2 [&_p:last-child]:mb-0 [&_strong]:text-[var(--brand-cyan)] [&_strong]:font-semibold [&_ul]:list-disc [&_ul]:pl-4 [&_ul]:my-2 [&_ol]:list-decimal [&_ol]:pl-4 [&_ol]:my-2 [&_li]:my-0.5">
                       <ReactMarkdown>{message.content}</ReactMarkdown>
                     </div>
                   )}
@@ -555,8 +572,8 @@ export default function ChatPage() {
 
             {/* Loading indicator */}
             {loading && (
-              <div className="flex gap-3 max-w-4xl">
-                <div className="w-8 h-8 relative shrink-0">
+              <div className="flex gap-2 sm:gap-3 max-w-4xl">
+                <div className="w-7 h-7 sm:w-8 sm:h-8 relative shrink-0">
                   <Image
                     src="/assets/finybuddy-mascot.png"
                     alt="FinyBot"
@@ -564,14 +581,14 @@ export default function ChatPage() {
                     className="object-contain"
                   />
                 </div>
-                <div className="px-4 py-3 rounded-2xl rounded-bl-md bg-[var(--background-secondary)] border border-[var(--border)]">
+                <div className="px-3 sm:px-4 py-2 sm:py-3 rounded-2xl rounded-bl-md bg-[var(--background-secondary)] border border-[var(--border)]">
                   <div className="flex items-center gap-2 text-[var(--brand-gray)]">
                     <div className="flex gap-1">
-                      <span className="w-2 h-2 rounded-full bg-[var(--brand-purple)] animate-bounce" style={{ animationDelay: "0ms" }} />
-                      <span className="w-2 h-2 rounded-full bg-[var(--brand-purple)] animate-bounce" style={{ animationDelay: "150ms" }} />
-                      <span className="w-2 h-2 rounded-full bg-[var(--brand-purple)] animate-bounce" style={{ animationDelay: "300ms" }} />
+                      <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-[var(--brand-purple)] animate-bounce" style={{ animationDelay: "0ms" }} />
+                      <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-[var(--brand-purple)] animate-bounce" style={{ animationDelay: "150ms" }} />
+                      <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-[var(--brand-purple)] animate-bounce" style={{ animationDelay: "300ms" }} />
                     </div>
-                    <span className="text-sm">Pensando...</span>
+                    <span className="text-xs sm:text-sm">Pensando...</span>
                   </div>
                 </div>
               </div>
@@ -583,15 +600,15 @@ export default function ChatPage() {
       </div>
 
       {/* Input area - fijado abajo */}
-      <div className="shrink-0 border-t border-[var(--border)] bg-[var(--background)] p-4">
+      <div className="shrink-0 border-t border-[var(--border)] bg-[var(--background)] p-2 sm:p-4">
         <form onSubmit={handleSubmit} className="max-w-4xl mx-auto">
-          <div className="flex items-end gap-2">
+          <div className="flex items-end gap-1.5 sm:gap-2">
             {/* Mic button */}
             <button
               type="button"
               onClick={handleMicClick}
               disabled={loading || isTranscribing}
-              className={`p-3 rounded-2xl transition-all shrink-0 ${
+              className={`p-2.5 sm:p-3 rounded-xl sm:rounded-2xl transition-all shrink-0 ${
                 isRecording
                   ? "bg-[var(--danger)] text-white animate-pulse"
                   : "bg-[var(--background-secondary)] border border-[var(--border)] text-[var(--brand-gray)] hover:text-[var(--foreground)] hover:border-[var(--brand-purple)]"
@@ -599,11 +616,11 @@ export default function ChatPage() {
               title={isRecording ? "Detener grabación" : "Grabar mensaje de voz"}
             >
               {isTranscribing ? (
-                <Loader2 className="w-5 h-5 animate-spin" />
+                <Loader2 className="w-4 h-4 sm:w-5 sm:h-5 animate-spin" />
               ) : isRecording ? (
-                <Square className="w-5 h-5" />
+                <Square className="w-4 h-4 sm:w-5 sm:h-5" />
               ) : (
-                <Mic className="w-5 h-5" />
+                <Mic className="w-4 h-4 sm:w-5 sm:h-5" />
               )}
             </button>
 
@@ -613,26 +630,26 @@ export default function ChatPage() {
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={handleKeyDown}
-                placeholder={isRecording ? "Grabando... pulsa el botón para enviar" : "Escribe tu mensaje..."}
+                placeholder={isRecording ? "Grabando..." : "Escribe tu mensaje..."}
                 rows={1}
-                className="w-full px-4 py-3 bg-[var(--background-secondary)] border border-[var(--border)] rounded-2xl resize-none focus:outline-none focus:border-[var(--brand-purple)] focus:ring-2 focus:ring-[var(--brand-purple)]/20 text-sm"
+                className="w-full px-3 sm:px-4 py-2.5 sm:py-3 bg-[var(--background-secondary)] border border-[var(--border)] rounded-xl sm:rounded-2xl resize-none focus:outline-none focus:border-[var(--brand-purple)] focus:ring-2 focus:ring-[var(--brand-purple)]/20 text-xs sm:text-sm"
                 disabled={loading || isRecording}
               />
             </div>
             <button
               type="submit"
               disabled={!input.trim() || loading || isRecording}
-              className="p-3 rounded-2xl gradient-brand text-white hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
+              className="p-2.5 sm:p-3 rounded-xl sm:rounded-2xl gradient-brand text-white hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
             >
               {loading ? (
-                <Loader2 className="w-5 h-5 animate-spin" />
+                <Loader2 className="w-4 h-4 sm:w-5 sm:h-5 animate-spin" />
               ) : (
-                <Send className="w-5 h-5" />
+                <Send className="w-4 h-4 sm:w-5 sm:h-5" />
               )}
             </button>
           </div>
           {isRecording && (
-            <p className="text-xs text-[var(--danger)] mt-2 text-center animate-pulse">
+            <p className="text-[10px] sm:text-xs text-[var(--danger)] mt-1.5 sm:mt-2 text-center animate-pulse">
               Grabando audio... Pulsa el botón rojo para enviar
             </p>
           )}
