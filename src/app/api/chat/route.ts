@@ -16,7 +16,9 @@ interface FinancialContext {
   currentMonth: {
     income: number;
     expenses: number;
+    savings: number;
     balance: number;
+    available: number;
     savingsRate: number;
   };
   categories: {
@@ -107,6 +109,10 @@ async function getFinancialContext(userId: string): Promise<FinancialContext> {
     .filter(op => op.type === "expense")
     .reduce((sum, op) => sum + op.amount, 0);
 
+  const monthlySavings = currentMonthOps
+    .filter(op => op.type === "savings")
+    .reduce((sum, op) => sum + op.amount, 0);
+
   // Calculate category spending
   const categorySpending = categories.map(cat => {
     const catOps = operations.filter(op => op.category_id === cat.id);
@@ -189,8 +195,10 @@ async function getFinancialContext(userId: string): Promise<FinancialContext> {
     currentMonth: {
       income: monthlyIncome,
       expenses: monthlyExpenses,
+      savings: monthlySavings,
       balance: monthlyIncome - monthlyExpenses,
-      savingsRate: monthlyIncome > 0 ? Math.round(((monthlyIncome - monthlyExpenses) / monthlyIncome) * 100) : 0,
+      available: monthlyIncome - monthlyExpenses - monthlySavings,
+      savingsRate: monthlyIncome > 0 ? Math.round((monthlySavings / monthlyIncome) * 100) : 0,
     },
     categories: categorySpending,
     savingsGoals: processedGoals,
@@ -205,7 +213,8 @@ function buildSystemPrompt(context: FinancialContext): string {
   const daysInMonth = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).getDate();
   const currentDay = new Date().getDate();
   const daysRemaining = daysInMonth - currentDay;
-  const dailyBudget = daysRemaining > 0 ? Math.round(context.currentMonth.balance / daysRemaining) : 0;
+  // Disponible = ingresos - gastos - ahorro (lo que realmente puede gastar)
+  const dailyBudget = daysRemaining > 0 ? Math.round(context.currentMonth.available / daysRemaining) : 0;
 
   // Build categories list for the prompt
   const categoriesList = context.categories
@@ -231,11 +240,16 @@ DATOS FINANCIEROS DE ${context.profile.name.toUpperCase()}:
 RESUMEN MES ACTUAL:
 - Ingresos: ${context.currentMonth.income.toLocaleString("es-ES")} euros
 - Gastos: ${context.currentMonth.expenses.toLocaleString("es-ES")} euros
-- Balance actual: ${context.currentMonth.balance.toLocaleString("es-ES")} euros
+- Ahorro registrado: ${context.currentMonth.savings.toLocaleString("es-ES")} euros
+- Disponible real (ingresos - gastos - ahorro): ${context.currentMonth.available.toLocaleString("es-ES")} euros
 - Tasa de ahorro: ${context.currentMonth.savingsRate}%
 - Regla personal: ${context.profile.rule} (necesidades/deseos/ahorro)
 - Dias restantes del mes: ${daysRemaining}
 - Margen diario disponible: ${dailyBudget.toLocaleString("es-ES")} euros/dia
+
+IMPORTANTE SOBRE CALCULOS:
+- "Cuanto puedo gastar" = Disponible real / dias restantes = ${dailyBudget} euros/dia
+- El disponible real YA DESCUENTA el ahorro, asi que es lo que realmente puede gastar sin tocar su ahorro
 
 TENDENCIA 6 MESES:
 ${context.monthlyTrend.map(m => `${m.month}: ${m.income.toLocaleString("es-ES")} entrada, ${m.expenses.toLocaleString("es-ES")} salida`).join(" | ")}
@@ -262,7 +276,7 @@ ULTIMAS OPERACIONES (con ID para poder eliminar):
 ${context.recentOperations.slice(0, 8).map(op => `[ID:${op.id}] ${op.date.slice(5)}: ${op.concept} ${op.type === "expense" ? "-" : "+"}${op.amount} euros`).join(" | ")}
 
 CAPACIDADES DE ACCION:
-Tienes la capacidad de CREAR y ELIMINAR OPERACIONES usando las funciones disponibles.
+Tienes la capacidad de gestionar OPERACIONES, METAS DE AHORRO y DEUDAS usando las funciones disponibles.
 
 CREAR OPERACIONES (create_operation):
 Cuando el usuario te pida registrar un gasto, ingreso o ahorro, USA LA FUNCION para crearlo realmente en la base de datos.
@@ -275,6 +289,14 @@ Cuando el usuario quiera borrar, eliminar o quitar una operacion, USA LA FUNCION
 - Busca la operacion en las ULTIMAS OPERACIONES por concepto, cantidad o fecha.
 - Si hay varias coincidencias, pregunta al usuario cual quiere eliminar.
 - Si no encuentras la operacion, dile al usuario que no la has encontrado.
+
+METAS DE AHORRO:
+- create_savings_goal: Crea una nueva meta cuando el usuario diga "quiero ahorrar para X", "voy a ahorrar X euros para Y".
+- add_savings_contribution: Añade dinero a una meta existente cuando diga "he aportado X a mi meta de Y", "mete X euros en mi ahorro de Y".
+
+DEUDAS:
+- create_debt: Registra una deuda cuando el usuario diga "debo X euros a Y", "tengo un prestamo de X euros".
+- add_debt_payment: Registra un pago cuando diga "he pagado X de mi deuda de Y", "abona X euros a mi prestamo".
 
 IMPORTANTE SOBRE CATEGORIAS:
 - Usa SIEMPRE el category_id de la lista de categorias disponibles del usuario.
@@ -354,6 +376,110 @@ const tools = [
           }
         },
         required: ["operation_id"]
+      }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "create_savings_goal",
+      description: "Crea una nueva meta de ahorro para el usuario. Usa esta funcion cuando el usuario quiera crear un objetivo de ahorro (ej: 'quiero ahorrar para unas vacaciones', 'voy a ahorrar para un coche').",
+      parameters: {
+        type: "object",
+        properties: {
+          name: {
+            type: "string",
+            description: "Nombre de la meta de ahorro (ej: 'Vacaciones', 'Fondo de emergencia', 'Coche nuevo')"
+          },
+          target_amount: {
+            type: "number",
+            description: "Cantidad objetivo a ahorrar en euros"
+          },
+          target_date: {
+            type: "string",
+            description: "Fecha limite opcional en formato YYYY-MM-DD. Puede ser null si no hay fecha limite."
+          }
+        },
+        required: ["name", "target_amount"]
+      }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "add_savings_contribution",
+      description: "Añade un aporte a una meta de ahorro existente. Usa esta funcion cuando el usuario quiera añadir dinero a una de sus metas de ahorro.",
+      parameters: {
+        type: "object",
+        properties: {
+          savings_goal_name: {
+            type: "string",
+            description: "Nombre de la meta de ahorro a la que añadir el aporte. Busca en las METAS DE AHORRO del usuario."
+          },
+          amount: {
+            type: "number",
+            description: "Cantidad a aportar en euros"
+          },
+          note: {
+            type: "string",
+            description: "Nota opcional sobre el aporte"
+          }
+        },
+        required: ["savings_goal_name", "amount"]
+      }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "create_debt",
+      description: "Crea una nueva deuda para el usuario. Usa esta funcion cuando el usuario quiera registrar una deuda (ej: 'debo 500 euros a mi hermano', 'tengo un prestamo de 10000 euros').",
+      parameters: {
+        type: "object",
+        properties: {
+          name: {
+            type: "string",
+            description: "Nombre o descripcion de la deuda (ej: 'Prestamo coche', 'Deuda con Juan', 'Tarjeta de credito')"
+          },
+          initial_amount: {
+            type: "number",
+            description: "Cantidad total de la deuda en euros"
+          },
+          interest_rate: {
+            type: "number",
+            description: "Tasa de interes anual en porcentaje. Usar 0 si no tiene intereses."
+          },
+          due_date: {
+            type: "string",
+            description: "Fecha de vencimiento opcional en formato YYYY-MM-DD"
+          }
+        },
+        required: ["name", "initial_amount"]
+      }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "add_debt_payment",
+      description: "Registra un pago de una deuda existente. Usa esta funcion cuando el usuario quiera registrar que ha pagado parte de una deuda.",
+      parameters: {
+        type: "object",
+        properties: {
+          debt_name: {
+            type: "string",
+            description: "Nombre de la deuda a la que añadir el pago. Busca en las DEUDAS del usuario."
+          },
+          amount: {
+            type: "number",
+            description: "Cantidad pagada en euros"
+          },
+          note: {
+            type: "string",
+            description: "Nota opcional sobre el pago"
+          }
+        },
+        required: ["debt_name", "amount"]
       }
     }
   }
@@ -437,6 +563,158 @@ async function executeDeleteOperation(
   };
 }
 
+// Function to create a savings goal
+async function executeCreateSavingsGoal(
+  userId: string,
+  args: {
+    name: string;
+    target_amount: number;
+    target_date?: string;
+  }
+) {
+  const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+  const { data, error } = await supabase
+    .from("savings_goals")
+    .insert({
+      user_id: userId,
+      name: args.name,
+      target_amount: args.target_amount,
+      target_date: args.target_date || null,
+      status: "active",
+    })
+    .select()
+    .single();
+
+  if (error) {
+    console.error("Error creating savings goal:", error);
+    return { success: false, error: error.message };
+  }
+
+  return { success: true, savings_goal: data };
+}
+
+// Function to add a contribution to a savings goal
+async function executeAddSavingsContribution(
+  userId: string,
+  args: {
+    savings_goal_name: string;
+    amount: number;
+    note?: string;
+  }
+) {
+  const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+  // Find the savings goal by name
+  const { data: goals, error: findError } = await supabase
+    .from("savings_goals")
+    .select("id, name")
+    .eq("user_id", userId)
+    .ilike("name", `%${args.savings_goal_name}%`);
+
+  if (findError || !goals || goals.length === 0) {
+    return { success: false, error: `No se encontro ninguna meta de ahorro con el nombre "${args.savings_goal_name}"` };
+  }
+
+  const goal = goals[0];
+
+  const { data, error } = await supabase
+    .from("savings_contributions")
+    .insert({
+      savings_goal_id: goal.id,
+      user_id: userId,
+      amount: args.amount,
+      note: args.note || null,
+      contribution_date: new Date().toISOString().split("T")[0],
+    })
+    .select()
+    .single();
+
+  if (error) {
+    console.error("Error adding savings contribution:", error);
+    return { success: false, error: error.message };
+  }
+
+  return { success: true, contribution: data, goal_name: goal.name };
+}
+
+// Function to create a debt
+async function executeCreateDebt(
+  userId: string,
+  args: {
+    name: string;
+    initial_amount: number;
+    interest_rate?: number;
+    due_date?: string;
+  }
+) {
+  const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+  const { data, error } = await supabase
+    .from("debts")
+    .insert({
+      user_id: userId,
+      name: args.name,
+      initial_amount: args.initial_amount,
+      interest_rate: args.interest_rate || 0,
+      due_date: args.due_date || null,
+      status: "active",
+    })
+    .select()
+    .single();
+
+  if (error) {
+    console.error("Error creating debt:", error);
+    return { success: false, error: error.message };
+  }
+
+  return { success: true, debt: data };
+}
+
+// Function to add a payment to a debt
+async function executeAddDebtPayment(
+  userId: string,
+  args: {
+    debt_name: string;
+    amount: number;
+    note?: string;
+  }
+) {
+  const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+  // Find the debt by name
+  const { data: debts, error: findError } = await supabase
+    .from("debts")
+    .select("id, name, initial_amount")
+    .eq("user_id", userId)
+    .ilike("name", `%${args.debt_name}%`);
+
+  if (findError || !debts || debts.length === 0) {
+    return { success: false, error: `No se encontro ninguna deuda con el nombre "${args.debt_name}"` };
+  }
+
+  const debt = debts[0];
+
+  const { data, error } = await supabase
+    .from("debt_payments")
+    .insert({
+      debt_id: debt.id,
+      user_id: userId,
+      amount: args.amount,
+      note: args.note || null,
+      payment_date: new Date().toISOString().split("T")[0],
+    })
+    .select()
+    .single();
+
+  if (error) {
+    console.error("Error adding debt payment:", error);
+    return { success: false, error: error.message };
+  }
+
+  return { success: true, payment: data, debt_name: debt.name };
+}
+
 export async function POST(request: NextRequest) {
   try {
     const { messages, userId } = await request.json();
@@ -494,6 +772,14 @@ export async function POST(request: NextRequest) {
           result = await executeCreateOperation(userId, args);
         } else if (toolCall.function.name === "delete_operation") {
           result = await executeDeleteOperation(userId, args);
+        } else if (toolCall.function.name === "create_savings_goal") {
+          result = await executeCreateSavingsGoal(userId, args);
+        } else if (toolCall.function.name === "add_savings_contribution") {
+          result = await executeAddSavingsContribution(userId, args);
+        } else if (toolCall.function.name === "create_debt") {
+          result = await executeCreateDebt(userId, args);
+        } else if (toolCall.function.name === "add_debt_payment") {
+          result = await executeAddDebtPayment(userId, args);
         }
 
         if (result) {
