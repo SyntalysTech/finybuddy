@@ -475,17 +475,19 @@ export default function DashboardPage() {
 
       <div className="p-6 space-y-6">
         {/* Frase contextual dinámica con mascota */}
-        <div className="card p-4 bg-gradient-to-r from-[var(--brand-purple)]/10 to-[var(--brand-cyan)]/10 border-[var(--brand-purple)]/20">
+        <div className="glass-brand p-4 rounded-2xl animate-slide-in-down">
           <div className="flex items-start gap-3">
-            <Image
-              src="/assets/finybuddy-mascot.png"
-              alt="FinyBuddy"
-              width={48}
-              height={48}
-              className="rounded-full"
-            />
+            <div className="animate-float-slow">
+              <Image
+                src="/assets/finybuddy-mascot.png"
+                alt="FinyBuddy"
+                width={48}
+                height={48}
+                className="rounded-full"
+              />
+            </div>
             <div className="flex-1">
-              <p className="text-sm font-medium text-[var(--brand-purple)] mb-1">
+              <p className="text-sm font-medium text-[var(--brand-purple)] mb-1 animate-fade-in">
                 {loading ? "Analizando tus datos..." : contextualPhrase}
               </p>
               <p className="text-sm text-[var(--brand-gray)] italic">
@@ -498,26 +500,26 @@ export default function DashboardPage() {
         {/* KPI Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {/* Ingresos */}
-          <div className="kpi-card">
+          <div className="kpi-glass hover-lift animate-slide-in-up stagger-1">
             <div className="flex items-start justify-between">
               <div>
                 <p className="text-sm text-[var(--brand-gray)] mb-1">Ingresos del mes</p>
-                <p className="text-2xl font-bold text-[var(--success)]">
+                <p className="text-2xl font-bold text-[var(--success)] animate-count">
                   {loading ? "..." : formatCurrency(monthlySummary?.total_income || 0)}
                 </p>
               </div>
-              <div className="p-3 rounded-xl bg-[var(--success)]/10">
+              <div className="p-3 rounded-xl bg-[var(--success)]/10 hover-scale">
                 <TrendingUp className="w-6 h-6 text-[var(--success)]" />
               </div>
             </div>
           </div>
 
           {/* Gastos */}
-          <div className="kpi-card">
+          <div className="kpi-glass hover-lift animate-slide-in-up stagger-2">
             <div className="flex items-start justify-between">
               <div>
                 <p className="text-sm text-[var(--brand-gray)] mb-1">Gastos del mes</p>
-                <p className="text-2xl font-bold text-[var(--danger)]">
+                <p className="text-2xl font-bold text-[var(--danger)] animate-count">
                   {loading ? "..." : formatCurrency(monthlySummary?.total_expenses || 0)}
                 </p>
                 {!loading && budgetSummary && budgetSummary.total_budgeted_expenses > 0 && (
@@ -533,18 +535,18 @@ export default function DashboardPage() {
                   </p>
                 )}
               </div>
-              <div className="p-3 rounded-xl bg-[var(--danger)]/10">
+              <div className="p-3 rounded-xl bg-[var(--danger)]/10 hover-scale">
                 <TrendingDown className="w-6 h-6 text-[var(--danger)]" />
               </div>
             </div>
           </div>
 
           {/* Ahorro */}
-          <div className="kpi-card">
+          <div className="kpi-glass hover-lift animate-slide-in-up stagger-3">
             <div className="flex items-start justify-between">
               <div>
                 <p className="text-sm text-[var(--brand-gray)] mb-1">Ahorro del mes</p>
-                <p className="text-2xl font-bold text-[var(--brand-cyan)]">
+                <p className="text-2xl font-bold text-[var(--brand-cyan)] animate-count">
                   {loading ? "..." : formatCurrency(monthlySummary?.total_savings || 0)}
                 </p>
                 {!loading && budgetSummary && budgetSummary.total_budgeted_savings > 0 && (
@@ -560,7 +562,7 @@ export default function DashboardPage() {
                   </p>
                 )}
               </div>
-              <div className="p-3 rounded-xl bg-[var(--brand-cyan)]/10">
+              <div className="p-3 rounded-xl bg-[var(--brand-cyan)]/10 animate-piggy">
                 <PiggyBank className="w-6 h-6 text-[var(--brand-cyan)]" />
               </div>
             </div>
@@ -664,27 +666,37 @@ export default function DashboardPage() {
           </div>
 
           {/* FinyBuddy Interpretation Panel */}
-          <div className="card p-6 bg-gradient-to-br from-[var(--brand-cyan)]/5 to-[var(--brand-purple)]/5">
+          <div className="glass-brand rounded-2xl p-6 animate-slide-in-right">
             <div className="flex items-center gap-3 mb-4">
-              <Image
-                src="/assets/finybuddy-mascot.png"
-                alt="FinyBuddy"
-                width={48}
-                height={48}
-                className="rounded-full"
-              />
+              <div className="animate-bounce-subtle">
+                <Image
+                  src="/assets/finybuddy-mascot.png"
+                  alt="FinyBuddy"
+                  width={48}
+                  height={48}
+                  className="rounded-full"
+                />
+              </div>
               <div>
-                <h3 className="text-lg font-semibold">FinyBuddy</h3>
+                <h3 className="text-lg font-semibold animate-gradient-text">FinyBuddy</h3>
                 <p className="text-xs text-[var(--brand-gray)]">Tu asistente financiero</p>
+              </div>
+              <div className="ml-auto">
+                <Sparkles className="w-5 h-5 text-[var(--brand-cyan)] animate-sparkle" />
               </div>
             </div>
             <div className="space-y-3">
               {loading ? (
-                <p className="text-sm text-[var(--brand-gray)]">Analizando tus finanzas...</p>
+                <div className="flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-[var(--brand-cyan)] animate-typing-dot"></span>
+                  <span className="w-2 h-2 rounded-full bg-[var(--brand-cyan)] animate-typing-dot"></span>
+                  <span className="w-2 h-2 rounded-full bg-[var(--brand-cyan)] animate-typing-dot"></span>
+                  <span className="text-sm text-[var(--brand-gray)] ml-2">Analizando...</span>
+                </div>
               ) : (
                 getFinyBuddyMessage()?.map((message, index) => (
-                  <div key={index} className="flex items-start gap-2">
-                    <span className="text-[var(--brand-cyan)] mt-0.5">•</span>
+                  <div key={index} className={`flex items-start gap-2 animate-slide-in-left stagger-${index + 1}`}>
+                    <span className="text-[var(--brand-cyan)] mt-0.5 animate-pulse">•</span>
                     <p className="text-sm text-[var(--foreground)]">{message}</p>
                   </div>
                 ))
@@ -696,12 +708,12 @@ export default function DashboardPage() {
         {/* Quick Stats Row */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Metas de ahorro */}
-          <div className="card p-6">
+          <div className="card-glass p-6 hover-lift animate-slide-in-left">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold">Metas de ahorro</h3>
               <Link
                 href="/ahorro"
-                className="text-sm text-[var(--brand-cyan)] hover:underline"
+                className="text-sm text-[var(--brand-cyan)] hover:underline hover-glow rounded px-2 py-1 transition-all"
               >
                 Ver todas
               </Link>
@@ -710,24 +722,24 @@ export default function DashboardPage() {
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <div className="p-2 rounded-lg bg-[var(--brand-purple)]/10">
+                    <div className="p-2 rounded-lg bg-[var(--brand-purple)]/10 hover-scale animate-pulse-ring">
                       <Target className="w-5 h-5 text-[var(--brand-purple)]" />
                     </div>
                     <div>
-                      <p className="text-2xl font-bold">{savingsSummary.active_goals}</p>
+                      <p className="text-2xl font-bold animate-count">{savingsSummary.active_goals}</p>
                       <p className="text-sm text-[var(--brand-gray)]">metas activas</p>
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className="text-lg font-semibold text-[var(--brand-purple)]">
+                    <p className="text-lg font-semibold text-[var(--brand-purple)] animate-count">
                       {Math.round(savingsSummary.overall_progress)}%
                     </p>
                     <p className="text-sm text-[var(--brand-gray)]">progreso total</p>
                   </div>
                 </div>
-                <div className="progress-bar h-2">
+                <div className="progress-bar h-2 overflow-hidden">
                   <div
-                    className="progress-bar-fill bg-[var(--brand-purple)]"
+                    className="progress-bar-fill bg-gradient-to-r from-[var(--brand-purple)] to-[var(--brand-cyan)] animate-shimmer"
                     style={{ width: `${Math.min(savingsSummary.overall_progress, 100)}%` }}
                   />
                 </div>
@@ -738,7 +750,7 @@ export default function DashboardPage() {
               </div>
             ) : (
               <div className="flex flex-col items-center justify-center py-8 text-center">
-                <div className="w-12 h-12 rounded-full bg-[var(--background-secondary)] flex items-center justify-center mb-3">
+                <div className="w-12 h-12 rounded-full bg-[var(--background-secondary)] flex items-center justify-center mb-3 animate-bounce-subtle">
                   <Target className="w-6 h-6 text-[var(--brand-gray)]" />
                 </div>
                 <p className="text-sm text-[var(--brand-gray)]">No hay metas de ahorro</p>
@@ -747,12 +759,12 @@ export default function DashboardPage() {
           </div>
 
           {/* Deudas */}
-          <div className="card p-6">
+          <div className="card-glass p-6 hover-lift animate-slide-in-right">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold">Mis deudas</h3>
               <Link
                 href="/deuda"
-                className="text-sm text-[var(--brand-cyan)] hover:underline"
+                className="text-sm text-[var(--brand-cyan)] hover:underline hover-glow rounded px-2 py-1 transition-all"
               >
                 Ver todas
               </Link>
@@ -761,24 +773,24 @@ export default function DashboardPage() {
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <div className="p-2 rounded-lg bg-[var(--danger)]/10">
+                    <div className="p-2 rounded-lg bg-[var(--danger)]/10 hover-scale">
                       <CreditCard className="w-5 h-5 text-[var(--danger)]" />
                     </div>
                     <div>
-                      <p className="text-2xl font-bold">{debtsSummary.active_debts}</p>
+                      <p className="text-2xl font-bold animate-count">{debtsSummary.active_debts}</p>
                       <p className="text-sm text-[var(--brand-gray)]">deudas activas</p>
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className="text-lg font-semibold text-[var(--success)]">
+                    <p className="text-lg font-semibold text-[var(--success)] animate-count">
                       {Math.round(debtsSummary.overall_progress)}%
                     </p>
                     <p className="text-sm text-[var(--brand-gray)]">pagado</p>
                   </div>
                 </div>
-                <div className="progress-bar h-2">
+                <div className="progress-bar h-2 overflow-hidden">
                   <div
-                    className="progress-bar-fill bg-[var(--success)]"
+                    className="progress-bar-fill bg-gradient-to-r from-[var(--warning)] to-[var(--success)]"
                     style={{ width: `${Math.min(debtsSummary.overall_progress, 100)}%` }}
                   />
                 </div>

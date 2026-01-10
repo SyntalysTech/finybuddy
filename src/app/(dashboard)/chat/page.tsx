@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import Image from "next/image";
 import ReactMarkdown from "react-markdown";
 import { createClient } from "@/lib/supabase/client";
@@ -14,11 +14,22 @@ import {
   Target,
   Mic,
   Square,
+  MessageSquare,
+  Plus,
+  Trash2,
+  ChevronLeft,
 } from "lucide-react";
 
 interface Message {
   role: "user" | "assistant";
   content: string;
+}
+
+interface Conversation {
+  id: string;
+  title: string;
+  created_at: string;
+  updated_at: string;
 }
 
 const QUICK_PROMPTS = [
@@ -36,12 +47,102 @@ export default function ChatPage() {
   const [userAvatar, setUserAvatar] = useState<string | null>(null);
   const [isRecording, setIsRecording] = useState(false);
   const [isTranscribing, setIsTranscribing] = useState(false);
+  const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [currentConversationId, setCurrentConversationId] = useState<string | null>(null);
+  const [showHistory, setShowHistory] = useState(false);
+  const [loadingHistory, setLoadingHistory] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
 
   const supabase = createClient();
+
+  // Load conversations list
+  const loadConversations = useCallback(async (uid: string) => {
+    const { data } = await supabase
+      .from("ai_conversations")
+      .select("id, title, created_at, updated_at")
+      .eq("user_id", uid)
+      .order("updated_at", { ascending: false })
+      .limit(20);
+
+    if (data) {
+      setConversations(data);
+    }
+  }, [supabase]);
+
+  // Load messages for a conversation
+  const loadConversationMessages = useCallback(async (conversationId: string) => {
+    setLoadingHistory(true);
+    const { data } = await supabase
+      .from("ai_messages")
+      .select("role, content")
+      .eq("conversation_id", conversationId)
+      .order("created_at", { ascending: true });
+
+    if (data) {
+      setMessages(data.filter(m => m.role !== "system") as Message[]);
+    }
+    setCurrentConversationId(conversationId);
+    setShowHistory(false);
+    setLoadingHistory(false);
+  }, [supabase]);
+
+  // Save message to conversation
+  const saveMessage = useCallback(async (conversationId: string, role: string, content: string) => {
+    await supabase.from("ai_messages").insert({
+      conversation_id: conversationId,
+      role,
+      content,
+    });
+
+    // Update conversation timestamp and title if first message
+    const updates: { updated_at: string; title?: string } = { updated_at: new Date().toISOString() };
+    if (role === "user" && messages.length === 0) {
+      updates.title = content.slice(0, 50) + (content.length > 50 ? "..." : "");
+    }
+    await supabase.from("ai_conversations").update(updates).eq("id", conversationId);
+  }, [supabase, messages.length]);
+
+  // Create new conversation
+  const createNewConversation = useCallback(async () => {
+    if (!userId) return null;
+
+    const { data } = await supabase
+      .from("ai_conversations")
+      .insert({ user_id: userId, title: "Nueva conversación" })
+      .select()
+      .single();
+
+    if (data) {
+      setCurrentConversationId(data.id);
+      setMessages([]);
+      await loadConversations(userId);
+      return data.id;
+    }
+    return null;
+  }, [userId, supabase, loadConversations]);
+
+  // Delete conversation
+  const deleteConversation = async (conversationId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    await supabase.from("ai_conversations").delete().eq("id", conversationId);
+    if (currentConversationId === conversationId) {
+      setCurrentConversationId(null);
+      setMessages([]);
+    }
+    if (userId) {
+      await loadConversations(userId);
+    }
+  };
+
+  // Start new chat
+  const startNewChat = () => {
+    setCurrentConversationId(null);
+    setMessages([]);
+    setShowHistory(false);
+  };
 
   // Get user ID and avatar on mount
   useEffect(() => {
@@ -58,10 +159,12 @@ export default function ChatPage() {
         if (profile?.avatar_url) {
           setUserAvatar(profile.avatar_url);
         }
+        // Load conversations
+        await loadConversations(user.id);
       }
     };
     getUser();
-  }, [supabase]);
+  }, [supabase, loadConversations]);
 
   // Auto-scroll to bottom
   useEffect(() => {
@@ -84,6 +187,19 @@ export default function ChatPage() {
     setInput("");
     setLoading(true);
 
+    // Create conversation if needed
+    let convId = currentConversationId;
+    if (!convId) {
+      convId = await createNewConversation();
+      if (!convId) {
+        setLoading(false);
+        return;
+      }
+    }
+
+    // Save user message
+    await saveMessage(convId, "user", text.trim());
+
     try {
       const response = await fetch("/api/chat", {
         method: "POST",
@@ -104,12 +220,20 @@ export default function ChatPage() {
       const data = await response.json();
       const assistantMessage: Message = { role: "assistant", content: data.message };
       setMessages(prev => [...prev, assistantMessage]);
+
+      // Save assistant message
+      await saveMessage(convId, "assistant", data.message);
+
+      // Reload conversations list to update titles
+      await loadConversations(userId);
     } catch (error) {
       console.error("Chat error:", error);
+      const errorMessage = "Lo siento, ha ocurrido un error. Por favor, inténtalo de nuevo.";
       setMessages(prev => [...prev, {
         role: "assistant",
-        content: "Lo siento, ha ocurrido un error. Por favor, inténtalo de nuevo.",
+        content: errorMessage,
       }]);
+      await saveMessage(convId, "assistant", errorMessage);
     } finally {
       setLoading(false);
     }
@@ -218,30 +342,123 @@ export default function ChatPage() {
   };
 
   return (
-    <div className="flex flex-col h-screen">
-      {/* Header integrado */}
-      <div className="shrink-0 border-b border-[var(--border)] bg-[var(--background)]">
-        <div className="px-6 py-4 flex items-center gap-4">
-          <div className="w-10 h-10 relative shrink-0">
-            <Image
-              src="/assets/finybuddy-mascot.png"
-              alt="FinyBot"
-              fill
-              className="object-contain"
-            />
+    <div className="flex h-screen">
+      {/* Panel lateral de historial */}
+      <div
+        className={`${
+          showHistory ? "w-72" : "w-0"
+        } transition-all duration-300 border-r border-[var(--border)] bg-[var(--background-secondary)] overflow-hidden shrink-0`}
+      >
+        <div className="w-72 h-full flex flex-col">
+          {/* Header del historial */}
+          <div className="p-4 border-b border-[var(--border)] flex items-center justify-between">
+            <h2 className="font-semibold text-sm">Historial</h2>
+            <button
+              onClick={startNewChat}
+              className="p-2 rounded-lg hover:bg-[var(--background)] transition-colors"
+              title="Nueva conversación"
+            >
+              <Plus className="w-4 h-4" />
+            </button>
           </div>
-          <div>
-            <h1 className="text-lg font-bold">FinyBot</h1>
-            <p className="text-xs text-[var(--brand-gray)]">Tu asistente financiero personal</p>
-          </div>
-          <div className="ml-auto flex items-center gap-2">
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-[var(--success)]/10 text-[var(--success)]">
-              <span className="w-1.5 h-1.5 rounded-full bg-[var(--success)] animate-pulse" />
-              Online
-            </span>
+
+          {/* Lista de conversaciones */}
+          <div className="flex-1 overflow-y-auto p-2">
+            {loadingHistory ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="w-5 h-5 animate-spin text-[var(--brand-gray)]" />
+              </div>
+            ) : conversations.length === 0 ? (
+              <p className="text-sm text-[var(--brand-gray)] text-center py-8">
+                No hay conversaciones
+              </p>
+            ) : (
+              <div className="space-y-1">
+                {conversations.map((conv) => (
+                  <button
+                    key={conv.id}
+                    onClick={() => loadConversationMessages(conv.id)}
+                    className={`w-full p-3 rounded-lg text-left transition-colors group flex items-start gap-2 ${
+                      currentConversationId === conv.id
+                        ? "bg-[var(--brand-purple)]/10 border border-[var(--brand-purple)]/30"
+                        : "hover:bg-[var(--background)]"
+                    }`}
+                  >
+                    <MessageSquare className="w-4 h-4 shrink-0 mt-0.5 text-[var(--brand-gray)]" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium truncate">{conv.title}</p>
+                      <p className="text-xs text-[var(--brand-gray)]">
+                        {new Date(conv.updated_at).toLocaleDateString("es-ES", {
+                          day: "numeric",
+                          month: "short",
+                        })}
+                      </p>
+                    </div>
+                    <button
+                      onClick={(e) => deleteConversation(conv.id, e)}
+                      className="p-1 rounded opacity-0 group-hover:opacity-100 hover:bg-[var(--danger)]/10 hover:text-[var(--danger)] transition-all"
+                      title="Eliminar conversación"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       </div>
+
+      {/* Contenido principal del chat */}
+      <div className="flex-1 flex flex-col h-screen min-w-0">
+        {/* Header integrado */}
+        <div className="shrink-0 border-b border-[var(--border)] bg-[var(--background)]">
+          <div className="px-6 py-4 flex items-center gap-4">
+            {/* Botón toggle historial */}
+            <button
+              onClick={() => setShowHistory(!showHistory)}
+              className={`p-2 rounded-lg transition-colors ${
+                showHistory
+                  ? "bg-[var(--brand-purple)]/10 text-[var(--brand-purple)]"
+                  : "hover:bg-[var(--background-secondary)]"
+              }`}
+              title={showHistory ? "Cerrar historial" : "Ver historial"}
+            >
+              {showHistory ? (
+                <ChevronLeft className="w-5 h-5" />
+              ) : (
+                <MessageSquare className="w-5 h-5" />
+              )}
+            </button>
+
+            <div className="w-10 h-10 relative shrink-0">
+              <Image
+                src="/assets/finybuddy-mascot.png"
+                alt="FinyBot"
+                fill
+                className="object-contain"
+              />
+            </div>
+            <div>
+              <h1 className="text-lg font-bold">FinyBot</h1>
+              <p className="text-xs text-[var(--brand-gray)]">Tu asistente financiero personal</p>
+            </div>
+            <div className="ml-auto flex items-center gap-2">
+              {/* Botón nueva conversación */}
+              <button
+                onClick={startNewChat}
+                className="p-2 rounded-lg hover:bg-[var(--background-secondary)] transition-colors"
+                title="Nueva conversación"
+              >
+                <Plus className="w-5 h-5" />
+              </button>
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-[var(--success)]/10 text-[var(--success)]">
+                <span className="w-1.5 h-1.5 rounded-full bg-[var(--success)] animate-pulse" />
+                Online
+              </span>
+            </div>
+          </div>
+        </div>
 
       {/* Messages area - ocupa todo el espacio disponible */}
       <div className="flex-1 overflow-y-auto">
@@ -421,6 +638,7 @@ export default function ChatPage() {
           )}
         </form>
       </div>
+      </div>{/* Fin contenido principal del chat */}
     </div>
   );
 }

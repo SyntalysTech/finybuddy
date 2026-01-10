@@ -30,24 +30,26 @@ interface NavItem {
   name: string;
   href: string;
   icon: React.ComponentType<{ className?: string }>;
+  color?: string; // Color del icono
+  gradient?: string; // Gradiente para estado activo
 }
 
 const mainNavItems: NavItem[] = [
-  { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-  { name: "Previsión vs Realidad", href: "/prevision-vs-realidad", icon: ArrowLeftRight },
-  { name: "Operaciones", href: "/operaciones", icon: Receipt },
-  { name: "Previsión", href: "/prevision", icon: Calculator },
-  { name: "Calendario", href: "/calendario", icon: Calendar },
-  { name: "Ahorro", href: "/ahorro", icon: PiggyBank },
-  { name: "Deuda", href: "/deuda", icon: CreditCard },
-  { name: "FinyBot", href: "/chat", icon: Bot },
+  { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard, color: "text-[#02EAFF]", gradient: "from-[#02EAFF]/20 to-transparent" },
+  { name: "Previsión vs Realidad", href: "/prevision-vs-realidad", icon: ArrowLeftRight, color: "text-[#7739FE]", gradient: "from-[#7739FE]/20 to-transparent" },
+  { name: "Operaciones", href: "/operaciones", icon: Receipt, color: "text-[#10B981]", gradient: "from-[#10B981]/20 to-transparent" },
+  { name: "Previsión", href: "/prevision", icon: Calculator, color: "text-[#F59E0B]", gradient: "from-[#F59E0B]/20 to-transparent" },
+  { name: "Calendario", href: "/calendario", icon: Calendar, color: "text-[#EC4899]", gradient: "from-[#EC4899]/20 to-transparent" },
+  { name: "Ahorro", href: "/ahorro", icon: PiggyBank, color: "text-[#22C55E]", gradient: "from-[#22C55E]/20 to-transparent" },
+  { name: "Deuda", href: "/deuda", icon: CreditCard, color: "text-[#EF4444]", gradient: "from-[#EF4444]/20 to-transparent" },
+  { name: "FinyBot", href: "/chat", icon: Bot, color: "text-[#02EAFF]", gradient: "from-[#02EAFF]/20 via-[#7739FE]/15 to-transparent" },
 ];
 
 const settingsNavItems: NavItem[] = [
-  { name: "Mis Categorías", href: "/categorias", icon: FolderOpen },
-  { name: "Mi Regla financiera", href: "/regla-financiera", icon: Scale },
-  { name: "Perfil", href: "/perfil", icon: User },
-  { name: "Ajustes", href: "/ajustes", icon: Settings },
+  { name: "Mis Categorías", href: "/categorias", icon: FolderOpen, color: "text-[#8B5CF6]", gradient: "from-[#8B5CF6]/20 to-transparent" },
+  { name: "Mi Regla financiera", href: "/regla-financiera", icon: Scale, color: "text-[#06B6D4]", gradient: "from-[#06B6D4]/20 to-transparent" },
+  { name: "Perfil", href: "/perfil", icon: User, color: "text-[#F97316]", gradient: "from-[#F97316]/20 to-transparent" },
+  { name: "Ajustes", href: "/ajustes", icon: Settings, color: "text-[#6B7280]", gradient: "from-[#6B7280]/20 to-transparent" },
 ];
 
 export default function Sidebar() {
@@ -140,29 +142,41 @@ export default function Sidebar() {
                 <li key={item.href}>
                   <Link
                     href={item.href}
-                    className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors duration-200 group overflow-hidden ${
+                    className={`relative flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-300 group overflow-hidden ${
                       active
-                        ? "bg-[var(--sidebar-active)] text-[var(--brand-cyan)]"
-                        : "hover:bg-[var(--sidebar-hover)] hover:text-[var(--sidebar-text-active)]"
+                        ? `bg-gradient-to-r ${item.gradient} border border-white/10`
+                        : "hover:bg-[var(--sidebar-hover)] hover:scale-[1.02]"
                     }`}
                     title={collapsed ? item.name : undefined}
                   >
-                    <Icon
-                      className={`w-5 h-5 flex-shrink-0 transition-colors duration-200 ${
-                        active ? "text-[var(--brand-cyan)]" : "group-hover:text-[var(--brand-cyan)]"
-                      }`}
-                    />
+                    {/* Indicador lateral activo */}
+                    {active && (
+                      <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 rounded-r-full bg-gradient-to-b from-[#02EAFF] to-[#7739FE] animate-pulse" />
+                    )}
+                    <div className={`p-1.5 rounded-lg transition-all duration-300 ${
+                      active
+                        ? "bg-white/10"
+                        : "group-hover:bg-white/5"
+                    }`}>
+                      <Icon
+                        className={`w-5 h-5 flex-shrink-0 transition-all duration-300 ${
+                          active
+                            ? item.color
+                            : `text-[var(--sidebar-text)] group-hover:${item.color}`
+                        } ${active ? "scale-110" : "group-hover:scale-110"}`}
+                      />
+                    </div>
                     <span
                       className={`text-sm font-medium whitespace-nowrap transition-all duration-300 ease-in-out ${
-                        active ? "text-white" : ""
+                        active ? "text-white font-semibold" : "group-hover:text-white"
                       } ${collapsed ? "w-0 opacity-0" : "w-auto opacity-100"}`}
                     >
                       {item.name}
                     </span>
                     {active && (
                       <div
-                        className={`ml-auto w-1.5 h-1.5 rounded-full bg-[var(--brand-cyan)] flex-shrink-0 transition-all duration-300 ease-in-out ${
-                          collapsed ? "opacity-0 scale-0" : "opacity-100 scale-100"
+                        className={`ml-auto w-2 h-2 rounded-full bg-gradient-to-br from-[#02EAFF] to-[#7739FE] flex-shrink-0 transition-all duration-300 ease-in-out shadow-lg shadow-[#02EAFF]/30 ${
+                          collapsed ? "opacity-0 scale-0" : "opacity-100 scale-100 animate-pulse"
                         }`}
                       />
                     )}
@@ -192,29 +206,41 @@ export default function Sidebar() {
                 <li key={item.href}>
                   <Link
                     href={item.href}
-                    className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors duration-200 group overflow-hidden ${
+                    className={`relative flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-300 group overflow-hidden ${
                       active
-                        ? "bg-[var(--sidebar-active)] text-[var(--brand-cyan)]"
-                        : "hover:bg-[var(--sidebar-hover)] hover:text-[var(--sidebar-text-active)]"
+                        ? `bg-gradient-to-r ${item.gradient} border border-white/10`
+                        : "hover:bg-[var(--sidebar-hover)] hover:scale-[1.02]"
                     }`}
                     title={collapsed ? item.name : undefined}
                   >
-                    <Icon
-                      className={`w-5 h-5 flex-shrink-0 transition-colors duration-200 ${
-                        active ? "text-[var(--brand-cyan)]" : "group-hover:text-[var(--brand-cyan)]"
-                      }`}
-                    />
+                    {/* Indicador lateral activo */}
+                    {active && (
+                      <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 rounded-r-full bg-gradient-to-b from-[#02EAFF] to-[#7739FE] animate-pulse" />
+                    )}
+                    <div className={`p-1.5 rounded-lg transition-all duration-300 ${
+                      active
+                        ? "bg-white/10"
+                        : "group-hover:bg-white/5"
+                    }`}>
+                      <Icon
+                        className={`w-5 h-5 flex-shrink-0 transition-all duration-300 ${
+                          active
+                            ? item.color
+                            : `text-[var(--sidebar-text)] group-hover:${item.color}`
+                        } ${active ? "scale-110" : "group-hover:scale-110"}`}
+                      />
+                    </div>
                     <span
                       className={`text-sm font-medium whitespace-nowrap transition-all duration-300 ease-in-out ${
-                        active ? "text-white" : ""
+                        active ? "text-white font-semibold" : "group-hover:text-white"
                       } ${collapsed ? "w-0 opacity-0" : "w-auto opacity-100"}`}
                     >
                       {item.name}
                     </span>
                     {active && (
                       <div
-                        className={`ml-auto w-1.5 h-1.5 rounded-full bg-[var(--brand-cyan)] flex-shrink-0 transition-all duration-300 ease-in-out ${
-                          collapsed ? "opacity-0 scale-0" : "opacity-100 scale-100"
+                        className={`ml-auto w-2 h-2 rounded-full bg-gradient-to-br from-[#02EAFF] to-[#7739FE] flex-shrink-0 transition-all duration-300 ease-in-out shadow-lg shadow-[#02EAFF]/30 ${
+                          collapsed ? "opacity-0 scale-0" : "opacity-100 scale-100 animate-pulse"
                         }`}
                       />
                     )}
@@ -241,29 +267,38 @@ export default function Sidebar() {
               <li>
                 <Link
                   href="/admin"
-                  className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors duration-200 group overflow-hidden ${
+                  className={`relative flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-300 group overflow-hidden ${
                     isActive("/admin")
-                      ? "bg-[var(--sidebar-active)] text-[var(--brand-cyan)]"
-                      : "hover:bg-[var(--sidebar-hover)] hover:text-[var(--sidebar-text-active)]"
+                      ? "bg-gradient-to-r from-[#F59E0B]/20 to-transparent border border-white/10"
+                      : "hover:bg-[var(--sidebar-hover)] hover:scale-[1.02]"
                   }`}
                   title={collapsed ? "Admin" : undefined}
                 >
-                  <ShieldCheck
-                    className={`w-5 h-5 flex-shrink-0 transition-colors duration-200 ${
-                      isActive("/admin") ? "text-[var(--brand-cyan)]" : "group-hover:text-[var(--brand-cyan)]"
-                    }`}
-                  />
+                  {isActive("/admin") && (
+                    <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 rounded-r-full bg-gradient-to-b from-[#F59E0B] to-[#EF4444] animate-pulse" />
+                  )}
+                  <div className={`p-1.5 rounded-lg transition-all duration-300 ${
+                    isActive("/admin")
+                      ? "bg-white/10"
+                      : "group-hover:bg-white/5"
+                  }`}>
+                    <ShieldCheck
+                      className={`w-5 h-5 flex-shrink-0 transition-all duration-300 ${
+                        isActive("/admin") ? "text-[#F59E0B] scale-110" : "text-[var(--sidebar-text)] group-hover:text-[#F59E0B] group-hover:scale-110"
+                      }`}
+                    />
+                  </div>
                   <span
                     className={`text-sm font-medium whitespace-nowrap transition-all duration-300 ease-in-out ${
-                      isActive("/admin") ? "text-white" : ""
+                      isActive("/admin") ? "text-white font-semibold" : "group-hover:text-white"
                     } ${collapsed ? "w-0 opacity-0" : "w-auto opacity-100"}`}
                   >
                     Admin
                   </span>
                   {isActive("/admin") && (
                     <div
-                      className={`ml-auto w-1.5 h-1.5 rounded-full bg-[var(--brand-cyan)] flex-shrink-0 transition-all duration-300 ease-in-out ${
-                        collapsed ? "opacity-0 scale-0" : "opacity-100 scale-100"
+                      className={`ml-auto w-2 h-2 rounded-full bg-gradient-to-br from-[#F59E0B] to-[#EF4444] flex-shrink-0 transition-all duration-300 ease-in-out shadow-lg shadow-[#F59E0B]/30 ${
+                        collapsed ? "opacity-0 scale-0" : "opacity-100 scale-100 animate-pulse"
                       }`}
                     />
                   )}
