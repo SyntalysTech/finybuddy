@@ -20,7 +20,84 @@ import {
   Shield,
   Zap,
   ChevronDown,
+  Mail,
+  Loader2,
 } from "lucide-react";
+
+// Newsletter subscription form
+function NewsletterForm() {
+  const [email, setEmail] = useState("");
+  const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
+  const [message, setMessage] = useState("");
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email) return;
+
+    setStatus("loading");
+
+    try {
+      const response = await fetch("/api/newsletter/subscribe", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, source: "landing" }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setStatus("success");
+        setMessage(data.message);
+        setEmail("");
+      } else {
+        setStatus("error");
+        setMessage(data.error || "Error al suscribirse");
+      }
+    } catch {
+      setStatus("error");
+      setMessage("Error de conexión. Inténtalo de nuevo.");
+    }
+
+    setTimeout(() => {
+      setStatus("idle");
+      setMessage("");
+    }, 5000);
+  };
+
+  return (
+    <div className="relative">
+      <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-3 max-w-md mx-auto">
+        <div className="relative flex-1">
+          <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[var(--brand-gray)]" />
+          <input
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="Tu email"
+            className="w-full pl-12 pr-4 py-3.5 rounded-xl bg-[var(--background-secondary)] border border-[var(--border)] focus:border-[var(--brand-cyan)] focus:ring-2 focus:ring-[var(--brand-cyan)]/20 outline-none transition-all"
+            disabled={status === "loading"}
+          />
+        </div>
+        <button
+          type="submit"
+          disabled={status === "loading" || !email}
+          className="px-6 py-3.5 rounded-xl bg-[var(--brand-cyan)] text-white font-semibold hover:bg-[var(--brand-cyan)]/90 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+        >
+          {status === "loading" ? (
+            <Loader2 className="w-5 h-5 animate-spin" />
+          ) : (
+            <>Suscribirse</>
+          )}
+        </button>
+      </form>
+      {message && (
+        <p className={`mt-4 text-sm ${status === "success" ? "text-[var(--success)]" : "text-[var(--danger)]"}`}>
+          {message}
+        </p>
+      )}
+    </div>
+  );
+}
 
 // Animated counter component
 function AnimatedNumber({ value, prefix = "", suffix = "" }: { value: number; prefix?: string; suffix?: string }) {
@@ -592,6 +669,23 @@ export default function HomePage() {
               </div>
             </div>
           </div>
+        </div>
+      </section>
+
+      {/* Newsletter Section */}
+      <section className="py-20 px-6 bg-[var(--background)]">
+        <div className="max-w-3xl mx-auto text-center">
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[var(--brand-cyan)]/10 text-[var(--brand-cyan)] text-sm font-medium mb-6">
+            <Sparkles className="w-4 h-4" />
+            Newsletter
+          </div>
+          <h2 className="text-3xl md:text-4xl font-bold mb-4">
+            Consejos financieros cada semana
+          </h2>
+          <p className="text-lg text-[var(--brand-gray)] mb-8">
+            Suscríbete y recibe trucos de ahorro, novedades de FinyBuddy y consejos para mejorar tus finanzas personales.
+          </p>
+          <NewsletterForm />
         </div>
       </section>
 
