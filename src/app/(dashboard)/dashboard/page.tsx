@@ -44,7 +44,7 @@ const motivationalQuotes = [
   "El dinero es un buen sirviente, pero un mal amo.",
   "Invertir en ti mismo es la mejor inversión que puedes hacer.",
   "La disciplina financiera de hoy es la libertad de mañana.",
-  "No gastes lo que queda después de ahorrar. Ahorra lo que queda después de gastar.",
+  "No ahorres lo que te queda después de gastar. Gasta lo que te queda después de ahorrar.",
   "Un presupuesto te dice a tu dinero a dónde ir, en lugar de preguntarte a dónde fue.",
   "La independencia financiera se construye un día a la vez.",
   "Cuida los céntimos y los euros se cuidarán solos.",

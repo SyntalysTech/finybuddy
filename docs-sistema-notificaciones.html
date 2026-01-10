@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>FinyBuddy - Sistema de Notificaciones</title>
+  <style>
+    @page { size: A4; margin: 20mm; }
+    @media print {
+      .no-print { display: none; }
+      .page-break { page-break-before: always; }
+    }
+    body {
+      font-family: Arial, sans-serif;
+      font-size: 12pt;
+      line-height: 1.6;
+      color: #333;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    .btn {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: #3b82f6;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 8px;
+      font-size: 14px;
+      cursor: pointer;
+    }
+    h1 {
+      color: #1e40af;
+      border-bottom: 3px solid #3b82f6;
+      padding-bottom: 10px;
+      margin-bottom: 30px;
+    }
+    h2 {
+      color: #1e40af;
+      margin-top: 30px;
+      margin-bottom: 15px;
+      page-break-after: avoid;
+    }
+    h3 {
+      color: #3b82f6;
+      margin-top: 20px;
+      page-break-after: avoid;
+    }
+    p, ul, div, table {
+      page-break-inside: avoid;
+    }
+    .section {
+      page-break-inside: avoid;
+    }
+    .highlight {
+      background: #fef3c7;
+      padding: 15px;
+      border-left: 4px solid #f59e0b;
+      margin: 15px 0;
+    }
+    .code {
+      background: #f1f5f9;
+      padding: 15px;
+      font-family: monospace;
+      font-size: 11pt;
+      border-radius: 5px;
+      margin: 15px 0;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 15px 0;
+    }
+    th, td {
+      border: 1px solid #e2e8f0;
+      padding: 10px;
+      text-align: left;
+    }
+    th {
+      background: #f1f5f9;
+    }
+    ul { margin: 10px 0; padding-left: 25px; }
+    li { margin: 5px 0; }
+  </style>
+</head>
+<body>
+
+<button class="btn no-print" onclick="window.print()">Generar PDF</button>
+
+<h1>FinyBuddy - Sistema de Correos y Notificaciones</h1>
+<p><em>Documentacion tecnica para administradores - Enero 2026</em></p>
+
+<h2>1. Emails de Recordatorios de Pagos</h2>
+
+<h3>¿Que hace?</h3>
+<p>Envia un email automatico al usuario <strong>1 dia antes</strong> de que venza un pago que tenga configurado en el Calendario de la app.</p>
+
+<h3>¿Cuando se ejecuta?</h3>
+<p>Todos los dias a las <strong>00:00 UTC</strong>, mediante Vercel Cron Jobs.</p>
+
+<h3>¿Como lo activa/desactiva el usuario?</h3>
+<p>Desde la app: <strong>Ajustes → Notificaciones → "Alerta de recordatorios"</strong></p>
+<p>Es un toggle ON/OFF. Por defecto viene activado.</p>
+
+<h3>Ejemplo de email enviado</h3>
+<ul>
+  <li><strong>Asunto:</strong> "Recordatorio: Alquiler vence mañana"</li>
+  <li><strong>Contenido:</strong> Logo FinyBuddy, lista de pagos con importes, total, boton al calendario</li>
+</ul>
+
+<hr>
+
+<h2>2. Resumen Mensual In-App</h2>
+
+<h3>¿Que hace?</h3>
+<p>El <strong>dia 2 de cada mes</strong>, crea una notificacion dentro de la app con el resumen del mes anterior: ingresos, gastos, ahorro y balance.</p>
+
+<div class="highlight">
+  <strong>IMPORTANTE:</strong> Esta funcion NO envia email. Solo crea una notificacion interna que el usuario ve en la campanita de la app.
+</div>
+
+<h3>¿Como lo activa/desactiva el usuario?</h3>
+<p>Desde la app: <strong>Ajustes → Notificaciones → "Resumen mensual"</strong></p>
+
+<h3>¿Donde lo ve el usuario?</h3>
+<p>En el icono de la campanita del header. Al hacer clic se despliega el panel de notificaciones.</p>
+
+<!-- SALTO DE PAGINA -->
+<div class="page-break"></div>
+
+<h2>3. Newsletter (Landing Page)</h2>
+
+<h3>¿Que hace?</h3>
+<p>Recoge emails de personas interesadas desde el formulario de la landing page para enviarles novedades en el futuro.</p>
+
+<h3>¿Como gestionar la newsletter?</h3>
+<p>Desde el panel de administracion: <strong>Admin → pestaña "Newsletter"</strong></p>
+<ul>
+  <li>Ver lista de todos los suscriptores</li>
+  <li>Activar/desactivar suscriptores</li>
+  <li>Eliminar suscriptores</li>
+  <li>Enviar newsletters a todos los suscriptores activos</li>
+  <li>Enviar email de prueba antes de enviar a todos</li>
+</ul>
+
+<h3>¿Donde se guardan los emails?</h3>
+<p>En la tabla <code>newsletter_subscribers</code> de Supabase.</p>
+
+<hr>
+
+<h2>4. Servicios Utilizados</h2>
+
+<table>
+  <tr>
+    <th>Servicio</th>
+    <th>Para que se usa</th>
+    <th>Panel de control</th>
+  </tr>
+  <tr>
+    <td>Resend</td>
+    <td>Enviar los emails de recordatorios</td>
+    <td>resend.com</td>
+  </tr>
+  <tr>
+    <td>Vercel Cron</td>
+    <td>Ejecutar tareas automaticas diarias/mensuales</td>
+    <td>vercel.com</td>
+  </tr>
+  <tr>
+    <td>Supabase</td>
+    <td>Base de datos (usuarios, notificaciones, suscriptores)</td>
+    <td>supabase.com</td>
+  </tr>
+</table>
+
+<hr>
+
+<h2>5. Variables de Entorno</h2>
+<p>Configuradas en Vercel → Settings → Environment Variables:</p>
+
+<div class="code">
+RESEND_API_KEY=re_xxxxxxxxxx<br>
+CRON_SECRET=token_secreto<br>
+NEXT_PUBLIC_SUPABASE_URL=https://xxx.supabase.co<br>
+SUPABASE_SERVICE_ROLE_KEY=eyJxxxxxxx
+</div>
+
+<hr>
+
+<h2>6. Endpoints API</h2>
+
+<table>
+  <tr>
+    <th>Endpoint</th>
+    <th>Funcion</th>
+    <th>Frecuencia</th>
+  </tr>
+  <tr>
+    <td>/api/send-reminder-emails</td>
+    <td>Envia emails de recordatorios</td>
+    <td>Diaria (00:00 UTC)</td>
+  </tr>
+  <tr>
+    <td>/api/generate-monthly-summary</td>
+    <td>Crea notificaciones de resumen</td>
+    <td>Dia 2 de cada mes</td>
+  </tr>
+  <tr>
+    <td>/api/newsletter/subscribe</td>
+    <td>Registra nuevos suscriptores</td>
+    <td>Cuando alguien se suscribe</td>
+  </tr>
+</table>
+
+<!-- SALTO DE PAGINA -->
+<div class="page-break"></div>
+
+<h2>7. Panel de Administracion</h2>
+
+<p>Acceso: <strong>finybuddy.com/admin</strong> (solo usuarios con permisos de admin)</p>
+
+<h3>Pestaña "Usuarios"</h3>
+<ul>
+  <li>Ver lista de todos los usuarios registrados</li>
+  <li>Crear nuevos usuarios</li>
+  <li>Editar usuarios (nombre, permisos admin)</li>
+  <li>Cambiar contraseñas</li>
+  <li>Enviar magic link de acceso</li>
+  <li>Activar/desactivar usuarios</li>
+  <li>Eliminar usuarios</li>
+</ul>
+
+<h3>Pestaña "Newsletter"</h3>
+<ul>
+  <li>Ver todos los suscriptores de la landing</li>
+  <li>Activar/desactivar suscripciones</li>
+  <li>Eliminar suscriptores</li>
+  <li>Enviar newsletter: escribir asunto y contenido</li>
+  <li>Enviar email de prueba antes del envio masivo</li>
+</ul>
+
+<hr>
+
+<h2>8. Resumen Rapido</h2>
+
+<table>
+  <tr>
+    <th>Funcionalidad</th>
+    <th>Tipo</th>
+    <th>Automatico</th>
+    <th>Usuario puede configurar</th>
+  </tr>
+  <tr>
+    <td>Recordatorios de pagos</td>
+    <td>Email</td>
+    <td>Si</td>
+    <td>Si</td>
+  </tr>
+  <tr>
+    <td>Resumen mensual</td>
+    <td>In-App</td>
+    <td>Si</td>
+    <td>Si</td>
+  </tr>
+  <tr>
+    <td>Newsletter</td>
+    <td>Manual</td>
+    <td>No</td>
+    <td>N/A</td>
+  </tr>
+</table>
+
+<br><br>
+<p style="text-align: center; color: #666;">
+  <em>Documento para FinyBuddy - Syntalys Tech - Enero 2026</em>
+</p>
+
+</body>
+</html>
