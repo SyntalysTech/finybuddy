@@ -166,10 +166,10 @@ export default function ChatPage() {
     getUser();
   }, [supabase, loadConversations]);
 
-  // Auto-scroll to bottom
+  // Auto-scroll to bottom when messages change or loading starts
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+  }, [messages, loading]);
 
   // Auto-resize textarea
   useEffect(() => {
@@ -183,11 +183,13 @@ export default function ChatPage() {
     if (!text.trim() || loading || !userId) return;
 
     const userMessage: Message = { role: "user", content: text.trim() };
-    setMessages(prev => [...prev, userMessage]);
+
+    // Immediately show user message and loading state - no delay!
     setInput("");
     setLoading(true);
+    setMessages(prev => [...prev, userMessage]);
 
-    // Create conversation if needed
+    // Create conversation if needed (in background, user already sees their message)
     let convId = currentConversationId;
     if (!convId) {
       convId = await createNewConversation();
@@ -197,8 +199,8 @@ export default function ChatPage() {
       }
     }
 
-    // Save user message
-    await saveMessage(convId, "user", text.trim());
+    // Save user message (in background)
+    saveMessage(convId, "user", text.trim());
 
     try {
       const response = await fetch("/api/chat", {
