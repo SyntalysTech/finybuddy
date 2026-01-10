@@ -268,7 +268,7 @@ export default function OperationModal({ isOpen, onClose, onSave, operation, pre
       )}
 
       {/* Main Modal - NO onClick on backdrop to prevent accidental close */}
-      <div className="bg-[var(--background)] rounded-t-2xl sm:rounded-2xl shadow-2xl w-full sm:max-w-lg max-h-[85vh] sm:max-h-[90vh] overflow-y-auto overscroll-contain sm:m-4">
+      <div className="bg-[var(--background)] rounded-t-2xl sm:rounded-2xl shadow-2xl w-full max-w-full sm:max-w-lg max-h-[85vh] sm:max-h-[90vh] overflow-y-auto overscroll-contain mx-0 sm:mx-4">
         {/* Header */}
         <div className="px-4 sm:px-6 py-3 sm:py-4 border-b border-[var(--border)] flex items-center justify-between sticky top-0 bg-[var(--background)] z-10">
           <h2 className="text-base sm:text-lg font-semibold">

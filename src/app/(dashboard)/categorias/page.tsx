@@ -242,17 +242,17 @@ export default function CategoriasPage() {
     return (
       <div
         key={category.id}
-        className={`p-4 rounded-xl border-l-4 border transition-all ${
+        className={`p-2.5 sm:p-4 rounded-lg sm:rounded-xl border-l-4 border transition-all ${
           category.is_active
             ? "bg-[var(--background)] border-[var(--border)] hover:border-[var(--brand-gray)]"
             : "bg-[var(--background-secondary)]/50 border-[var(--border)] opacity-60"
         }`}
         style={{ borderLeftColor: category.color }}
       >
-        <div className="flex items-start gap-3">
+        <div className="flex items-center gap-2 sm:gap-3">
           {/* Icon */}
           <div
-            className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl shrink-0"
+            className="w-9 h-9 sm:w-12 sm:h-12 rounded-lg sm:rounded-xl flex items-center justify-center text-lg sm:text-2xl shrink-0"
             style={{ backgroundColor: `${category.color}30` }}
           >
             {category.icon}
@@ -260,25 +260,21 @@ export default function CategoriasPage() {
 
           {/* Content */}
           <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2">
-              <h3 className="font-semibold truncate">{category.name}</h3>
-              {!category.is_active && (
-                <span className="px-2 py-0.5 rounded-full text-xs bg-[var(--brand-gray)]/20 text-[var(--brand-gray)]">
-                  Inactiva
-                </span>
-              )}
+            <div className="flex items-center gap-1 sm:gap-2 flex-wrap">
+              <h3 className="text-xs sm:text-base font-semibold truncate max-w-[100px] sm:max-w-none">{category.name}</h3>
               {category.is_default && (
-                <span className="px-2 py-0.5 rounded-full text-xs bg-[var(--brand-purple)]/10 text-[var(--brand-purple)]">
-                  Por defecto
+                <span className="px-1.5 sm:px-2 py-0.5 rounded-full text-[10px] sm:text-xs bg-[var(--brand-purple)]/10 text-[var(--brand-purple)] whitespace-nowrap">
+                  <span className="hidden sm:inline">Por defecto</span>
+                  <span className="sm:hidden">Def</span>
                 </span>
               )}
             </div>
 
-            <div className="flex items-center gap-3 mt-1">
+            <div className="flex items-center gap-1.5 sm:gap-3 mt-0.5 sm:mt-1">
               {/* Segment badge for expenses */}
               {category.type === "expense" && segmentInfo && (
                 <span
-                  className="text-xs px-2 py-0.5 rounded-full"
+                  className="text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 rounded-full"
                   style={{
                     backgroundColor: `${segmentInfo.color}20`,
                     color: segmentInfo.color
@@ -290,18 +286,18 @@ export default function CategoriasPage() {
 
               {/* Operation count */}
               {category.operation_count !== undefined && category.operation_count > 0 && (
-                <span className="text-xs text-[var(--brand-gray)]">
-                  {category.operation_count} operacion{category.operation_count !== 1 ? "es" : ""}
+                <span className="text-[10px] sm:text-xs text-[var(--brand-gray)]">
+                  {category.operation_count} op.
                 </span>
               )}
             </div>
           </div>
 
           {/* Actions */}
-          <div className="flex items-center gap-1 shrink-0">
+          <div className="flex items-center shrink-0">
             <button
               onClick={() => handleToggleActive(category)}
-              className={`p-2 rounded-lg transition-colors ${
+              className={`p-1.5 sm:p-2 rounded-lg transition-colors ${
                 category.is_active
                   ? "hover:bg-[var(--warning)]/10"
                   : "hover:bg-[var(--success)]/10"
@@ -309,9 +305,9 @@ export default function CategoriasPage() {
               title={category.is_active ? "Desactivar" : "Activar"}
             >
               {category.is_active ? (
-                <EyeOff className="w-4 h-4 text-[var(--brand-gray)]" />
+                <EyeOff className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[var(--brand-gray)]" />
               ) : (
-                <Eye className="w-4 h-4 text-[var(--success)]" />
+                <Eye className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[var(--success)]" />
               )}
             </button>
             <button
@@ -319,10 +315,10 @@ export default function CategoriasPage() {
                 setEditingCategory(category);
                 setShowCategoryModal(true);
               }}
-              className="p-2 rounded-lg hover:bg-[var(--background-secondary)] transition-colors"
+              className="p-1.5 sm:p-2 rounded-lg hover:bg-[var(--background-secondary)] transition-colors"
               title="Editar"
             >
-              <Edit2 className="w-4 h-4 text-[var(--brand-gray)]" />
+              <Edit2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[var(--brand-gray)]" />
             </button>
             {(!category.operation_count || category.operation_count === 0) && (
               <button
@@ -330,10 +326,10 @@ export default function CategoriasPage() {
                   setDeletingCategory(category);
                   setShowDeleteModal(true);
                 }}
-                className="p-2 rounded-lg hover:bg-[var(--danger)]/10 transition-colors"
+                className="p-1.5 sm:p-2 rounded-lg hover:bg-[var(--danger)]/10 transition-colors"
                 title="Eliminar"
               >
-                <Trash2 className="w-4 h-4 text-[var(--danger)]" />
+                <Trash2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[var(--danger)]" />
               </button>
             )}
           </div>
@@ -361,92 +357,93 @@ export default function CategoriasPage() {
         }
       />
 
-      <div className="p-6 space-y-6">
+      <div className="p-3 sm:p-6 space-y-4 sm:space-y-6">
         {/* Summary Cards */}
-        <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
-          <div className="card p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-[var(--brand-purple)]/10">
-                <Tag className="w-5 h-5 text-[var(--brand-purple)]" />
+        <div className="grid grid-cols-3 sm:grid-cols-3 lg:grid-cols-5 gap-2 sm:gap-4">
+          <div className="card p-2 sm:p-4">
+            <div className="flex flex-col sm:flex-row items-center sm:items-center gap-1 sm:gap-3">
+              <div className="p-1.5 sm:p-2 rounded-lg bg-[var(--brand-purple)]/10">
+                <Tag className="w-4 h-4 sm:w-5 sm:h-5 text-[var(--brand-purple)]" />
               </div>
-              <div>
-                <p className="text-sm text-[var(--brand-gray)]">Total</p>
-                <p className="text-xl font-bold">{totalCategories}</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="card p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-[var(--success)]/10">
-                <CheckCircle className="w-5 h-5 text-[var(--success)]" />
-              </div>
-              <div>
-                <p className="text-sm text-[var(--brand-gray)]">Activas</p>
-                <p className="text-xl font-bold">{activeCategories}</p>
+              <div className="text-center sm:text-left">
+                <p className="text-[10px] sm:text-sm text-[var(--brand-gray)]">Total</p>
+                <p className="text-base sm:text-xl font-bold">{totalCategories}</p>
               </div>
             </div>
           </div>
 
-          <div className="card p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-[var(--success)]/10">
-                <TrendingUp className="w-5 h-5 text-[var(--success)]" />
+          <div className="card p-2 sm:p-4">
+            <div className="flex flex-col sm:flex-row items-center sm:items-center gap-1 sm:gap-3">
+              <div className="p-1.5 sm:p-2 rounded-lg bg-[var(--success)]/10">
+                <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 text-[var(--success)]" />
               </div>
-              <div>
-                <p className="text-sm text-[var(--brand-gray)]">Ingresos</p>
-                <p className="text-xl font-bold">{incomeCategories}</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="card p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-[var(--danger)]/10">
-                <TrendingDown className="w-5 h-5 text-[var(--danger)]" />
-              </div>
-              <div>
-                <p className="text-sm text-[var(--brand-gray)]">Gastos</p>
-                <p className="text-xl font-bold">{expenseCategories}</p>
+              <div className="text-center sm:text-left">
+                <p className="text-[10px] sm:text-sm text-[var(--brand-gray)]">Activas</p>
+                <p className="text-base sm:text-xl font-bold">{activeCategories}</p>
               </div>
             </div>
           </div>
 
-          <div className="card p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-[var(--brand-cyan)]/10">
-                <PiggyBank className="w-5 h-5 text-[var(--brand-cyan)]" />
+          <div className="card p-2 sm:p-4 hidden lg:block">
+            <div className="flex flex-col sm:flex-row items-center sm:items-center gap-1 sm:gap-3">
+              <div className="p-1.5 sm:p-2 rounded-lg bg-[var(--success)]/10">
+                <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 text-[var(--success)]" />
               </div>
-              <div>
-                <p className="text-sm text-[var(--brand-gray)]">Ahorro</p>
-                <p className="text-xl font-bold">{savingsCategories}</p>
+              <div className="text-center sm:text-left">
+                <p className="text-[10px] sm:text-sm text-[var(--brand-gray)]">Ingresos</p>
+                <p className="text-base sm:text-xl font-bold">{incomeCategories}</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="card p-2 sm:p-4 hidden lg:block">
+            <div className="flex flex-col sm:flex-row items-center sm:items-center gap-1 sm:gap-3">
+              <div className="p-1.5 sm:p-2 rounded-lg bg-[var(--danger)]/10">
+                <TrendingDown className="w-4 h-4 sm:w-5 sm:h-5 text-[var(--danger)]" />
+              </div>
+              <div className="text-center sm:text-left">
+                <p className="text-[10px] sm:text-sm text-[var(--brand-gray)]">Gastos</p>
+                <p className="text-base sm:text-xl font-bold">{expenseCategories}</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="card p-2 sm:p-4">
+            <div className="flex flex-col sm:flex-row items-center sm:items-center gap-1 sm:gap-3">
+              <div className="p-1.5 sm:p-2 rounded-lg bg-[var(--brand-cyan)]/10">
+                <PiggyBank className="w-4 h-4 sm:w-5 sm:h-5 text-[var(--brand-cyan)]" />
+              </div>
+              <div className="text-center sm:text-left">
+                <p className="text-[10px] sm:text-sm text-[var(--brand-gray)]">Ahorro</p>
+                <p className="text-base sm:text-xl font-bold">{savingsCategories}</p>
               </div>
             </div>
           </div>
         </div>
 
         {/* Financial Rule Info */}
-        <div className="card p-5">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="font-semibold flex items-center gap-2">
-              <Info className="w-5 h-5 text-[var(--brand-purple)]" />
-              Tu regla financiera
+        <div className="card p-3 sm:p-5">
+          <div className="flex items-center justify-between mb-3 sm:mb-4">
+            <h3 className="font-semibold flex items-center gap-2 text-sm sm:text-base">
+              <Info className="w-4 h-4 sm:w-5 sm:h-5 text-[var(--brand-purple)]" />
+              <span className="hidden sm:inline">Tu regla financiera</span>
+              <span className="sm:hidden">Regla</span>
             </h3>
             <Link
               href="/regla-financiera"
-              className="flex items-center gap-1.5 text-sm text-[var(--brand-cyan)] hover:underline"
+              className="flex items-center gap-1 sm:gap-1.5 text-xs sm:text-sm text-[var(--brand-cyan)] hover:underline"
             >
-              <Settings className="w-4 h-4" />
-              Configurar
+              <Settings className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+              <span className="hidden sm:inline">Configurar</span>
             </Link>
           </div>
 
-          <p className="text-sm text-[var(--brand-gray)] mb-4">
-            Asigna un segmento a tus categorías de gasto, indicando si se trata de un gasto por necesidad o por deseo, para poder distribuir tu presupuesto correctamente según tu regla financiera personalizada.
+          <p className="text-xs sm:text-sm text-[var(--brand-gray)] mb-3 sm:mb-4 hidden sm:block">
+            Asigna un segmento a tus categorías de gasto para distribuir tu presupuesto según tu regla financiera.
           </p>
 
           {/* Visual bar */}
-          <div className="h-3 rounded-full overflow-hidden flex mb-4">
+          <div className="h-2 sm:h-3 rounded-full overflow-hidden flex mb-3 sm:mb-4">
             <div
               className="transition-all"
               style={{ width: `${financialRule.needs}%`, backgroundColor: "#02EAFF" }}
@@ -461,56 +458,57 @@ export default function CategoriasPage() {
             />
           </div>
 
-          <div className="grid sm:grid-cols-3 gap-4">
+          <div className="grid grid-cols-3 gap-2 sm:gap-4">
             <div
-              className="p-4 rounded-xl"
+              className="p-2 sm:p-4 rounded-lg sm:rounded-xl text-center sm:text-left"
               style={{ backgroundColor: "#02EAFF10" }}
             >
-              <div className="flex items-center justify-between mb-1">
-                <span className="text-lg font-bold" style={{ color: "#02EAFF" }}>
-                  Necesidades
+              <div className="flex flex-col sm:flex-row items-center sm:justify-between mb-0.5 sm:mb-1">
+                <span className="text-xs sm:text-lg font-bold" style={{ color: "#02EAFF" }}>
+                  <span className="hidden sm:inline">Necesidades</span>
+                  <span className="sm:hidden">Neces.</span>
                 </span>
-                <span className="text-lg font-bold" style={{ color: "#02EAFF" }}>
+                <span className="text-sm sm:text-lg font-bold" style={{ color: "#02EAFF" }}>
                   {financialRule.needs}%
                 </span>
               </div>
-              <p className="text-sm text-[var(--brand-gray)]">Gastos esenciales</p>
+              <p className="text-[10px] sm:text-sm text-[var(--brand-gray)] hidden sm:block">Gastos esenciales</p>
             </div>
             <div
-              className="p-4 rounded-xl"
+              className="p-2 sm:p-4 rounded-lg sm:rounded-xl text-center sm:text-left"
               style={{ backgroundColor: "#9945FF10" }}
             >
-              <div className="flex items-center justify-between mb-1">
-                <span className="text-lg font-bold" style={{ color: "#9945FF" }}>
+              <div className="flex flex-col sm:flex-row items-center sm:justify-between mb-0.5 sm:mb-1">
+                <span className="text-xs sm:text-lg font-bold" style={{ color: "#9945FF" }}>
                   Deseos
                 </span>
-                <span className="text-lg font-bold" style={{ color: "#9945FF" }}>
+                <span className="text-sm sm:text-lg font-bold" style={{ color: "#9945FF" }}>
                   {financialRule.wants}%
                 </span>
               </div>
-              <p className="text-sm text-[var(--brand-gray)]">Gastos opcionales</p>
+              <p className="text-[10px] sm:text-sm text-[var(--brand-gray)] hidden sm:block">Gastos opcionales</p>
             </div>
             <div
-              className="p-4 rounded-xl"
+              className="p-2 sm:p-4 rounded-lg sm:rounded-xl text-center sm:text-left"
               style={{ backgroundColor: "#14F19510" }}
             >
-              <div className="flex items-center justify-between mb-1">
-                <span className="text-lg font-bold" style={{ color: "#14F195" }}>
+              <div className="flex flex-col sm:flex-row items-center sm:justify-between mb-0.5 sm:mb-1">
+                <span className="text-xs sm:text-lg font-bold" style={{ color: "#14F195" }}>
                   Ahorro
                 </span>
-                <span className="text-lg font-bold" style={{ color: "#14F195" }}>
+                <span className="text-sm sm:text-lg font-bold" style={{ color: "#14F195" }}>
                   {financialRule.savings}%
                 </span>
               </div>
-              <p className="text-sm text-[var(--brand-gray)]">Ahorro e inversión</p>
+              <p className="text-[10px] sm:text-sm text-[var(--brand-gray)] hidden sm:block">Ahorro e inversión</p>
             </div>
           </div>
         </div>
 
         {/* Filters */}
-        <div className="flex flex-col sm:flex-row gap-4">
-          {/* Type Filter */}
-          <div className="flex items-center gap-2">
+        <div className="flex flex-col gap-3 sm:gap-4">
+          {/* Type Filter - scrollable on mobile */}
+          <div className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto pb-1 -mx-3 px-3 sm:mx-0 sm:px-0">
             {[
               { value: "all", label: "Todas" },
               { value: "income", label: "Ingresos" },
@@ -520,7 +518,7 @@ export default function CategoriasPage() {
               <button
                 key={tab.value}
                 onClick={() => setFilter(tab.value as typeof filter)}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors whitespace-nowrap ${
                   filter === tab.value
                     ? "bg-[var(--brand-purple)] text-white"
                     : "bg-[var(--background-secondary)] hover:bg-[var(--border)]"
@@ -532,28 +530,31 @@ export default function CategoriasPage() {
           </div>
 
           {/* Search & Toggle */}
-          <div className="flex items-center gap-3 sm:ml-auto">
+          <div className="flex items-center gap-2 sm:gap-3">
             {/* Search */}
-            <div className="relative">
+            <div className="relative flex-1 sm:flex-initial">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--brand-gray)]" />
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Buscar..."
-                className="pl-9 pr-4 py-2 bg-[var(--background-secondary)] border border-[var(--border)] rounded-lg text-sm focus:outline-none focus:border-[var(--brand-cyan)] w-40"
+                className="w-full sm:w-40 pl-9 pr-4 py-1.5 sm:py-2 bg-[var(--background-secondary)] border border-[var(--border)] rounded-lg text-xs sm:text-sm focus:outline-none focus:border-[var(--brand-cyan)]"
               />
             </div>
 
             {/* Show inactive toggle */}
-            <label className="flex items-center gap-2 text-sm cursor-pointer">
+            <label className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm cursor-pointer whitespace-nowrap">
               <input
                 type="checkbox"
                 checked={showInactive}
                 onChange={(e) => setShowInactive(e.target.checked)}
-                className="rounded"
+                className="rounded w-3.5 h-3.5 sm:w-4 sm:h-4"
               />
-              <span className="text-[var(--brand-gray)]">Mostrar inactivas</span>
+              <span className="text-[var(--brand-gray)]">
+                <span className="hidden sm:inline">Mostrar inactivas</span>
+                <span className="sm:hidden">Inactivas</span>
+              </span>
             </label>
           </div>
         </div>
@@ -586,16 +587,16 @@ export default function CategoriasPage() {
           </div>
         ) : filter === "all" ? (
           // Grouped view
-          <div className="space-y-6">
+          <div className="space-y-4 sm:space-y-6">
             {/* Income */}
             {groupedCategories.income.length > 0 && (
-              <div className="card p-5">
-                <div className="flex items-center gap-2 mb-4">
-                  <TrendingUp className="w-5 h-5 text-[var(--success)]" />
-                  <h2 className="font-semibold">Categorías de Ingresos</h2>
-                  <span className="text-sm text-[var(--brand-gray)]">({groupedCategories.income.length})</span>
+              <div className="card p-3 sm:p-5">
+                <div className="flex items-center gap-2 mb-3 sm:mb-4">
+                  <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 text-[var(--success)]" />
+                  <h2 className="text-sm sm:text-base font-semibold">Ingresos</h2>
+                  <span className="text-xs sm:text-sm text-[var(--brand-gray)]">({groupedCategories.income.length})</span>
                 </div>
-                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                <div className="grid gap-2 sm:gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
                   {groupedCategories.income.map(renderCategoryCard)}
                 </div>
               </div>
@@ -603,13 +604,13 @@ export default function CategoriasPage() {
 
             {/* Expenses */}
             {groupedCategories.expense.length > 0 && (
-              <div className="card p-5">
-                <div className="flex items-center gap-2 mb-4">
-                  <TrendingDown className="w-5 h-5 text-[var(--danger)]" />
-                  <h2 className="font-semibold">Categorías de Gastos</h2>
-                  <span className="text-sm text-[var(--brand-gray)]">({groupedCategories.expense.length})</span>
+              <div className="card p-3 sm:p-5">
+                <div className="flex items-center gap-2 mb-3 sm:mb-4">
+                  <TrendingDown className="w-4 h-4 sm:w-5 sm:h-5 text-[var(--danger)]" />
+                  <h2 className="text-sm sm:text-base font-semibold">Gastos</h2>
+                  <span className="text-xs sm:text-sm text-[var(--brand-gray)]">({groupedCategories.expense.length})</span>
                 </div>
-                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                <div className="grid gap-2 sm:gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
                   {groupedCategories.expense.map(renderCategoryCard)}
                 </div>
               </div>
@@ -617,13 +618,13 @@ export default function CategoriasPage() {
 
             {/* Savings */}
             {groupedCategories.savings.length > 0 && (
-              <div className="card p-5">
-                <div className="flex items-center gap-2 mb-4">
-                  <PiggyBank className="w-5 h-5 text-[var(--brand-cyan)]" />
-                  <h2 className="font-semibold">Categorías de Ahorro</h2>
-                  <span className="text-sm text-[var(--brand-gray)]">({groupedCategories.savings.length})</span>
+              <div className="card p-3 sm:p-5">
+                <div className="flex items-center gap-2 mb-3 sm:mb-4">
+                  <PiggyBank className="w-4 h-4 sm:w-5 sm:h-5 text-[var(--brand-cyan)]" />
+                  <h2 className="text-sm sm:text-base font-semibold">Ahorro</h2>
+                  <span className="text-xs sm:text-sm text-[var(--brand-gray)]">({groupedCategories.savings.length})</span>
                 </div>
-                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                <div className="grid gap-2 sm:gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
                   {groupedCategories.savings.map(renderCategoryCard)}
                 </div>
               </div>
@@ -631,8 +632,8 @@ export default function CategoriasPage() {
           </div>
         ) : (
           // Flat view when filtered
-          <div className="card p-5">
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="card p-3 sm:p-5">
+            <div className="grid gap-2 sm:gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
               {filteredCategories.map(renderCategoryCard)}
             </div>
           </div>
