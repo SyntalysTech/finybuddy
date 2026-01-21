@@ -28,6 +28,7 @@ import {
 } from "lucide-react";
 import { format, subMonths, addMonths } from "date-fns";
 import { es } from "date-fns/locale";
+import FinyInfoPanel from "@/components/ui/FinyInfoPanel";
 
 interface Category {
   id: string;
@@ -258,49 +259,49 @@ export default function PrevisionPage() {
   const wantsDeviation = wantsTotal - wantsTarget;
   const savingsDeviation = plannedSavings - savingsTarget;
 
-  // FinyBuddy intelligent message
-  const getFinyBuddyMessage = (): string[] => {
+  // Finy intelligent message - Dynamic messages based on budget data
+  const getFinyDynamicMessages = (): string[] => {
     if (!hasBudget || loading) return [];
 
     const messages: string[] = [];
 
     // Check balance
     if (availableBalance < 0) {
-      messages.push(`Ojo, tu prevision no cuadra. Te pasas ${Math.abs(availableBalance).toLocaleString("es-ES")}e. Revisa gastos o ahorro.`);
+      messages.push(`Tu previsión no cuadra. Te pasas ${formatCurrency(Math.abs(availableBalance))}. Revisa gastos o ahorro.`);
     } else if (availableBalance > totalIncome * 0.1) {
-      messages.push(`Te sobran ${availableBalance.toLocaleString("es-ES")}e sin asignar. Metelos al ahorro o tendras tentaciones.`);
+      messages.push(`Te quedan ${formatCurrency(availableBalance)} sin asignar. Puedes destinarlos al ahorro.`);
     }
 
     // Check savings
     if (savingsPercent < ruleSavings && plannedSavings > 0) {
-      messages.push(`El ahorro va flojo, solo ${savingsPercent}%. Intenta llegar al ${ruleSavings}% si puedes.`);
+      messages.push(`El ahorro está al ${savingsPercent}%. Tu objetivo es ${ruleSavings}%.`);
     } else if (savingsPercent >= ruleSavings && plannedSavings > 0) {
-      messages.push(`Ahorro previsto al ${savingsPercent}%. Buen plan, crack.`);
+      messages.push(`Ahorro previsto al ${savingsPercent}%. Buen plan.`);
     } else if (plannedSavings === 0 && totalIncome > 0) {
-      messages.push(`No tienes ahorro previsto. Aunque sean 50 pavos, ponlo.`);
+      messages.push(`No tienes ahorro previsto. Cualquier cantidad ayuda.`);
     }
 
     // Check needs
     if (needsPercent > ruleNeeds + 10) {
-      messages.push(`Las necesidades se te van al ${needsPercent}%. Revisa si todo es realmente necesario.`);
+      messages.push(`Las necesidades están al ${needsPercent}%. Tu objetivo es ${ruleNeeds}%.`);
     }
 
     // Check wants
     if (wantsPercent > ruleWants + 10) {
-      messages.push(`Los caprichos al ${wantsPercent}%... eso se nota en el ahorro.`);
+      messages.push(`Los deseos están al ${wantsPercent}%. Tu objetivo es ${ruleWants}%.`);
     } else if (wantsPercent <= ruleWants && wantsTotal > 0) {
-      messages.push(`Deseos controlados al ${wantsPercent}%. Bien hecho.`);
+      messages.push(`Deseos controlados al ${wantsPercent}%.`);
     }
 
     // No budget set
     if (totalIncome === 0 && budgets.length === 0) {
-      messages.push(`Sin prevision no hay control. Crea tu presupuesto para este mes.`);
+      messages.push(`Sin previsión no hay control. Crea tu presupuesto para este mes.`);
     }
 
     return messages.length > 0 ? messages : [];
   };
 
-  const finyBuddyMessages = getFinyBuddyMessage();
+  const finyDynamicMessages = getFinyDynamicMessages();
 
   // Start editing planned savings
   const startEditingPlannedSavings = () => {
@@ -996,26 +997,19 @@ export default function PrevisionPage() {
       />
 
       <div className="p-6 space-y-6">
-        {/* FinyBuddy Vineta */}
-        {finyBuddyMessages.length > 0 && (
-          <div className="flex items-start gap-3 p-4 rounded-xl bg-[var(--brand-purple)]/5 border border-[var(--brand-purple)]/20">
-            <div className="w-12 h-12 relative shrink-0">
-              <Image
-                src="/assets/finybuddy-mascot.png"
-                alt="FinyBuddy"
-                fill
-                className="object-contain"
-              />
-            </div>
-            <div className="flex-1">
-              {finyBuddyMessages.map((msg, i) => (
-                <p key={i} className="text-sm text-[var(--foreground)] mb-1 last:mb-0">
-                  {msg}
-                </p>
-              ))}
-            </div>
-          </div>
-        )}
+        {/* Finy Info Panel */}
+        <FinyInfoPanel
+          messages={[
+            "Aquí planificas los ingresos, gastos y ahorro del mes por categorías.",
+            "Al cuadrar ingresos con necesidades, deseos y ahorro, estás definiendo tu propia regla financiera adaptada a tu realidad.",
+            "La previsión no es un presupuesto rígido, sino una referencia para tomar mejores decisiones durante el mes.",
+          ]}
+          dynamicMessages={finyDynamicMessages}
+          tip="Una previsión bien ajustada facilita después la lectura de desviaciones en \"Previsión vs Realidad\" y ayuda a mejorar la planificación en meses futuros."
+          finybotMessage="Puedes preguntarme cómo configurar tu previsión o resolver cualquier duda sobre tu presupuesto."
+          storageKey="prevision"
+          defaultExpanded={true}
+        />
 
         {/* KPI Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

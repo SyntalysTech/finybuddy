@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import Header from "@/components/layout/Header";
 import OperationModal from "@/components/operations/OperationModal";
 import DeleteConfirmModal from "@/components/operations/DeleteConfirmModal";
+import FinyInfoPanel from "@/components/ui/FinyInfoPanel";
 import { createClient } from "@/lib/supabase/client";
 import { useProfile } from "@/hooks/useProfile";
 import {
@@ -285,6 +286,19 @@ export default function OperacionesPage() {
       />
 
       <div className="p-3 sm:p-6 space-y-3 sm:space-y-6">
+        {/* Finy Info Panel */}
+        <FinyInfoPanel
+          messages={[
+            "Aquí registras las operaciones reales del día a día: ingresos, gastos y ahorro.",
+            "Las operaciones reflejan lo que realmente ha pasado, no lo que habías planificado.",
+            "Registrar correctamente las operaciones es la base para que los gráficos, indicadores y comparativas del resto de la app funcionen correctamente.",
+          ]}
+          tip="Puedes introducir operaciones manualmente con el botón \"Nueva Operación\" o usando Finybot con texto o audio (por ejemplo: \"He pagado 30 € en gasolina\")."
+          finybotMessage="Finybot está pensado para ahorrar tiempo. Escribe o habla de forma natural para registrar operaciones."
+          storageKey="operaciones"
+          defaultExpanded={true}
+        />
+
         {/* Resumen del mes */}
         <div className="grid grid-cols-3 gap-2 sm:gap-4">
           <div className="card p-2 sm:p-4">

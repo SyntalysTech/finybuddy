@@ -31,6 +31,7 @@ import {
 import { format, differenceInMonths, parseISO } from "date-fns";
 import { es } from "date-fns/locale";
 import DeleteConfirmModal from "@/components/operations/DeleteConfirmModal";
+import FinyInfoPanel from "@/components/ui/FinyInfoPanel";
 import { useProfile } from "@/hooks/useProfile";
 
 interface Debt {
@@ -291,8 +292,8 @@ export default function DeudaPage() {
   const paidDebts = debts.filter(d => d.status === "paid").length;
   const totalMonthlyPayment = debts.filter(d => d.status === "active").reduce((sum, d) => sum + (d.monthly_payment || 0), 0);
 
-  // FinyBuddy intelligent message
-  const getFinyBuddyMessage = (): string[] => {
+  // Finy intelligent message - Dynamic messages based on user data
+  const getFinyDynamicMessages = (): string[] => {
     if (loading) return [];
 
     const messages: string[] = [];
@@ -304,51 +305,72 @@ export default function DeudaPage() {
     });
 
     if (overdueDebts.length > 0) {
-      messages.push(`Tienes ${overdueDebts.length} deuda${overdueDebts.length > 1 ? "s" : ""} vencida${overdueDebts.length > 1 ? "s" : ""}. Prioriza quitartelas de encima.`);
+      messages.push(`Tienes ${overdueDebts.length} deuda${overdueDebts.length > 1 ? "s" : ""} vencida${overdueDebts.length > 1 ? "s" : ""}. Conviene priorizarlas.`);
     }
 
     // Check high priority debts
     const highPriorityDebts = debts.filter(d => d.priority === "high" && d.status === "active");
     if (highPriorityDebts.length > 0) {
       const highPriorityTotal = highPriorityDebts.reduce((sum, d) => sum + d.current_balance, 0);
-      messages.push(`${highPriorityDebts.length} deuda${highPriorityDebts.length > 1 ? "s" : ""} de alta prioridad pendiente${highPriorityDebts.length > 1 ? "s" : ""}: ${highPriorityTotal.toLocaleString("es-ES")}e. Dale cana.`);
+      messages.push(`${highPriorityDebts.length} deuda${highPriorityDebts.length > 1 ? "s" : ""} de alta prioridad pendiente${highPriorityDebts.length > 1 ? "s" : ""}: ${formatCurrency(highPriorityTotal)}.`);
     }
 
     // Check overall progress
     if (totalOriginal > 0 && totalPaid > 0) {
       const overallProgress = Math.round((totalPaid / totalOriginal) * 100);
       if (overallProgress >= 80) {
-        messages.push(`Llevas el ${overallProgress}% de tus deudas pagadas. Ya casi estas libre, crack.`);
+        messages.push(`Llevas el ${overallProgress}% de tus deudas pagadas. Ya casi lo consigues.`);
       } else if (overallProgress >= 50) {
         messages.push(`${overallProgress}% de deudas liquidadas. Vas por buen camino.`);
+      } else if (overallProgress > 0) {
+        messages.push(`Llevas el ${overallProgress}% pagado. Cada aportación cuenta.`);
       }
     }
 
     // Check monthly payment burden
     if (totalMonthlyPayment > 0) {
-      messages.push(`Pagas ${totalMonthlyPayment.toLocaleString("es-ES")}e al mes en cuotas. Tenlo en cuenta para tu presupuesto.`);
+      messages.push(`Pagas ${formatCurrency(totalMonthlyPayment)} al mes en cuotas. Tenlo en cuenta para tu presupuesto.`);
     }
 
     // Check high interest debts
     const highInterestDebts = debts.filter(d => d.interest_rate > 15 && d.status === "active");
     if (highInterestDebts.length > 0) {
-      messages.push(`Ojo con las deudas de alto interes (>15%). Esas son las que mas te comen.`);
+      messages.push(`Las deudas con interés alto (>15%) generan más coste. Considera priorizarlas.`);
     }
 
     // No debts
     if (debts.length === 0) {
-      messages.push(`Sin deudas registradas. Si tienes alguna, anadela para controlarla.`);
+      messages.push(`Sin deudas registradas. Si tienes alguna, añádela para llevar un control.`);
     }
 
     // All debts paid celebration
     if (paidDebts > 0 && paidDebts === debts.length) {
-      messages.push(`Todas las deudas liquidadas. Eres libre, crack.`);
+      messages.push(`Todas las deudas liquidadas. Has conseguido tu objetivo.`);
     }
 
     return messages;
   };
 
-  const finyBuddyMessages = getFinyBuddyMessage();
+  // Get tip based on user data
+  const getFinyTip = (): string | undefined => {
+    if (loading || debts.length === 0) return undefined;
+
+    const highInterestDebts = debts.filter(d => d.interest_rate > 15 && d.status === "active");
+    const smallDebts = debts.filter(d => d.status === "active" && d.current_balance < 1000);
+
+    if (highInterestDebts.length > 0) {
+      return "Las deudas con mayor interés suelen ser buenas candidatas para priorizar, ya que generan más coste con el tiempo.";
+    }
+
+    if (smallDebts.length > 0) {
+      return "Liquidar primero las deudas más pequeñas puede darte motivación para continuar con el resto.";
+    }
+
+    return "Reducir deudas de forma constante, aunque sea poco a poco, es clave para mejorar tu salud financiera.";
+  };
+
+  const finyDynamicMessages = getFinyDynamicMessages();
+  const finyTip = getFinyTip();
 
   return (
     <>
@@ -370,26 +392,17 @@ export default function DeudaPage() {
       />
 
       <div className="p-6 space-y-6">
-        {/* FinyBuddy Vineta */}
-        {finyBuddyMessages.length > 0 && (
-          <div className="flex items-start gap-3 p-4 rounded-xl bg-[var(--brand-purple)]/5 border border-[var(--brand-purple)]/20">
-            <div className="w-12 h-12 relative shrink-0">
-              <Image
-                src="/assets/finybuddy-mascot.png"
-                alt="FinyBuddy"
-                fill
-                className="object-contain"
-              />
-            </div>
-            <div className="flex-1">
-              {finyBuddyMessages.map((msg, i) => (
-                <p key={i} className="text-sm text-[var(--foreground)] mb-1 last:mb-0">
-                  {msg}
-                </p>
-              ))}
-            </div>
-          </div>
-        )}
+        {/* Finy Info Panel */}
+        <FinyInfoPanel
+          messages={[
+            "Todo lo que has pagado de tus deudas en Operaciones puedes reflejarlo aquí para reducir tu saldo pendiente y avanzar hacia la eliminación total de tus deudas.",
+          ]}
+          dynamicMessages={finyDynamicMessages}
+          tip={finyTip}
+          finybotMessage="Puedes consultarme sobre tus deudas, pedir explicaciones sencillas o recibir ayuda para entender tu progreso."
+          storageKey="deuda"
+          defaultExpanded={true}
+        />
 
         {/* Summary Cards */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">

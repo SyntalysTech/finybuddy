@@ -30,6 +30,9 @@ import {
   Tooltip,
   ResponsiveContainer,
   Legend,
+  PieChart,
+  Pie,
+  Cell,
 } from "recharts";
 
 // Frases motivacionales financieras
@@ -334,8 +337,8 @@ export default function DashboardPage() {
   const dailyQuote = getDailyQuote();
   const contextualPhrase = getContextualPhrase(monthlySummary, savingsSummary, debtsSummary);
 
-  // FinyBuddy interpretation based on financial data - Estilo "Colega Crack"
-  const getFinyBuddyMessage = () => {
+  // Finy interpretation based on financial data - Tono cercano y educativo
+  const getFinyMessage = () => {
     if (!monthlySummary) return null;
 
     const { total_income, total_expenses, needs_total, wants_total, savings_total } = monthlySummary;
@@ -348,11 +351,11 @@ export default function DashboardPage() {
 
     // Analyze income vs expenses
     if (balance < 0) {
-      messages.push(`Ojo, este mes vas ${Math.abs(balance).toLocaleString("es-ES")} pavos en rojo. Toca recortar algo.`);
+      messages.push(`Este mes los gastos superan a los ingresos en ${formatCurrency(Math.abs(balance))}. Conviene revisar dónde puedes ajustar.`);
     } else if (balance > total_income * 0.3) {
-      messages.push(`Vas muy bien, tienes ${balance.toLocaleString("es-ES")}e de margen. Mete algo a ahorro antes de que vuele.`);
+      messages.push(`Tienes ${formatCurrency(balance)} de margen este mes. Buen momento para destinar parte al ahorro.`);
     } else if (balance > 0) {
-      messages.push(`Balance positivo de ${balance.toLocaleString("es-ES")}e. Vas muy bien.`);
+      messages.push(`Balance positivo de ${formatCurrency(balance)}. Vas por buen camino.`);
     }
 
     // Analyze rule compliance
@@ -363,59 +366,38 @@ export default function DashboardPage() {
 
       if (needsActualPercent > ruleNeeds * 1.2) {
         const excess = Math.round(needsActualPercent - ruleNeeds);
-        messages.push(`Los gastos fijos se te van un ${excess}% por encima. Revisa si hay algo recortable.`);
+        messages.push(`Las necesidades están un ${excess}% por encima del objetivo. Revisa si hay algún gasto recortable.`);
       }
       if (wantsActualPercent > ruleWants * 1.2) {
         const excess = Math.round(wantsActualPercent - ruleWants);
-        messages.push(`Te has pasado con el ocio: +${excess}% del objetivo. A ver si aguantamos lo que queda de mes.`);
+        messages.push(`Los deseos superan el objetivo en un ${excess}%. Puede ser buena idea moderar los siguientes días.`);
       }
       if (savingsActualPercent < ruleSavings * 0.5 && total_income > 0) {
-        messages.push("El ahorro va flojo. Intenta meter aunque sea 50 pavos este mes.");
+        messages.push("El ahorro va por debajo de lo esperado. Cualquier aportación, por pequeña que sea, suma.");
       } else if (savingsActualPercent >= ruleSavings) {
-        messages.push("Ahorro muy bien cubierto. Buen trabajo.");
+        messages.push("Ahorro bien cubierto este mes. Buen trabajo.");
       }
     }
 
     // Check savings goals
     if (savingsSummary && savingsSummary.active_goals > 0) {
       if (savingsSummary.overall_progress >= 90 && savingsSummary.overall_progress < 100) {
-        messages.push(`Metas de ahorro al ${savingsSummary.overall_progress}%. Un ultimo empujon mas y lo clavas.`);
+        messages.push(`Metas de ahorro al ${savingsSummary.overall_progress}%. Ya casi lo consigues.`);
       } else if (savingsSummary.overall_progress < 30) {
-        messages.push("Las metas van flojas. Necesitan mas chicha.");
+        messages.push("Las metas de ahorro avanzan despacio. Puedes revisarlas cuando quieras.");
       }
     }
 
     // Check debts
     if (debtsSummary && debtsSummary.active_debts > 0) {
       if (debtsSummary.overall_progress >= 80) {
-        messages.push(`Deudas al ${debtsSummary.overall_progress}%. Casi lo tienes, no aflojes ahora.`);
+        messages.push(`Deudas al ${debtsSummary.overall_progress}% pagadas. Ya casi las eliminas.`);
       } else if (debtsSummary.overall_progress < 20) {
-        messages.push("Las deudas van lentas. Prioriza pagarlas para quitarte intereses de encima.");
+        messages.push("Las deudas avanzan despacio. Priorizar los pagos puede reducir el coste total en intereses.");
       }
     }
 
-    return messages.length > 0 ? messages : ["Todo controlado, sigue asi."];
-  };
-
-  // Calculate 50/30/20 percentages
-  const totalIncome = monthlySummary?.total_income || 0;
-  const needsPercent = totalIncome > 0 ? ((monthlySummary?.needs_total || 0) / totalIncome) * 100 : 0;
-  const wantsPercent = totalIncome > 0 ? ((monthlySummary?.wants_total || 0) / totalIncome) * 100 : 0;
-  const savingsPercent = totalIncome > 0 ? ((monthlySummary?.savings_total || 0) / totalIncome) * 100 : 0;
-
-  // Get progress bar color based on rule compliance
-  const getProgressColor = (current: number, target: number, isInverse: boolean = false) => {
-    if (isInverse) {
-      // For needs/wants: under target is good
-      if (current <= target) return "bg-[var(--success)]";
-      if (current <= target * 1.1) return "bg-[var(--warning)]";
-      return "bg-[var(--danger)]";
-    } else {
-      // For savings: meeting/exceeding target is good
-      if (current >= target) return "bg-[var(--success)]";
-      if (current >= target * 0.8) return "bg-[var(--warning)]";
-      return "bg-[var(--danger)]";
-    }
+    return messages.length > 0 ? messages : ["Todo controlado por ahora. Sigue así."];
   };
 
   // Data for bar chart - using real savings from operations
@@ -598,9 +580,18 @@ export default function DashboardPage() {
                       borderRadius: "8px",
                       fontSize: "12px",
                     }}
+                    itemSorter={(item) => {
+                      const order: Record<string, number> = { Ingresos: 0, Gastos: 1, Ahorro: 2 };
+                      return order[item.dataKey as string] ?? 3;
+                    }}
                   />
                   <Legend
                     wrapperStyle={{ fontSize: "11px", paddingTop: "10px" }}
+                    payload={[
+                      { value: "Ingresos", type: "rect", color: "#10b981" },
+                      { value: "Gastos", type: "rect", color: "#ef4444" },
+                      { value: "Ahorro", type: "rect", color: "#06b6d4" },
+                    ]}
                   />
                   <Bar dataKey="Ingresos" fill="#10b981" radius={[4, 4, 0, 0]} />
                   <Bar dataKey="Gastos" fill="#ef4444" radius={[4, 4, 0, 0]} />
@@ -611,87 +602,92 @@ export default function DashboardPage() {
           </div>
         )}
 
-        {/* Cumplimiento Regla + FinyBuddy */}
+        {/* Distribución del mes + Finy */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
-          {/* Cumplimiento Regla - Solo 3 barras de progreso */}
+          {/* Gráfico de tarta - Distribución real del mes */}
           <div className="card p-4 sm:p-6">
             <h3 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4">
-              Regla {profile?.rule_needs_percent ?? 50}/{profile?.rule_wants_percent ?? 30}/{profile?.rule_savings_percent ?? 20}
+              Distribución del mes
             </h3>
-            <div className="space-y-3 sm:space-y-4">
-              {/* Necesidades */}
-              <div>
-                <div className="flex justify-between mb-1">
-                  <span className="text-xs sm:text-sm font-medium">Necesidades</span>
-                  <span className="text-xs sm:text-sm text-[var(--brand-gray)]">
-                    {Math.round(needsPercent)}% / {profile?.rule_needs_percent ?? 50}%
-                  </span>
+            {(monthlySummary?.needs_total || 0) + (monthlySummary?.wants_total || 0) + (monthlySummary?.savings_total || 0) > 0 ? (
+              <div className="flex flex-col items-center">
+                <div className="h-48 sm:h-56 w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={[
+                          { name: "Necesidades", value: monthlySummary?.needs_total || 0, color: "#2EEB8F" },
+                          { name: "Deseos", value: monthlySummary?.wants_total || 0, color: "#8B4DFF" },
+                          { name: "Ahorro", value: monthlySummary?.savings_total || 0, color: "#00E5FF" },
+                        ].filter(item => item.value > 0)}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={50}
+                        outerRadius={80}
+                        paddingAngle={2}
+                        dataKey="value"
+                        label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                        labelLine={{ stroke: "var(--brand-gray)", strokeWidth: 1 }}
+                      >
+                        {[
+                          { name: "Necesidades", value: monthlySummary?.needs_total || 0, color: "#2EEB8F" },
+                          { name: "Deseos", value: monthlySummary?.wants_total || 0, color: "#8B4DFF" },
+                          { name: "Ahorro", value: monthlySummary?.savings_total || 0, color: "#00E5FF" },
+                        ].filter(item => item.value > 0).map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.color} />
+                        ))}
+                      </Pie>
+                      <Tooltip
+                        formatter={(value: number) => formatCurrency(value)}
+                        contentStyle={{
+                          backgroundColor: "var(--background)",
+                          border: "1px solid var(--border)",
+                          borderRadius: "8px",
+                          fontSize: "12px",
+                        }}
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
                 </div>
-                <div className="progress-bar h-2 sm:h-3">
-                  <div
-                    className={`progress-bar-fill ${getProgressColor(needsPercent, profile?.rule_needs_percent ?? 50, true)}`}
-                    style={{ width: `${Math.min(needsPercent, 100)}%` }}
-                  />
+                <div className="flex flex-wrap justify-center gap-3 sm:gap-4 mt-2">
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-3 h-3 rounded-full" style={{ backgroundColor: "#2EEB8F" }}></div>
+                    <span className="text-xs text-[var(--brand-gray)]">Necesidades: {formatCurrency(monthlySummary?.needs_total || 0)}</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-3 h-3 rounded-full" style={{ backgroundColor: "#8B4DFF" }}></div>
+                    <span className="text-xs text-[var(--brand-gray)]">Deseos: {formatCurrency(monthlySummary?.wants_total || 0)}</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-3 h-3 rounded-full" style={{ backgroundColor: "#00E5FF" }}></div>
+                    <span className="text-xs text-[var(--brand-gray)]">Ahorro: {formatCurrency(monthlySummary?.savings_total || 0)}</span>
+                  </div>
                 </div>
-                <p className="text-xs text-[var(--brand-gray)] mt-1">
-                  {formatCurrency(monthlySummary?.needs_total || 0)}
-                </p>
               </div>
-
-              {/* Deseos */}
-              <div>
-                <div className="flex justify-between mb-1">
-                  <span className="text-xs sm:text-sm font-medium">Deseos</span>
-                  <span className="text-xs sm:text-sm text-[var(--brand-gray)]">
-                    {Math.round(wantsPercent)}% / {profile?.rule_wants_percent ?? 30}%
-                  </span>
+            ) : (
+              <div className="flex flex-col items-center justify-center py-8 text-center">
+                <div className="w-12 h-12 rounded-full bg-[var(--background-secondary)] flex items-center justify-center mb-3">
+                  <Wallet className="w-6 h-6 text-[var(--brand-gray)]" />
                 </div>
-                <div className="progress-bar h-2 sm:h-3">
-                  <div
-                    className={`progress-bar-fill ${getProgressColor(wantsPercent, profile?.rule_wants_percent ?? 30, true)}`}
-                    style={{ width: `${Math.min(wantsPercent, 100)}%` }}
-                  />
-                </div>
-                <p className="text-xs text-[var(--brand-gray)] mt-1">
-                  {formatCurrency(monthlySummary?.wants_total || 0)}
-                </p>
+                <p className="text-sm text-[var(--brand-gray)]">Sin movimientos este mes</p>
               </div>
-
-              {/* Ahorro */}
-              <div>
-                <div className="flex justify-between mb-1">
-                  <span className="text-xs sm:text-sm font-medium">Ahorro</span>
-                  <span className="text-xs sm:text-sm text-[var(--brand-gray)]">
-                    {Math.round(savingsPercent)}% / {profile?.rule_savings_percent ?? 20}%
-                  </span>
-                </div>
-                <div className="progress-bar h-2 sm:h-3">
-                  <div
-                    className={`progress-bar-fill ${getProgressColor(savingsPercent, profile?.rule_savings_percent ?? 20, false)}`}
-                    style={{ width: `${Math.min(savingsPercent, 100)}%` }}
-                  />
-                </div>
-                <p className="text-xs text-[var(--brand-gray)] mt-1">
-                  {formatCurrency(monthlySummary?.savings_total || 0)}
-                </p>
-              </div>
-            </div>
+            )}
           </div>
 
-          {/* FinyBuddy Interpretation Panel */}
+          {/* Finy Interpretation Panel */}
           <div className="glass-brand rounded-xl sm:rounded-2xl p-4 sm:p-6 animate-slide-in-right">
             <div className="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4">
               <div className="animate-bounce-subtle flex-shrink-0">
                 <Image
                   src="/assets/finybuddy-mascot.png"
-                  alt="FinyBuddy"
+                  alt="Finy"
                   width={40}
                   height={40}
                   className="rounded-full w-10 h-10 sm:w-12 sm:h-12"
                 />
               </div>
               <div className="min-w-0">
-                <h3 className="text-base sm:text-lg font-semibold animate-gradient-text">FinyBuddy</h3>
+                <h3 className="text-base sm:text-lg font-semibold animate-gradient-text">Finy</h3>
                 <p className="text-xs text-[var(--brand-gray)]">Tu asistente financiero</p>
               </div>
               <div className="ml-auto flex-shrink-0">
@@ -707,7 +703,7 @@ export default function DashboardPage() {
                   <span className="text-xs sm:text-sm text-[var(--brand-gray)] ml-2">Analizando...</span>
                 </div>
               ) : (
-                getFinyBuddyMessage()?.map((message, index) => (
+                getFinyMessage()?.map((message, index) => (
                   <div key={index} className={`flex items-start gap-2 animate-slide-in-left stagger-${index + 1}`}>
                     <span className="text-[var(--brand-cyan)] mt-0.5 animate-pulse flex-shrink-0">•</span>
                     <p className="text-xs sm:text-sm text-[var(--foreground)]">{message}</p>

@@ -35,6 +35,7 @@ import {
 import { es } from "date-fns/locale";
 import OperationModal from "@/components/operations/OperationModal";
 import DeleteConfirmModal from "@/components/operations/DeleteConfirmModal";
+import FinyInfoPanel from "@/components/ui/FinyInfoPanel";
 
 interface Category {
   id: string;
@@ -341,8 +342,8 @@ export default function CalendarioPage() {
     }).format(amount);
   };
 
-  // FinyBuddy intelligent message
-  const getFinyBuddyMessage = (): string[] => {
+  // Finy intelligent message - Dynamic messages based on calendar data
+  const getFinyDynamicMessages = (): string[] => {
     if (loading) return [];
 
     const messages: string[] = [];
@@ -354,13 +355,13 @@ export default function CalendarioPage() {
 
     // Check balance
     if (balance < 0) {
-      messages.push(`Este mes vas en rojo: ${Math.abs(balance).toLocaleString("es-ES")}e mas de gastos que ingresos. Cuidado.`);
+      messages.push(`Este mes llevas ${formatCurrency(Math.abs(balance))} más de gastos que de ingresos.`);
     } else if (balance > 0 && monthSummary.totalIncome > 0) {
       const savingsRate = Math.round((balance / monthSummary.totalIncome) * 100);
       if (savingsRate >= 20) {
-        messages.push(`Llevas ${savingsRate}% de margen este mes. Muy bien, crack.`);
+        messages.push(`Llevas un ${savingsRate}% de margen este mes. Buen ritmo.`);
       } else if (savingsRate > 0) {
-        messages.push(`Margen del ${savingsRate}% este mes. No esta mal, pero se puede mejorar.`);
+        messages.push(`Margen del ${savingsRate}% este mes.`);
       }
     }
 
@@ -368,21 +369,21 @@ export default function CalendarioPage() {
     if (pendingReminders.length > 0) {
       const totalPending = pendingReminders.reduce((sum, r) => sum + (r.amount || 0), 0);
       if (totalPending > 0) {
-        messages.push(`Tienes ${pendingReminders.length} recordatorio${pendingReminders.length > 1 ? "s" : ""} pendiente${pendingReminders.length > 1 ? "s" : ""} por ${totalPending.toLocaleString("es-ES")}e. No los pierdas de vista.`);
+        messages.push(`${pendingReminders.length} recordatorio${pendingReminders.length > 1 ? "s" : ""} pendiente${pendingReminders.length > 1 ? "s" : ""} por ${formatCurrency(totalPending)}.`);
       } else {
-        messages.push(`${pendingReminders.length} recordatorio${pendingReminders.length > 1 ? "s" : ""} pendiente${pendingReminders.length > 1 ? "s" : ""}. Revisa que no se te pase nada.`);
+        messages.push(`${pendingReminders.length} recordatorio${pendingReminders.length > 1 ? "s" : ""} pendiente${pendingReminders.length > 1 ? "s" : ""}.`);
       }
     }
 
     // Check if no operations this month
     if (monthSummary.operationCount === 0 && isSameMonth(currentDate, new Date())) {
-      messages.push(`Sin operaciones este mes. Empieza a registrar para tener control.`);
+      messages.push(`Sin operaciones este mes. Registra tus movimientos para hacer seguimiento.`);
     }
 
     return messages;
   };
 
-  const finyBuddyMessages = getFinyBuddyMessage();
+  const finyDynamicMessages = getFinyDynamicMessages();
 
   const handleAddReminder = (date?: Date) => {
     if (date) {
@@ -472,26 +473,18 @@ export default function CalendarioPage() {
       />
 
       <div className="p-3 sm:p-6 space-y-3 sm:space-y-6">
-        {/* FinyBuddy Vineta */}
-        {finyBuddyMessages.length > 0 && (
-          <div className="flex items-start gap-2 sm:gap-3 p-3 sm:p-4 rounded-xl bg-[var(--brand-purple)]/5 border border-[var(--brand-purple)]/20">
-            <div className="w-10 h-10 sm:w-12 sm:h-12 relative shrink-0">
-              <Image
-                src="/assets/finybuddy-mascot.png"
-                alt="FinyBuddy"
-                fill
-                className="object-contain"
-              />
-            </div>
-            <div className="flex-1 min-w-0">
-              {finyBuddyMessages.map((msg, i) => (
-                <p key={i} className="text-xs sm:text-sm text-[var(--foreground)] mb-1 last:mb-0">
-                  {msg}
-                </p>
-              ))}
-            </div>
-          </div>
-        )}
+        {/* Finy Info Panel */}
+        <FinyInfoPanel
+          messages={[
+            "Cada día del calendario muestra los registros introducidos en Operaciones (ingresos, gastos y ahorro).",
+            "Puedes crear recordatorios de pagos futuros u otros hitos financieros (seguros, impuestos, renovaciones) con el botón \"Nuevo recordatorio\".",
+          ]}
+          dynamicMessages={finyDynamicMessages}
+          tip="El objetivo principal del calendario es anticiparse y organizar, no solo revisar el pasado."
+          finybotMessage="Pregúntame cómo usar el calendario, crear recordatorios o planificar tus finanzas."
+          storageKey="calendario"
+          defaultExpanded={true}
+        />
 
         {/* Month Navigation & Summary */}
         <div className="card p-2 sm:p-4">

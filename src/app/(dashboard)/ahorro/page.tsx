@@ -27,6 +27,7 @@ import {
 import { format, differenceInDays, parseISO } from "date-fns";
 import { es } from "date-fns/locale";
 import DeleteConfirmModal from "@/components/operations/DeleteConfirmModal";
+import FinyInfoPanel from "@/components/ui/FinyInfoPanel";
 import { useProfile } from "@/hooks/useProfile";
 
 interface SavingsGoal {
@@ -267,8 +268,8 @@ export default function AhorroPage() {
   const activeGoals = goals.filter(g => g.status === "active").length;
   const completedGoals = goals.filter(g => g.status === "completed").length;
 
-  // FinyBuddy intelligent message
-  const getFinyBuddyMessage = (): string[] => {
+  // Finy intelligent message - Dynamic messages based on user data
+  const getFinyDynamicMessages = (): string[] => {
     if (loading) return [];
 
     const messages: string[] = [];
@@ -280,41 +281,57 @@ export default function AhorroPage() {
     });
 
     if (overdueGoals.length > 0) {
-      messages.push(`Tienes ${overdueGoals.length} meta${overdueGoals.length > 1 ? "s" : ""} vencida${overdueGoals.length > 1 ? "s" : ""}. Revisa si necesitas ajustar fechas.`);
+      messages.push(`Tienes ${overdueGoals.length} meta${overdueGoals.length > 1 ? "s" : ""} con fecha vencida. Puedes ajustar las fechas si lo necesitas.`);
     }
 
     // Check overall progress
     if (totalTarget > 0) {
       const overallProgress = Math.round((totalSaved / totalTarget) * 100);
       if (overallProgress >= 80) {
-        messages.push(`Llevas el ${overallProgress}% de tus metas. Casi lo tienes, crack.`);
+        messages.push(`Llevas el ${overallProgress}% de tus metas. Ya casi lo consigues.`);
       } else if (overallProgress >= 50) {
-        messages.push(`Vas por el ${overallProgress}% del total. Buen ritmo, sigue asi.`);
-      } else if (overallProgress < 30 && activeGoals > 0) {
-        messages.push(`Solo llevas el ${overallProgress}%. Dale cana al ahorro este mes.`);
+        messages.push(`Vas por el ${overallProgress}% del total. Buen ritmo.`);
+      } else if (overallProgress > 0 && activeGoals > 0) {
+        messages.push(`Llevas el ${overallProgress}% ahorrado. Cada aportación suma.`);
       }
     }
 
     // Check for paused goals
     const pausedGoals = goals.filter(g => g.status === "paused").length;
     if (pausedGoals > 0) {
-      messages.push(`${pausedGoals} meta${pausedGoals > 1 ? "s" : ""} pausada${pausedGoals > 1 ? "s" : ""}. No las olvides.`);
+      messages.push(`${pausedGoals} meta${pausedGoals > 1 ? "s" : ""} pausada${pausedGoals > 1 ? "s" : ""}. Puedes retomarlas cuando quieras.`);
     }
 
     // No goals at all
     if (goals.length === 0) {
-      messages.push(`Sin metas de ahorro. Crea una para empezar a controlar tu pasta.`);
+      messages.push(`Sin metas de ahorro configuradas. Crea una para empezar a ahorrar con un objetivo claro.`);
     }
 
     // Completed goals celebration
     if (completedGoals > 0 && completedGoals === goals.length) {
-      messages.push(`Todas las metas completadas. Eres una maquina del ahorro.`);
+      messages.push(`Todas las metas completadas. Has logrado tus objetivos de ahorro.`);
     }
 
     return messages;
   };
 
-  const finyBuddyMessages = getFinyBuddyMessage();
+  // Get tip based on user data
+  const getFinyTip = (): string | undefined => {
+    if (loading) return undefined;
+
+    if (goals.length === 0) {
+      return "Definir metas de ahorro concretas te ayuda a mantener la motivación y ver tu progreso.";
+    }
+
+    if (activeGoals > 3) {
+      return "Priorizar una o dos metas principales puede acelerar la sensación de progreso.";
+    }
+
+    return "Ahorrar poco pero de forma constante suele ser más efectivo que intentar ahorrar mucho de golpe.";
+  };
+
+  const finyDynamicMessages = getFinyDynamicMessages();
+  const finyTip = getFinyTip();
 
   return (
     <>
@@ -336,26 +353,17 @@ export default function AhorroPage() {
       />
 
       <div className="p-6 space-y-6">
-        {/* FinyBuddy Vineta */}
-        {finyBuddyMessages.length > 0 && (
-          <div className="flex items-start gap-3 p-4 rounded-xl bg-[var(--brand-purple)]/5 border border-[var(--brand-purple)]/20">
-            <div className="w-12 h-12 relative shrink-0">
-              <Image
-                src="/assets/finybuddy-mascot.png"
-                alt="FinyBuddy"
-                fill
-                className="object-contain"
-              />
-            </div>
-            <div className="flex-1">
-              {finyBuddyMessages.map((msg, i) => (
-                <p key={i} className="text-sm text-[var(--foreground)] mb-1 last:mb-0">
-                  {msg}
-                </p>
-              ))}
-            </div>
-          </div>
-        )}
+        {/* Finy Info Panel */}
+        <FinyInfoPanel
+          messages={[
+            "Todo lo que has ahorrado con tus operaciones puedes reflejarlo aquí para aumentar el progreso de tus metas.",
+          ]}
+          dynamicMessages={finyDynamicMessages}
+          tip={finyTip}
+          finybotMessage="Puedes preguntarme sobre tus metas de ahorro, pedir consejos o resolver cualquier duda."
+          storageKey="ahorro"
+          defaultExpanded={true}
+        />
 
         {/* Summary Cards */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">

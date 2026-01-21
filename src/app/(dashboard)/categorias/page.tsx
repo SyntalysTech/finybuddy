@@ -22,6 +22,7 @@ import {
   Info
 } from "lucide-react";
 import DeleteConfirmModal from "@/components/operations/DeleteConfirmModal";
+import FinyInfoPanel from "@/components/ui/FinyInfoPanel";
 
 interface Category {
   id: string;
@@ -358,6 +359,18 @@ export default function CategoriasPage() {
       />
 
       <div className="p-3 sm:p-6 space-y-4 sm:space-y-6">
+        {/* Finy Info Panel */}
+        <FinyInfoPanel
+          messages={[
+            "En este apartado configuras las categorías que se utilizarán en toda la aplicación: Calendario, Previsión, Operaciones, Previsión vs Realidad y Dashboard.",
+            "Las categorías son la base para clasificar correctamente los ingresos, gastos y ahorro, y determinan cómo se calculan y se muestran los indicadores, comparativas y gráficos de la app.",
+          ]}
+          tip="En las categorías de gasto es especialmente importante asignar un segmento (Necesidades o Deseos), ya que permite entender mejor en qué se va el dinero y cómo se distribuye. Las Necesidades son gastos esenciales para vivir (alquiler, hipoteca, alimentación, suministros). Los Deseos son gastos no esenciales u opcionales (restaurantes, viajes, entretenimiento)."
+          finybotMessage="Si tienes dudas sobre cómo configurar tus categorías, pregúntame por texto o audio."
+          storageKey="categorias"
+          defaultExpanded={true}
+        />
+
         {/* Summary Cards */}
         <div className="grid grid-cols-3 sm:grid-cols-3 lg:grid-cols-5 gap-2 sm:gap-4">
           <div className="card p-2 sm:p-4">

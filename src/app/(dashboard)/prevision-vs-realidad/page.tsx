@@ -17,6 +17,7 @@ import {
   ArrowDown,
   Minus,
 } from "lucide-react";
+import FinyInfoPanel from "@/components/ui/FinyInfoPanel";
 import { format, subMonths, addMonths } from "date-fns";
 import { es } from "date-fns/locale";
 
@@ -52,7 +53,7 @@ export default function PrevisionVsRealidadPage() {
   const [plannedSavings, setPlannedSavings] = useState(0);
   const [actualSavingsFromOps, setActualSavingsFromOps] = useState(0);
 
-  // Collapsible panels state
+  // Collapsible panels state with localStorage persistence
   const [expandedPanels, setExpandedPanels] = useState<Record<string, boolean>>({
     income: true,
     needs: true,
@@ -61,8 +62,25 @@ export default function PrevisionVsRealidadPage() {
     savingsTotal: true,
   });
 
+  // Load expanded panels state from localStorage
+  useEffect(() => {
+    const saved = localStorage.getItem("finy-prevision-vs-realidad-panels");
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        setExpandedPanels(prev => ({ ...prev, ...parsed }));
+      } catch {
+        // Ignore invalid JSON
+      }
+    }
+  }, []);
+
   const togglePanel = (panel: string) => {
-    setExpandedPanels(prev => ({ ...prev, [panel]: !prev[panel] }));
+    setExpandedPanels(prev => {
+      const newState = { ...prev, [panel]: !prev[panel] };
+      localStorage.setItem("finy-prevision-vs-realidad-panels", JSON.stringify(newState));
+      return newState;
+    });
   };
 
   const supabase = createClient();
@@ -239,30 +257,59 @@ export default function PrevisionVsRealidadPage() {
   const expenseDeviation = totalActualExpenses - totalBudgetedExpenses;
   const savingsDeviation = actualSavings - budgetedSavings;
 
-  // Generar mensaje interpretativo para cada card
+  // Generar mensaje interpretativo para cada card (tiempo presente)
   const getIncomeMessage = () => {
     if (totalBudgetedIncome === 0 && totalActualIncome === 0) return null;
-    if (totalBudgetedIncome === 0) return `Has ingresado ${formatCurrency(totalActualIncome)} sin previsión`;
-    if (incomeDeviation === 0) return "Exactamente lo previsto";
-    if (incomeDeviation > 0) return `Has ingresado ${formatCurrency(Math.abs(incomeDeviation))} más de lo previsto`;
-    return `Has ingresado ${formatCurrency(Math.abs(incomeDeviation))} menos de lo previsto`;
+    if (totalBudgetedIncome === 0) return `Llevas ingresado ${formatCurrency(totalActualIncome)} sin previsión`;
+    if (incomeDeviation === 0) return "Perfecto, estás exactamente en el punto que habías planificado";
+    if (incomeDeviation > 0) return `Llevas ingresado ${formatCurrency(Math.abs(incomeDeviation))} más de lo previsto`;
+    return `Llevas ingresado ${formatCurrency(Math.abs(incomeDeviation))} menos de lo previsto`;
   };
 
   const getExpenseMessage = () => {
     if (totalBudgetedExpenses === 0 && totalActualExpenses === 0) return null;
-    if (totalBudgetedExpenses === 0) return `Has gastado ${formatCurrency(totalActualExpenses)} sin previsión`;
-    if (expenseDeviation === 0) return "Exactamente lo previsto";
-    if (expenseDeviation > 0) return `Has gastado ${formatCurrency(Math.abs(expenseDeviation))} más de lo previsto`;
-    return `Has gastado ${formatCurrency(Math.abs(expenseDeviation))} menos de lo previsto`;
+    if (totalBudgetedExpenses === 0) return `Llevas gastado ${formatCurrency(totalActualExpenses)} sin previsión`;
+    if (expenseDeviation === 0) return "Perfecto, estás exactamente en el punto que habías planificado";
+    if (expenseDeviation > 0) return `Llevas gastado ${formatCurrency(Math.abs(expenseDeviation))} más de lo previsto`;
+    return `Llevas gastado ${formatCurrency(Math.abs(expenseDeviation))} menos de lo previsto`;
   };
 
   const getSavingsMessage = () => {
     if (budgetedSavings === 0 && actualSavings === 0) return null;
-    if (budgetedSavings === 0) return `Has ahorrado ${formatCurrency(actualSavings)} sin previsión`;
-    if (savingsDeviation === 0) return "Exactamente lo previsto";
-    if (savingsDeviation > 0) return `Has ahorrado ${formatCurrency(Math.abs(savingsDeviation))} más de lo previsto`;
-    return `Has ahorrado ${formatCurrency(Math.abs(savingsDeviation))} menos de lo previsto`;
+    if (budgetedSavings === 0) return `Llevas ahorrado ${formatCurrency(actualSavings)} sin previsión`;
+    if (savingsDeviation === 0) return "Perfecto, estás exactamente en el punto que habías planificado";
+    if (savingsDeviation > 0) return `Llevas ahorrado ${formatCurrency(Math.abs(savingsDeviation))} más de lo previsto`;
+    return `Llevas ahorrado ${formatCurrency(Math.abs(savingsDeviation))} menos de lo previsto`;
   };
+
+  // Finy dynamic messages for interpretation panel
+  const getFinyDynamicMessages = (): string[] => {
+    if (loading) return [];
+    const messages: string[] = [];
+
+    // General alignment message
+    const isIncomeOk = incomeDeviation >= 0;
+    const isExpenseOk = expenseDeviation <= 0;
+    const isSavingsOk = savingsDeviation >= 0;
+
+    if (isIncomeOk && isExpenseOk && isSavingsOk) {
+      messages.push("Vas bastante alineado con tu plan este mes, sigue así.");
+    } else {
+      if (!isExpenseOk && Math.abs(expenseDeviation) > totalBudgetedExpenses * 0.1) {
+        messages.push("En gastos vas algo por encima de lo previsto, quizá conviene ir con más calma el resto del mes.");
+      }
+      if (!isSavingsOk && budgetedSavings > 0) {
+        messages.push("Aún tienes margen para ahorrar si mantienes el ritmo.");
+      }
+      if (!isIncomeOk && totalBudgetedIncome > 0) {
+        messages.push("Los ingresos van por debajo de lo esperado. Revisa si hay algún ingreso pendiente.");
+      }
+    }
+
+    return messages;
+  };
+
+  const finyDynamicMessages = getFinyDynamicMessages();
 
   // Get variance icon
   const getVarianceIcon = (budgeted: number, actual: number, isExpense: boolean) => {
@@ -390,6 +437,19 @@ export default function PrevisionVsRealidadPage() {
       />
 
       <div className="p-6 space-y-6">
+        {/* Finy Info Panel */}
+        <FinyInfoPanel
+          messages={[
+            "Este apartado te muestra qué está ocurriendo ahora mismo respecto al plan del mes.",
+            "Aquí puedes ver cuánto margen te queda para seguir gastando o ahorrando en cada partida.",
+          ]}
+          dynamicMessages={finyDynamicMessages}
+          tip="Las desviaciones no son un problema, son oportunidades de ajuste y aprendizaje para planificar mejor el próximo mes."
+          finybotMessage="Puedes preguntarme sobre tu situación financiera actual o cómo interpretar estos datos."
+          storageKey="prevision-vs-realidad"
+          defaultExpanded={true}
+        />
+
         {/* Summary Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {/* Income */}
@@ -445,8 +505,8 @@ export default function PrevisionVsRealidadPage() {
           {/* Savings */}
           <div className="card p-5">
             <div className="flex items-center gap-3 mb-4">
-              <div className="p-2.5 rounded-xl bg-[var(--brand-purple)]/10">
-                <PiggyBank className="w-6 h-6 text-[var(--brand-purple)]" />
+              <div className="p-2.5 rounded-xl bg-[var(--brand-cyan)]/10">
+                <PiggyBank className="w-6 h-6 text-[var(--brand-cyan)]" />
               </div>
               <span className="text-lg font-semibold">Ahorro</span>
             </div>
@@ -457,7 +517,7 @@ export default function PrevisionVsRealidadPage() {
               </div>
               <div className="text-center p-3 rounded-lg bg-[var(--background-secondary)]">
                 <p className="text-xs text-[var(--brand-gray)] mb-1">Real</p>
-                <p className="text-lg font-bold text-[var(--brand-purple)]">{formatCurrency(actualSavings)}</p>
+                <p className="text-lg font-bold text-[var(--brand-cyan)]">{formatCurrency(actualSavings)}</p>
               </div>
             </div>
             {getSavingsMessage() && (
