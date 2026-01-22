@@ -1005,7 +1005,7 @@ export default function PrevisionPage() {
             "La previsión no es un presupuesto rígido, sino una referencia para tomar mejores decisiones durante el mes.",
           ]}
           dynamicMessages={finyDynamicMessages}
-          tip="Una previsión bien ajustada facilita después la lectura de desviaciones en \"Previsión vs Realidad\" y ayuda a mejorar la planificación en meses futuros."
+          tip="Una previsión bien ajustada facilita después la lectura de desviaciones en 'Previsión vs Realidad' y ayuda a mejorar la planificación en meses futuros."
           finybotMessage="Puedes preguntarme cómo configurar tu previsión o resolver cualquier duda sobre tu presupuesto."
           storageKey="prevision"
           defaultExpanded={true}

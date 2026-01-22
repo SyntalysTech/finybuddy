@@ -293,7 +293,7 @@ export default function OperacionesPage() {
             "Las operaciones reflejan lo que realmente ha pasado, no lo que habías planificado.",
             "Registrar correctamente las operaciones es la base para que los gráficos, indicadores y comparativas del resto de la app funcionen correctamente.",
           ]}
-          tip="Puedes introducir operaciones manualmente con el botón \"Nueva Operación\" o usando Finybot con texto o audio (por ejemplo: \"He pagado 30 € en gasolina\")."
+          tip="Puedes introducir operaciones manualmente con el botón 'Nueva Operación' o usando Finybot con texto o audio (por ejemplo: 'He pagado 30 € en gasolina')."
           finybotMessage="Finybot está pensado para ahorrar tiempo. Escribe o habla de forma natural para registrar operaciones."
           storageKey="operaciones"
           defaultExpanded={true}
