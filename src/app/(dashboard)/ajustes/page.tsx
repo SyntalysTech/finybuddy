@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Header from "@/components/layout/Header";
+import Toast from "@/components/ui/Toast";
 import { createClient } from "@/lib/supabase/client";
 import { useTheme } from "@/contexts/ThemeContext";
 import {
@@ -10,7 +11,6 @@ import {
   Download,
   Trash2,
   AlertTriangle,
-  CheckCircle,
   X,
   Calendar,
   Database,
@@ -394,22 +394,9 @@ export default function AjustesPage() {
       <Header title="Ajustes" subtitle="Configuración de la aplicación" />
 
       <div className="p-6 space-y-6">
-        {/* Messages */}
-        {error && (
-          <div className="p-4 rounded-xl bg-[var(--danger)]/10 text-[var(--danger)] flex items-center gap-3">
-            <AlertTriangle className="w-5 h-5 shrink-0" />
-            <span className="text-sm">{error}</span>
-            <button onClick={() => setError("")} className="ml-auto">
-              <X className="w-4 h-4" />
-            </button>
-          </div>
-        )}
-        {success && (
-          <div className="p-4 rounded-xl bg-[var(--success)]/10 text-[var(--success)] flex items-center gap-3">
-            <CheckCircle className="w-5 h-5 shrink-0" />
-            <span className="text-sm">{success}</span>
-          </div>
-        )}
+        {/* Toast notifications */}
+        {error && <Toast type="error" message={error} onClose={() => setError("")} />}
+        {success && <Toast type="success" message={success} onClose={() => setSuccess("")} />}
 
         {/* Mi Plan */}
         <div className="card p-6">

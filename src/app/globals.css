@@ -883,6 +883,17 @@ body {
   }
 }
 
+@keyframes toast-slide-in {
+  from {
+    transform: translateY(-12px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
 .animate-slide-in-left {
   animation: slide-in-left 0.5s ease-out forwards;
 }
