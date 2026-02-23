@@ -606,13 +606,14 @@ export default function DashboardPage() {
                       return order[item.dataKey as string] ?? 3;
                     }}
                   />
+                  {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
                   <Legend
                     wrapperStyle={{ fontSize: "11px", paddingTop: "10px" }}
-                    payload={[
+                    {...{ payload: [
                       { value: "Ingresos", type: "square", color: "#10b981" },
                       { value: "Gastos", type: "square", color: "#ef4444" },
                       { value: "Ahorro", type: "square", color: "#06b6d4" },
-                    ]}
+                    ] } as any}
                   />
                   <Bar dataKey="Ingresos" fill="#10b981" radius={[4, 4, 0, 0]} />
                   <Bar dataKey="Gastos" fill="#ef4444" radius={[4, 4, 0, 0]} />
