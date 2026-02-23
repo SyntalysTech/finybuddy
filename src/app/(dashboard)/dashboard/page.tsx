@@ -608,6 +608,11 @@ export default function DashboardPage() {
                   />
                   <Legend
                     wrapperStyle={{ fontSize: "11px", paddingTop: "10px" }}
+                    payload={[
+                      { value: "Ingresos", type: "square", color: "#10b981" },
+                      { value: "Gastos", type: "square", color: "#ef4444" },
+                      { value: "Ahorro", type: "square", color: "#06b6d4" },
+                    ]}
                   />
                   <Bar dataKey="Ingresos" fill="#10b981" radius={[4, 4, 0, 0]} />
                   <Bar dataKey="Gastos" fill="#ef4444" radius={[4, 4, 0, 0]} />
