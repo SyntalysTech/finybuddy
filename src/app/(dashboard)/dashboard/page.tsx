@@ -625,7 +625,7 @@ export default function DashboardPage() {
             <h3 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4">
               Distribución del mes
             </h3>
-            {(monthlySummary?.needs_total || 0) + (monthlySummary?.wants_total || 0) + (monthlySummary?.savings_total || 0) > 0 ? (
+            {(monthlySummary?.needs_total || 0) + (monthlySummary?.wants_total || 0) + (monthlySummary?.total_savings || 0) > 0 ? (
               <div className="flex flex-col items-center">
                 <div className="h-48 sm:h-56 w-full">
                   <ResponsiveContainer width="100%" height="100%">
@@ -634,7 +634,7 @@ export default function DashboardPage() {
                         data={[
                           { name: "Necesidades", value: monthlySummary?.needs_total || 0, color: "#2EEB8F" },
                           { name: "Deseos", value: monthlySummary?.wants_total || 0, color: "#8B4DFF" },
-                          { name: "Ahorro", value: monthlySummary?.savings_total || 0, color: "#00E5FF" },
+                          { name: "Ahorro", value: monthlySummary?.total_savings || 0, color: "#00E5FF" },
                         ].filter(item => item.value > 0)}
                         cx="50%"
                         cy="50%"
@@ -648,7 +648,7 @@ export default function DashboardPage() {
                         {[
                           { name: "Necesidades", value: monthlySummary?.needs_total || 0, color: "#2EEB8F" },
                           { name: "Deseos", value: monthlySummary?.wants_total || 0, color: "#8B4DFF" },
-                          { name: "Ahorro", value: monthlySummary?.savings_total || 0, color: "#00E5FF" },
+                          { name: "Ahorro", value: monthlySummary?.total_savings || 0, color: "#00E5FF" },
                         ].filter(item => item.value > 0).map((entry, index) => (
                           <Cell key={`cell-${index}`} fill={entry.color} />
                         ))}
@@ -676,7 +676,7 @@ export default function DashboardPage() {
                   </div>
                   <div className="flex items-center gap-1.5">
                     <div className="w-3 h-3 rounded-full" style={{ backgroundColor: "#00E5FF" }}></div>
-                    <span className="text-xs text-[var(--brand-gray)]">Ahorro: {formatCurrency(monthlySummary?.savings_total || 0)}</span>
+                    <span className="text-xs text-[var(--brand-gray)]">Ahorro: {formatCurrency(monthlySummary?.total_savings || 0)}</span>
                   </div>
                 </div>
               </div>
