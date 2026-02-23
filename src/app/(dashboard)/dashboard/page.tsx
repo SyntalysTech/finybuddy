@@ -641,7 +641,7 @@ export default function DashboardPage() {
             </h3>
             {(monthlySummary?.needs_total || 0) + (monthlySummary?.wants_total || 0) + (monthlySummary?.total_savings || 0) > 0 ? (
               <div className="flex flex-col items-center">
-                <div className="h-48 sm:h-56 w-full">
+                <div className="h-52 sm:h-56 w-full">
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
                       <Pie
@@ -652,12 +652,13 @@ export default function DashboardPage() {
                         ].filter(item => item.value > 0)}
                         cx="50%"
                         cy="50%"
-                        innerRadius={50}
-                        outerRadius={80}
+                        innerRadius={45}
+                        outerRadius={70}
                         paddingAngle={2}
                         dataKey="value"
-                        label={({ name, percent }) => `${name} ${((percent ?? 0) * 100).toFixed(0)}%`}
+                        label={({ percent }) => `${((percent ?? 0) * 100).toFixed(0)}%`}
                         labelLine={{ stroke: "var(--brand-gray)", strokeWidth: 1 }}
+                        style={{ fontSize: "11px" }}
                       >
                         {[
                           { name: "Necesidades", value: monthlySummary?.needs_total || 0, color: "#2EEB8F" },
