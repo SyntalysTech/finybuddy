@@ -472,7 +472,7 @@ function PasswordModal({
 
       const { error: resetError } = await supabase.auth.resetPasswordForEmail(
         user.email,
-        { redirectTo: `${window.location.origin}/auth/callback?next=/reset-password` }
+        { redirectTo: `https://finybuddy.com/auth/callback?next=/reset-password` }
       );
 
       if (resetError) throw resetError;
