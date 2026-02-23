@@ -606,14 +606,22 @@ export default function DashboardPage() {
                       return order[item.dataKey as string] ?? 3;
                     }}
                   />
-                  {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
                   <Legend
                     wrapperStyle={{ fontSize: "11px", paddingTop: "10px" }}
-                    {...{ payload: [
-                      { value: "Ingresos", type: "square", color: "#10b981" },
-                      { value: "Gastos", type: "square", color: "#ef4444" },
-                      { value: "Ahorro", type: "square", color: "#06b6d4" },
-                    ] } as any}
+                    content={() => (
+                      <div style={{ display: "flex", justifyContent: "center", gap: "16px", paddingTop: "10px" }}>
+                        {[
+                          { label: "Ingresos", color: "#10b981" },
+                          { label: "Gastos", color: "#ef4444" },
+                          { label: "Ahorro", color: "#06b6d4" },
+                        ].map((item) => (
+                          <span key={item.label} style={{ display: "inline-flex", alignItems: "center", gap: "4px", fontSize: "11px", color: "var(--brand-gray)" }}>
+                            <span style={{ width: 10, height: 10, backgroundColor: item.color, display: "inline-block", borderRadius: 2 }} />
+                            {item.label}
+                          </span>
+                        ))}
+                      </div>
+                    )}
                   />
                   <Bar dataKey="Ingresos" fill="#10b981" radius={[4, 4, 0, 0]} />
                   <Bar dataKey="Gastos" fill="#ef4444" radius={[4, 4, 0, 0]} />
