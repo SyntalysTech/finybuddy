@@ -479,7 +479,7 @@ export default function CalendarioPage() {
             "Cada día del calendario muestra los registros introducidos en Operaciones (ingresos, gastos y ahorro).",
             "Puedes crear recordatorios de pagos futuros u otros hitos financieros (seguros, impuestos, renovaciones) con el botón \"Nuevo recordatorio\".",
           ]}
-          dynamicMessages={finyDynamicMessages}
+          dynamicMessages={[]}
           tip="El objetivo principal del calendario es anticiparse y organizar, no solo revisar el pasado."
           finybotMessage="Pregúntame cómo usar el calendario, crear recordatorios o planificar tus finanzas."
           storageKey="calendario"
