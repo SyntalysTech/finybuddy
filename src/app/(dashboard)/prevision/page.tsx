@@ -29,6 +29,7 @@ import {
 import { format, subMonths, addMonths } from "date-fns";
 import { es } from "date-fns/locale";
 import FinyInfoPanel from "@/components/ui/FinyInfoPanel";
+import ProGate from "@/components/subscription/ProGate";
 
 interface Category {
   id: string;
@@ -52,7 +53,7 @@ interface BudgetWithCategory extends Budget {
   category: Category;
 }
 
-export default function PrevisionPage() {
+function PrevisionPageContent() {
   const { profile } = useProfile();
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [categories, setCategories] = useState<Category[]>([]);
@@ -1570,5 +1571,13 @@ export default function PrevisionPage() {
         </div>
       )}
     </>
+  );
+}
+
+export default function PrevisionPage() {
+  return (
+    <ProGate featureName="Prevision">
+      <PrevisionPageContent />
+    </ProGate>
   );
 }

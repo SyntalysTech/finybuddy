@@ -33,6 +33,7 @@ import { es } from "date-fns/locale";
 import DeleteConfirmModal from "@/components/operations/DeleteConfirmModal";
 import FinyInfoPanel from "@/components/ui/FinyInfoPanel";
 import { useProfile } from "@/hooks/useProfile";
+import ProGate from "@/components/subscription/ProGate";
 
 interface Debt {
   id: string;
@@ -84,7 +85,7 @@ const getPriorityInfo = (priority: string) => {
   return PRIORITY_OPTIONS.find((p) => p.value === priority) || PRIORITY_OPTIONS[1];
 };
 
-export default function DeudaPage() {
+function DeudaPageContent() {
   const { profile } = useProfile();
   const [debts, setDebts] = useState<Debt[]>([]);
   const [loading, setLoading] = useState(true);
@@ -1574,5 +1575,13 @@ function PaymentModal({
         </form>
       </div>
     </div>
+  );
+}
+
+export default function DeudaPage() {
+  return (
+    <ProGate featureName="Gestion de deudas">
+      <DeudaPageContent />
+    </ProGate>
   );
 }

@@ -22,11 +22,17 @@ import {
   ShieldCheck,
   Menu,
   X,
+  Crown,
+  Globe,
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import { useSidebar } from "@/contexts/SidebarContext";
+import { useSubscription } from "@/hooks/useSubscription";
+import ProBadge from "@/components/subscription/ProBadge";
+
+const PRO_ROUTES = ["/prevision-vs-realidad", "/prevision", "/ahorro", "/deuda", "/chat"];
 
 interface NavItem {
   name: string;
@@ -60,6 +66,7 @@ export default function Sidebar() {
   const { collapsed, toggle, mobileOpen, setMobileOpen, isMobile } = useSidebar();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
+  const { isPro } = useSubscription();
 
   const supabase = createClient();
 
@@ -190,6 +197,9 @@ export default function Sidebar() {
                     >
                       {item.name}
                     </span>
+                    {!isPro && PRO_ROUTES.includes(item.href) && !collapsed && !isMobile && (
+                      <ProBadge className="ml-auto shrink-0" />
+                    )}
                     {active && (
                       <div
                         className={`ml-auto w-2 h-2 rounded-full bg-gradient-to-br from-[#02EAFF] to-[#7739FE] flex-shrink-0 transition-all duration-300 ease-in-out shadow-lg shadow-[#02EAFF]/30 ${
@@ -252,6 +262,9 @@ export default function Sidebar() {
                     >
                       {item.name}
                     </span>
+                    {!isPro && PRO_ROUTES.includes(item.href) && !collapsed && !isMobile && (
+                      <ProBadge className="ml-auto shrink-0" />
+                    )}
                     {active && (
                       <div
                         className={`ml-auto w-2 h-2 rounded-full bg-gradient-to-br from-[#02EAFF] to-[#7739FE] flex-shrink-0 transition-all duration-300 ease-in-out shadow-lg shadow-[#02EAFF]/30 ${
@@ -344,6 +357,24 @@ export default function Sidebar() {
             )}
           </button>
         )}
+
+        {/* Back to website */}
+        <Link
+          href="/"
+          className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-[var(--sidebar-text)] hover:bg-[var(--sidebar-hover)] transition-colors duration-200 overflow-hidden ${
+            collapsed && !isMobile ? "justify-center" : ""
+          }`}
+          title={collapsed && !isMobile ? "Volver a la web" : undefined}
+        >
+          <Globe className="w-5 h-5 flex-shrink-0" />
+          <span
+            className={`text-sm font-medium whitespace-nowrap transition-all duration-300 ease-in-out ${
+              collapsed && !isMobile ? "w-0 opacity-0" : "w-auto opacity-100"
+            }`}
+          >
+            Volver a la web
+          </span>
+        </Link>
 
         {/* Logout Button */}
         <button

@@ -3,6 +3,7 @@
 import Sidebar from "@/components/layout/Sidebar";
 import { SidebarProvider, useSidebar } from "@/contexts/SidebarContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
+import TrialBanner from "@/components/subscription/TrialBanner";
 
 function DashboardContent({ children }: { children: React.ReactNode }) {
   const { collapsed, isMobile } = useSidebar();
@@ -19,6 +20,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
               : "ml-[280px]"
         }`}
       >
+        <TrialBanner />
         {children}
       </main>
     </div>

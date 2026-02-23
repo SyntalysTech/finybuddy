@@ -21,7 +21,11 @@ import {
   Sun,
   Moon,
   RefreshCw,
+  Crown,
+  Clock,
 } from "lucide-react";
+import { useSubscription } from "@/hooks/useSubscription";
+import Link from "next/link";
 
 const START_PAGES = [
   { value: "dashboard", label: "Dashboard" },
@@ -43,6 +47,7 @@ interface NotificationSettings {
 export default function AjustesPage() {
   const router = useRouter();
   const { theme, setTheme } = useTheme();
+  const { isPro, isTrialing, trialDaysLeft, trialExpired, plan, status, willCancel, periodEnd } = useSubscription();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -405,6 +410,43 @@ export default function AjustesPage() {
             <span className="text-sm">{success}</span>
           </div>
         )}
+
+        {/* Mi Plan */}
+        <div className="card p-6">
+          <h3 className="font-semibold mb-4 flex items-center gap-2">
+            <Crown className="w-5 h-5 text-[#F59E0B]" />
+            Mi Plan
+          </h3>
+          <div className="flex items-center justify-between p-4 rounded-xl bg-[var(--background-secondary)]">
+            <div className="flex items-center gap-3">
+              <div className={`p-2.5 rounded-xl ${isPro ? "bg-gradient-to-br from-[#02EAFF]/20 to-[#7739FE]/20" : "bg-[var(--border)]"}`}>
+                <Crown className={`w-5 h-5 ${isPro ? "text-[#7739FE]" : "text-[var(--brand-gray)]"}`} />
+              </div>
+              <div>
+                <p className="font-semibold text-sm">
+                  {isTrialing ? "Prueba gratuita Pro" : status === "active" ? (plan === "pro_annual" ? "Pro Anual" : "Pro Mensual") : "Plan Basic"}
+                </p>
+                <p className="text-xs text-[var(--brand-gray)]">
+                  {isTrialing && (
+                    <span className="flex items-center gap-1">
+                      <Clock className="w-3 h-3" />
+                      {trialDaysLeft} dias restantes de prueba
+                    </span>
+                  )}
+                  {trialExpired && "Tu prueba ha terminado"}
+                  {status === "active" && !willCancel && "Suscripcion activa"}
+                  {status === "active" && willCancel && periodEnd && `Se cancela el ${new Date(periodEnd).toLocaleDateString("es-ES")}`}
+                </p>
+              </div>
+            </div>
+            <Link
+              href="/planes"
+              className="text-sm px-4 py-2 rounded-xl bg-gradient-to-r from-[#02EAFF] to-[#7739FE] text-white font-medium hover:opacity-90 transition-opacity"
+            >
+              {isPro ? "Gestionar" : "Mejorar plan"}
+            </Link>
+          </div>
+        </div>
 
         {/* Preferences - Full width at top */}
         <div className="card p-6">

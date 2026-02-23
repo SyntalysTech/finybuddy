@@ -18,6 +18,7 @@ import {
   Minus,
 } from "lucide-react";
 import FinyInfoPanel from "@/components/ui/FinyInfoPanel";
+import ProGate from "@/components/subscription/ProGate";
 import { format, subMonths, addMonths } from "date-fns";
 import { es } from "date-fns/locale";
 
@@ -43,7 +44,7 @@ interface BudgetVsActual {
   percentage: number;
 }
 
-export default function PrevisionVsRealidadPage() {
+function PrevisionVsRealidadPageContent() {
   const { profile } = useProfile();
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [data, setData] = useState<BudgetVsActual[]>([]);
@@ -749,5 +750,13 @@ export default function PrevisionVsRealidadPage() {
         )}
       </div>
     </>
+  );
+}
+
+export default function PrevisionVsRealidadPage() {
+  return (
+    <ProGate featureName="Prevision vs Realidad">
+      <PrevisionVsRealidadPageContent />
+    </ProGate>
   );
 }

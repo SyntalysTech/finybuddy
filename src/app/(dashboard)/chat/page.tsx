@@ -19,6 +19,7 @@ import {
   Trash2,
   ChevronLeft,
 } from "lucide-react";
+import ProGate from "@/components/subscription/ProGate";
 
 interface Message {
   role: "user" | "assistant";
@@ -39,7 +40,7 @@ const QUICK_PROMPTS = [
   { icon: Target, text: "Reto semanal", color: "text-[var(--brand-purple)]" },
 ];
 
-export default function ChatPage() {
+function ChatPageContent() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
@@ -659,5 +660,13 @@ export default function ChatPage() {
       </div>
       </div>{/* Fin contenido principal del chat */}
     </div>
+  );
+}
+
+export default function ChatPage() {
+  return (
+    <ProGate featureName="FinyBot">
+      <ChatPageContent />
+    </ProGate>
   );
 }

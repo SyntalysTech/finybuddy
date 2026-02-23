@@ -3,6 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { createClient } from "@/lib/supabase/client";
 import {
   TrendingUp,
   TrendingDown,
@@ -22,6 +23,11 @@ import {
   ChevronDown,
   Mail,
   Loader2,
+  Crown,
+  Check,
+  X,
+  Menu,
+  LayoutDashboard,
 } from "lucide-react";
 
 // Newsletter subscription form
@@ -201,10 +207,179 @@ function GlowOrb({ color, size, top, left, delay = 0 }: { color: string; size: n
   );
 }
 
+// Pricing section with monthly/annual toggle
+const BASIC_FEATURES = [
+  "Dashboard con regla 50/30/20",
+  "Registro de ingresos y gastos",
+  "Calendario financiero",
+  "Operaciones recurrentes",
+  "Categorías personalizadas",
+];
+
+const PRO_FEATURES = [
+  "Todo lo del plan Basic",
+  "Previsión vs Realidad",
+  "Previsión de gastos",
+  "Metas de ahorro",
+  "Gestión de deudas",
+  "FinyBot - asistente IA",
+  "Soporte prioritario",
+];
+
+const MONTHLY_PRICE_ID = process.env.NEXT_PUBLIC_STRIPE_PRICE_PRO_MONTHLY || "price_1T44ivK6uoz4D92qkesCNGLd";
+const ANNUAL_PRICE_ID = process.env.NEXT_PUBLIC_STRIPE_PRICE_PRO_ANNUAL || "price_1T44jjK6uoz4D92qcKQ1q3vp";
+
+function PricingToggle({ isLoggedIn, hasUsedTrial }: { isLoggedIn: boolean; hasUsedTrial: boolean }) {
+  const [annual, setAnnual] = useState(false);
+  const [checkoutLoading, setCheckoutLoading] = useState(false);
+
+  const handleCheckout = async () => {
+    if (!isLoggedIn) return;
+    setCheckoutLoading(true);
+    try {
+      const priceId = annual ? ANNUAL_PRICE_ID : MONTHLY_PRICE_ID;
+      const res = await fetch("/api/stripe/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ priceId }),
+      });
+      const data = await res.json();
+      if (data.url) {
+        window.location.href = data.url;
+      }
+    } catch (error) {
+      console.error("Checkout error:", error);
+    } finally {
+      setCheckoutLoading(false);
+    }
+  };
+
+  return (
+    <>
+      {/* Toggle */}
+      <div className="flex items-center justify-center gap-3 mb-10">
+        <span className={`text-sm font-medium ${!annual ? "text-[var(--foreground)]" : "text-[var(--brand-gray)]"}`}>
+          Mensual
+        </span>
+        <button
+          onClick={() => setAnnual(!annual)}
+          className={`relative w-14 h-7 rounded-full transition-colors ${
+            annual ? "bg-gradient-to-r from-[var(--brand-purple)] to-[var(--brand-cyan)]" : "bg-[var(--border)]"
+          }`}
+        >
+          <div className={`absolute top-0.5 w-6 h-6 rounded-full bg-white shadow-md transition-transform ${
+            annual ? "translate-x-7" : "translate-x-0.5"
+          }`} />
+        </button>
+        <span className={`text-sm font-medium ${annual ? "text-[var(--foreground)]" : "text-[var(--brand-gray)]"}`}>
+          Anual
+        </span>
+        <span className={`text-xs px-2 py-1 rounded-full bg-[var(--success)]/10 text-[var(--success)] font-medium transition-opacity ${annual ? "opacity-100" : "opacity-0"}`}>
+          Ahorra 22%
+        </span>
+      </div>
+
+      {/* Cards */}
+      <div className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto">
+        {/* Basic */}
+        <div className="p-8 rounded-2xl border border-[var(--border)] bg-[var(--background)] hover:border-[var(--brand-cyan)]/50 transition-all">
+          <div className="mb-6">
+            <h3 className="text-xl font-bold mb-1">Basic</h3>
+            <p className="text-sm text-[var(--brand-gray)]">Para empezar a controlar tus finanzas</p>
+          </div>
+          <div className="mb-6 h-[72px] flex flex-col justify-center">
+            <div>
+              <span className="text-4xl font-bold">Gratis</span>
+              <span className="text-[var(--brand-gray)] ml-1">para siempre</span>
+            </div>
+          </div>
+          <Link
+            href={isLoggedIn ? "/dashboard" : "/register"}
+            className="block w-full text-center px-6 py-3 rounded-xl border border-[var(--border)] font-medium hover:bg-[var(--background-secondary)] transition-all mb-8"
+          >
+            {isLoggedIn ? "Ir al Dashboard" : "Empezar gratis"}
+          </Link>
+          <ul className="space-y-3">
+            {BASIC_FEATURES.map((f, i) => (
+              <li key={i} className="flex items-start gap-3 text-sm">
+                <Check className="w-4 h-4 text-[var(--success)] shrink-0 mt-0.5" />
+                <span>{f}</span>
+              </li>
+            ))}
+            <li className="flex items-start gap-3 text-sm text-[var(--brand-gray)]">
+              <X className="w-4 h-4 text-[var(--brand-gray)]/50 shrink-0 mt-0.5" />
+              <span>Previsión y metas de ahorro</span>
+            </li>
+            <li className="flex items-start gap-3 text-sm text-[var(--brand-gray)]">
+              <X className="w-4 h-4 text-[var(--brand-gray)]/50 shrink-0 mt-0.5" />
+              <span>FinyBot - asistente IA</span>
+            </li>
+          </ul>
+        </div>
+
+        {/* Pro */}
+        <div className="relative p-8 rounded-2xl border-2 border-[var(--brand-purple)] bg-[var(--background)] shadow-xl shadow-[var(--brand-purple)]/10">
+          {/* Popular badge */}
+          <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+            <span className="px-4 py-1 rounded-full bg-gradient-to-r from-[var(--brand-purple)] to-[var(--brand-cyan)] text-white text-xs font-semibold shadow-lg">
+              {hasUsedTrial ? "Más popular" : "15 días gratis"}
+            </span>
+          </div>
+
+          <div className="mb-6">
+            <div className="flex items-center gap-2 mb-1">
+              <h3 className="text-xl font-bold">Pro</h3>
+              <Crown className="w-5 h-5 text-[var(--brand-purple)]" />
+            </div>
+            <p className="text-sm text-[var(--brand-gray)]">Todas las herramientas para dominar tus finanzas</p>
+          </div>
+          <div className="mb-6 h-[72px] flex flex-col justify-center">
+            <div>
+              <span className="text-4xl font-bold">{annual ? "139,99 €" : "14,99 €"}</span>
+              <span className="text-[var(--brand-gray)] ml-1">{annual ? "/año" : "/mes"}</span>
+            </div>
+            <p className={`text-sm mt-1 ${annual ? "text-[var(--brand-gray)]" : "invisible"}`}>
+              <span className="line-through">179,88 €</span>{" "}
+              <span className="text-[var(--success)] font-medium">Ahorras 39,89 €</span>
+            </p>
+          </div>
+          {isLoggedIn ? (
+            <button
+              onClick={handleCheckout}
+              disabled={checkoutLoading}
+              className="block w-full text-center px-6 py-3 rounded-xl bg-gradient-to-r from-[var(--brand-purple)] to-[var(--brand-cyan)] text-white font-semibold hover:opacity-90 transition-all shadow-lg shadow-[var(--brand-purple)]/25 mb-8 disabled:opacity-50"
+            >
+              {checkoutLoading ? "Redirigiendo a Stripe..." : "Mejorar a Pro"}
+            </button>
+          ) : (
+            <Link
+              href="/register"
+              className="block w-full text-center px-6 py-3 rounded-xl bg-gradient-to-r from-[var(--brand-purple)] to-[var(--brand-cyan)] text-white font-semibold hover:opacity-90 transition-all shadow-lg shadow-[var(--brand-purple)]/25 mb-8"
+            >
+              {hasUsedTrial ? "Suscribirse a Pro" : "Empezar prueba gratis"}
+            </Link>
+          )}
+          <ul className="space-y-3">
+            {PRO_FEATURES.map((f, i) => (
+              <li key={i} className="flex items-start gap-3 text-sm">
+                <Check className="w-4 h-4 text-[var(--brand-purple)] shrink-0 mt-0.5" />
+                <span>{f}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </div>
+    </>
+  );
+}
+
 export default function HomePage() {
   const [theme, setTheme] = useState<"light" | "dark">("light");
   const [scrollY, setScrollY] = useState(0);
   const [isVisible, setIsVisible] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [hasUsedTrial, setHasUsedTrial] = useState(false);
 
   useEffect(() => {
     // Check system preference or saved preference
@@ -213,6 +388,22 @@ export default function HomePage() {
     const initialTheme = saved ? (saved as "light" | "dark") : prefersDark ? "dark" : "light";
     setTheme(initialTheme);
     document.documentElement.classList.toggle("dark", initialTheme === "dark");
+
+    // Check auth and subscription
+    const supabase = createClient();
+    supabase.auth.getUser().then(async ({ data: { user } }) => {
+      if (user) {
+        setIsLoggedIn(true);
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("trial_ends_at, subscription_status")
+          .eq("id", user.id)
+          .single();
+        if (profile?.trial_ends_at) {
+          setHasUsedTrial(true);
+        }
+      }
+    });
 
     // Trigger animations
     setIsVisible(true);
@@ -251,6 +442,19 @@ export default function HomePage() {
             />
           </Link>
 
+          {/* Desktop Nav */}
+          <nav className="hidden md:flex items-center gap-6">
+            <a href="#features" className="text-sm text-[var(--brand-gray)] hover:text-[var(--foreground)] transition-colors">
+              Funciones
+            </a>
+            <a href="#pricing" className="text-sm text-[var(--brand-gray)] hover:text-[var(--foreground)] transition-colors">
+              Planes
+            </a>
+            <a href="#newsletter" className="text-sm text-[var(--brand-gray)] hover:text-[var(--foreground)] transition-colors">
+              Newsletter
+            </a>
+          </nav>
+
           <div className="flex items-center gap-3">
             {/* Theme Toggle */}
             <button
@@ -265,14 +469,104 @@ export default function HomePage() {
               )}
             </button>
 
-            <Link
-              href="/login"
-              className="px-5 py-2 rounded-lg bg-gradient-to-r from-[var(--brand-purple)] to-[var(--brand-cyan)] text-white font-medium text-sm hover:opacity-90 transition-all hover:scale-105 active:scale-95 shadow-lg shadow-[var(--brand-purple)]/25"
+            {/* Desktop buttons */}
+            {isLoggedIn ? (
+              <Link
+                href="/dashboard"
+                className="hidden md:inline-flex items-center gap-2 px-5 py-2 rounded-lg bg-gradient-to-r from-[var(--brand-purple)] to-[var(--brand-cyan)] text-white font-medium text-sm hover:opacity-90 transition-all hover:scale-105 active:scale-95 shadow-lg shadow-[var(--brand-purple)]/25"
+              >
+                <LayoutDashboard className="w-4 h-4" />
+                Mi Dashboard
+              </Link>
+            ) : (
+              <>
+                <Link
+                  href="/login"
+                  className="hidden md:inline-flex px-5 py-2 rounded-lg border border-[var(--border)] text-sm font-medium hover:bg-[var(--background-secondary)] transition-all hover:scale-105 active:scale-95"
+                >
+                  Iniciar sesión
+                </Link>
+                <Link
+                  href="/register"
+                  className="hidden md:inline-flex px-5 py-2 rounded-lg bg-gradient-to-r from-[var(--brand-purple)] to-[var(--brand-cyan)] text-white font-medium text-sm hover:opacity-90 transition-all hover:scale-105 active:scale-95 shadow-lg shadow-[var(--brand-purple)]/25"
+                >
+                  Crear cuenta gratis
+                </Link>
+              </>
+            )}
+
+            {/* Mobile hamburger */}
+            <button
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="md:hidden p-2 rounded-lg border border-[var(--border)] hover:bg-[var(--background-secondary)] transition-all"
+              aria-label="Menú"
             >
-              Iniciar sesión
-            </Link>
+              {mobileMenuOpen ? (
+                <X className="w-5 h-5" />
+              ) : (
+                <Menu className="w-5 h-5" />
+              )}
+            </button>
           </div>
         </div>
+
+        {/* Mobile Menu */}
+        {mobileMenuOpen && (
+          <div className="md:hidden border-t border-[var(--border)] bg-[var(--background)]/95 backdrop-blur-xl">
+            <div className="px-6 py-4 space-y-1">
+              <a
+                href="#features"
+                onClick={() => setMobileMenuOpen(false)}
+                className="block px-4 py-3 rounded-lg text-sm font-medium text-[var(--brand-gray)] hover:text-[var(--foreground)] hover:bg-[var(--background-secondary)] transition-colors"
+              >
+                Funciones
+              </a>
+              <a
+                href="#pricing"
+                onClick={() => setMobileMenuOpen(false)}
+                className="block px-4 py-3 rounded-lg text-sm font-medium text-[var(--brand-gray)] hover:text-[var(--foreground)] hover:bg-[var(--background-secondary)] transition-colors"
+              >
+                Planes
+              </a>
+              <a
+                href="#newsletter"
+                onClick={() => setMobileMenuOpen(false)}
+                className="block px-4 py-3 rounded-lg text-sm font-medium text-[var(--brand-gray)] hover:text-[var(--foreground)] hover:bg-[var(--background-secondary)] transition-colors"
+              >
+                Newsletter
+              </a>
+              <div className="pt-3 mt-3 border-t border-[var(--border)] space-y-2">
+                {isLoggedIn ? (
+                  <Link
+                    href="/dashboard"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="flex items-center justify-center gap-2 w-full px-4 py-3 rounded-lg bg-gradient-to-r from-[var(--brand-purple)] to-[var(--brand-cyan)] text-white text-sm font-semibold hover:opacity-90 transition-all shadow-lg shadow-[var(--brand-purple)]/25"
+                  >
+                    <LayoutDashboard className="w-4 h-4" />
+                    Mi Dashboard
+                  </Link>
+                ) : (
+                  <>
+                    <Link
+                      href="/login"
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="block w-full text-center px-4 py-3 rounded-lg border border-[var(--border)] text-sm font-medium hover:bg-[var(--background-secondary)] transition-all"
+                    >
+                      Iniciar sesión
+                    </Link>
+                    <Link
+                      href="/register"
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="block w-full text-center px-4 py-3 rounded-lg bg-gradient-to-r from-[var(--brand-purple)] to-[var(--brand-cyan)] text-white text-sm font-semibold hover:opacity-90 transition-all shadow-lg shadow-[var(--brand-purple)]/25"
+                    >
+                      Crear cuenta gratis
+                    </Link>
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
       </header>
 
       {/* Hero Section */}
@@ -319,22 +613,40 @@ export default function HomePage() {
                 <span className="font-semibold text-[var(--foreground)]">50/30/20</span>.
               </p>
 
-              <div className="flex flex-col sm:flex-row gap-4 mb-10">
-                <Link
-                  href="/login"
-                  className="group inline-flex items-center justify-center gap-2 px-8 py-4 rounded-xl bg-gradient-to-r from-[var(--brand-purple)] to-[var(--brand-cyan)] text-white font-semibold hover:opacity-90 transition-all hover:scale-105 active:scale-95 shadow-xl shadow-[var(--brand-purple)]/30"
-                >
-                  Empezar ahora
-                  <ArrowRight className="w-5 h-5 transition-transform group-hover:translate-x-1" />
-                </Link>
+              <div className="flex flex-col sm:flex-row gap-4 mb-4">
+                {isLoggedIn ? (
+                  <Link
+                    href="/dashboard"
+                    className="group inline-flex items-center justify-center gap-2 px-8 py-4 rounded-xl bg-gradient-to-r from-[var(--brand-purple)] to-[var(--brand-cyan)] text-white font-semibold hover:opacity-90 transition-all hover:scale-105 active:scale-95 shadow-xl shadow-[var(--brand-purple)]/30"
+                  >
+                    <LayoutDashboard className="w-5 h-5" />
+                    Ir al Dashboard
+                  </Link>
+                ) : (
+                  <Link
+                    href="/register"
+                    className="group inline-flex items-center justify-center gap-2 px-8 py-4 rounded-xl bg-gradient-to-r from-[var(--brand-purple)] to-[var(--brand-cyan)] text-white font-semibold hover:opacity-90 transition-all hover:scale-105 active:scale-95 shadow-xl shadow-[var(--brand-purple)]/30"
+                  >
+                    {hasUsedTrial ? "Crear cuenta gratis" : "Prueba gratis 15 días"}
+                    <ArrowRight className="w-5 h-5 transition-transform group-hover:translate-x-1" />
+                  </Link>
+                )}
                 <a
-                  href="#features"
+                  href="#pricing"
                   className="inline-flex items-center justify-center gap-2 px-8 py-4 rounded-xl border border-[var(--border)] font-medium hover:bg-[var(--background-secondary)] transition-all hover:scale-105"
                 >
-                  Ver funciones
+                  Ver planes
                   <ChevronDown className="w-5 h-5" />
                 </a>
               </div>
+              {!isLoggedIn && (
+                <p className="text-sm text-[var(--brand-gray)] mb-10">
+                  {hasUsedTrial
+                    ? "Plan Basic gratuito para siempre. Actualiza a Pro cuando quieras."
+                    : "Sin tarjeta de crédito. Acceso Pro completo durante 15 días."}
+                </p>
+              )}
+              {isLoggedIn && <div className="mb-10" />}
 
               {/* Trust badges */}
               <div className="flex flex-wrap gap-6">
@@ -624,56 +936,63 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* CTA Section */}
-      <section className="py-20 px-6">
-        <div className="max-w-4xl mx-auto">
-          <div className="relative rounded-3xl overflow-hidden">
-            {/* Background gradient */}
-            <div className="absolute inset-0 bg-gradient-to-br from-[var(--brand-purple)] via-[var(--brand-cyan)] to-[var(--brand-purple)]" />
+      {/* Pricing Section */}
+      <section id="pricing" className="py-20 px-6 relative">
+        <GridBackground />
 
-            {/* Pattern overlay */}
-            <div className="absolute inset-0 opacity-10">
-              <div className="absolute inset-0" style={{
-                backgroundImage: "url(\"data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E\")",
-              }} />
+        <div className="max-w-5xl mx-auto relative z-10">
+          <div className="text-center mb-12">
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[var(--brand-purple)]/10 border border-[var(--brand-purple)]/20 text-[var(--brand-purple)] text-sm font-medium mb-6">
+              <Crown className="w-4 h-4" />
+              Planes y precios
             </div>
-
-            <div className="relative z-10 p-10 md:p-16 text-center">
-              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/20 text-white text-sm font-medium mb-6 backdrop-blur-sm">
-                <Clock className="w-4 h-4" />
-                Próximamente más planes
-              </div>
-
-              <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
-                ¿Listo para tomar el control?
-              </h2>
-              <p className="text-white/80 mb-8 max-w-lg mx-auto text-lg">
-                Empieza a gestionar tus finanzas de forma inteligente hoy mismo.
-                Si tienes preguntas, contacta con nosotros.
-              </p>
-
-              <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <Link
-                  href="/login"
-                  className="group inline-flex items-center justify-center gap-2 px-8 py-4 rounded-xl bg-white text-[var(--brand-purple)] font-semibold hover:bg-white/90 transition-all hover:scale-105 active:scale-95 shadow-xl"
-                >
-                  Acceder a FinyBuddy
-                  <ArrowRight className="w-5 h-5 transition-transform group-hover:translate-x-1" />
-                </Link>
-                <a
-                  href="mailto:contacto@finybuddy.com"
-                  className="inline-flex items-center justify-center gap-2 px-8 py-4 rounded-xl border-2 border-white/30 text-white font-medium hover:bg-white/10 transition-all backdrop-blur-sm"
-                >
-                  Contactar
-                </a>
-              </div>
-            </div>
+            <h2 className="text-3xl md:text-4xl font-bold mb-4">
+              Elige tu <span className="gradient-brand-text">plan</span>
+            </h2>
+            <p className="text-[var(--brand-gray)] max-w-2xl mx-auto text-lg">
+              {hasUsedTrial
+                ? "Plan Basic gratis para siempre. Desbloquea todo con Pro."
+                : "Empieza gratis con 15 días de prueba Pro. Sin tarjeta de crédito."}
+            </p>
           </div>
+
+          {/* Billing Toggle */}
+          <PricingToggle isLoggedIn={isLoggedIn} hasUsedTrial={hasUsedTrial} />
+        </div>
+      </section>
+
+      {/* Final CTA */}
+      <section className="py-16 px-6">
+        <div className="max-w-3xl mx-auto text-center">
+          <h2 className="text-3xl md:text-4xl font-bold mb-4">
+            ¿Listo para tomar el control?
+          </h2>
+          <p className="text-[var(--brand-gray)] mb-8 text-lg">
+            {isLoggedIn
+              ? "Vuelve a tu dashboard y sigue gestionando tus finanzas."
+              : "Únete gratis y empieza a gestionar tus finanzas hoy mismo."}
+          </p>
+          <Link
+            href={isLoggedIn ? "/dashboard" : "/register"}
+            className="group inline-flex items-center justify-center gap-2 px-8 py-4 rounded-xl bg-gradient-to-r from-[var(--brand-purple)] to-[var(--brand-cyan)] text-white font-semibold hover:opacity-90 transition-all hover:scale-105 active:scale-95 shadow-xl shadow-[var(--brand-purple)]/30"
+          >
+            {isLoggedIn ? (
+              <>
+                <LayoutDashboard className="w-5 h-5" />
+                Ir al Dashboard
+              </>
+            ) : (
+              <>
+                Crear cuenta gratis
+                <ArrowRight className="w-5 h-5 transition-transform group-hover:translate-x-1" />
+              </>
+            )}
+          </Link>
         </div>
       </section>
 
       {/* Newsletter Section */}
-      <section className="py-20 px-6 bg-[var(--background)]">
+      <section id="newsletter" className="py-20 px-6 bg-[var(--background)]">
         <div className="max-w-3xl mx-auto text-center">
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[var(--brand-cyan)]/10 text-[var(--brand-cyan)] text-sm font-medium mb-6">
             <Sparkles className="w-4 h-4" />
@@ -706,10 +1025,19 @@ export default function HomePage() {
               </div>
             </div>
 
-            <div className="flex items-center gap-6">
+            <div className="flex flex-wrap items-center gap-4 text-sm text-[var(--brand-gray)]">
+              <Link href="/terms" className="hover:text-[var(--foreground)] transition-colors">
+                Términos
+              </Link>
+              <Link href="/privacy" className="hover:text-[var(--foreground)] transition-colors">
+                Privacidad
+              </Link>
+              <a href="mailto:soporte@finybuddy.com" className="hover:text-[var(--foreground)] transition-colors">
+                Soporte
+              </a>
               <button
                 onClick={toggleTheme}
-                className="flex items-center gap-2 text-sm text-[var(--brand-gray)] hover:text-[var(--foreground)] transition-colors"
+                className="flex items-center gap-2 hover:text-[var(--foreground)] transition-colors"
               >
                 {theme === "light" ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
                 {theme === "light" ? "Modo oscuro" : "Modo claro"}

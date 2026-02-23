@@ -28,6 +28,7 @@ import { format, differenceInDays, parseISO } from "date-fns";
 import { es } from "date-fns/locale";
 import DeleteConfirmModal from "@/components/operations/DeleteConfirmModal";
 import FinyInfoPanel from "@/components/ui/FinyInfoPanel";
+import ProGate from "@/components/subscription/ProGate";
 import { useProfile } from "@/hooks/useProfile";
 
 interface SavingsGoal {
@@ -58,7 +59,7 @@ const ICON_OPTIONS = ["🎯", "🏠", "🚗", "✈️", "💻", "📱", "🎓", 
 const COLOR_OPTIONS = ["#02EAFF", "#9945FF", "#14F195", "#F97316", "#EF4444", "#EC4899", "#8B5CF6", "#06B6D4"];
 const PRIORITY_LABELS = ["Muy baja", "Baja", "Media", "Alta", "Muy alta"];
 
-export default function AhorroPage() {
+function AhorroPageContent() {
   const [goals, setGoals] = useState<SavingsGoal[]>([]);
   const [loading, setLoading] = useState(true);
   const [showGoalModal, setShowGoalModal] = useState(false);
@@ -1687,5 +1688,13 @@ function WithdrawalModal({
         </form>
       </div>
     </div>
+  );
+}
+
+export default function AhorroPage() {
+  return (
+    <ProGate featureName="Metas de ahorro">
+      <AhorroPageContent />
+    </ProGate>
   );
 }

@@ -17,7 +17,10 @@ import {
   AlertTriangle,
   CheckCircle,
   ChevronRight,
+  Crown,
 } from "lucide-react";
+import Link from "next/link";
+import { useSubscription } from "@/hooks/useSubscription";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 
@@ -57,6 +60,7 @@ export default function PerfilPage() {
   const [showLogoutModal, setShowLogoutModal] = useState(false);
 
   const supabase = createClient();
+  const { isPro, isTrialing, trialDaysLeft, plan } = useSubscription();
 
   const fetchProfile = useCallback(async () => {
     setLoading(true);
@@ -283,6 +287,37 @@ export default function PerfilPage() {
                   Miembro desde {profile?.created_at && format(new Date(profile.created_at), "MMMM yyyy", { locale: es })}
                 </p>
               </div>
+            </div>
+
+            {/* Plan Card */}
+            <div className="card p-6">
+              <div className="flex items-center gap-3 mb-4">
+                <div className={`p-2 rounded-lg ${isPro ? "bg-[var(--brand-purple)]/10" : "bg-[var(--brand-gray)]/10"}`}>
+                  <Crown className={`w-5 h-5 ${isPro ? "text-[var(--brand-purple)]" : "text-[var(--brand-gray)]"}`} />
+                </div>
+                <div>
+                  <h3 className="font-semibold">Mi Plan</h3>
+                  <p className="text-sm text-[var(--brand-gray)]">
+                    {isTrialing
+                      ? `Prueba Pro - ${trialDaysLeft} días restantes`
+                      : plan === "pro_monthly"
+                        ? "Pro Mensual"
+                        : plan === "pro_annual"
+                          ? "Pro Anual"
+                          : "Basic (Gratuito)"}
+                  </p>
+                </div>
+              </div>
+              <Link
+                href="/planes"
+                className={`block w-full text-center px-4 py-2.5 rounded-xl text-sm font-medium transition-all ${
+                  isPro
+                    ? "border border-[var(--border)] hover:bg-[var(--background-secondary)]"
+                    : "bg-gradient-to-r from-[var(--brand-purple)] to-[var(--brand-cyan)] text-white hover:opacity-90"
+                }`}
+              >
+                {isPro ? "Gestionar plan" : "Mejorar a Pro"}
+              </Link>
             </div>
 
             {/* Account Actions */}

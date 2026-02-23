@@ -10,6 +10,8 @@ export type DebtStatus = "active" | "paused" | "paid";
 export type DebtType = "mortgage" | "car_loan" | "personal_loan" | "credit_card" | "student_loan" | "other";
 export type AlertType = "payment_due" | "budget_exceeded" | "goal_reminder" | "custom";
 export type MessageRole = "user" | "assistant" | "system";
+export type SubscriptionStatus = "trialing" | "active" | "canceled" | "past_due" | "unpaid" | "incomplete" | "paused";
+export type SubscriptionPlan = "basic" | "pro_monthly" | "pro_annual";
 
 export interface Profile {
   id: string;
@@ -29,6 +31,14 @@ export interface Profile {
   billing_tax_id: string | null;
   billing_address: string | null;
   billing_country: string | null;
+  subscription_status: SubscriptionStatus;
+  subscription_plan: SubscriptionPlan;
+  stripe_customer_id: string | null;
+  stripe_subscription_id: string | null;
+  stripe_price_id: string | null;
+  trial_ends_at: string | null;
+  subscription_current_period_end: string | null;
+  subscription_cancel_at_period_end: boolean;
   created_at: string;
   updated_at: string;
 }
