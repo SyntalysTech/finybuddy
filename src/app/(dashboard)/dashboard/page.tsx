@@ -266,23 +266,32 @@ export default function DashboardPage() {
       .eq("month", selectedMonth);
 
     if (budgetsData) {
+      let totalBudgetedIncome = 0;
       let totalBudgetedExpenses = 0;
-      let totalBudgetedSavings = 0;
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       budgetsData.forEach((budget: any) => {
         const category = Array.isArray(budget.category) ? budget.category[0] : budget.category;
-        if (category?.segment === 'savings') {
-          totalBudgetedSavings += budget.amount || 0;
-        } else {
+        if (category?.type === 'income') {
+          totalBudgetedIncome += budget.amount || 0;
+        } else if (category?.type === 'expense') {
           totalBudgetedExpenses += budget.amount || 0;
         }
       });
 
+      // Obtener ahorro previsto de planned_savings (como en Previsión)
+      const { data: plannedSavingsData } = await supabase
+        .from("planned_savings")
+        .select("amount")
+        .eq("user_id", user.id)
+        .eq("year", selectedYear)
+        .eq("month", selectedMonth)
+        .single();
+
       setBudgetSummary({
-        total_budgeted_income: 0, // No se presupuestan ingresos
+        total_budgeted_income: totalBudgetedIncome,
         total_budgeted_expenses: totalBudgetedExpenses,
-        total_budgeted_savings: totalBudgetedSavings,
+        total_budgeted_savings: plannedSavingsData?.amount || 0,
       });
     }
 
@@ -489,6 +498,18 @@ export default function DashboardPage() {
                 <p className="text-xl sm:text-2xl font-bold text-[var(--success)] animate-count truncate">
                   {loading ? "..." : formatCurrency(monthlySummary?.total_income || 0)}
                 </p>
+                {!loading && budgetSummary && budgetSummary.total_budgeted_income > 0 && (
+                  <p className={`text-xs mt-1 ${
+                    (monthlySummary?.total_income || 0) >= budgetSummary.total_budgeted_income
+                      ? "text-[var(--success)]"
+                      : "text-[var(--warning)]"
+                  }`}>
+                    {(monthlySummary?.total_income || 0) >= budgetSummary.total_budgeted_income
+                      ? `+${formatCurrency((monthlySummary?.total_income || 0) - budgetSummary.total_budgeted_income)} vs previsión`
+                      : `-${formatCurrency(budgetSummary.total_budgeted_income - (monthlySummary?.total_income || 0))} vs previsión`
+                    }
+                  </p>
+                )}
               </div>
               <div className="p-2 sm:p-3 rounded-lg sm:rounded-xl bg-[var(--success)]/10 hover-scale flex-shrink-0 ml-2">
                 <TrendingUp className="w-5 h-5 sm:w-6 sm:h-6 text-[var(--success)]" />
@@ -511,8 +532,8 @@ export default function DashboardPage() {
                       : "text-[var(--success)]"
                   }`}>
                     {(monthlySummary?.total_expenses || 0) > budgetSummary.total_budgeted_expenses
-                      ? `+${formatCurrency((monthlySummary?.total_expenses || 0) - budgetSummary.total_budgeted_expenses)} vs plan`
-                      : `${formatCurrency(budgetSummary.total_budgeted_expenses - (monthlySummary?.total_expenses || 0))} bajo plan`
+                      ? `+${formatCurrency((monthlySummary?.total_expenses || 0) - budgetSummary.total_budgeted_expenses)} vs previsión`
+                      : `-${formatCurrency(budgetSummary.total_budgeted_expenses - (monthlySummary?.total_expenses || 0))} vs previsión`
                     }
                   </p>
                 )}
@@ -538,8 +559,8 @@ export default function DashboardPage() {
                       : "text-[var(--warning)]"
                   }`}>
                     {(monthlySummary?.total_savings || 0) >= budgetSummary.total_budgeted_savings
-                      ? `+${formatCurrency((monthlySummary?.total_savings || 0) - budgetSummary.total_budgeted_savings)} vs plan`
-                      : `${formatCurrency(budgetSummary.total_budgeted_savings - (monthlySummary?.total_savings || 0))} bajo plan`
+                      ? `+${formatCurrency((monthlySummary?.total_savings || 0) - budgetSummary.total_budgeted_savings)} vs previsión`
+                      : `-${formatCurrency(budgetSummary.total_budgeted_savings - (monthlySummary?.total_savings || 0))} vs previsión`
                     }
                   </p>
                 )}
