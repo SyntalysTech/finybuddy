@@ -392,72 +392,72 @@ function DeudaPageContent() {
         }
       />
 
-      <div className="p-6 space-y-6">
+      <div className="p-3 sm:p-6 space-y-3 sm:space-y-6">
         {/* Finy Info Panel */}
         <FinyInfoPanel
           messages={[
-            "Todo lo que has pagado de tus deudas en Operaciones puedes reflejarlo aquí para reducir tu saldo pendiente y avanzar hacia la eliminación total de tus deudas.",
+            "Registra pagos a tus deudas para reducir el saldo pendiente y ver tu avance. Los pagos de Operaciones no se descuentan solos.",
           ]}
           dynamicMessages={finyDynamicMessages}
           tip={finyTip}
-          finybotMessage="Puedes consultarme sobre tus deudas, pedir explicaciones sencillas o recibir ayuda para entender tu progreso."
+          finybotMessage="Pregúntame sobre estrategias para liquidar deudas más rápido."
           storageKey="deuda"
           defaultExpanded={true}
         />
 
         {/* Summary Cards */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="card p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-[var(--danger)]/10">
-                <TrendingDown className="w-5 h-5 text-[var(--danger)]" />
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4">
+          <div className="card p-2.5 sm:p-4">
+            <div className="flex items-center gap-2 sm:gap-3">
+              <div className="p-1.5 sm:p-2 rounded-lg bg-[var(--danger)]/10">
+                <TrendingDown className="w-4 h-4 sm:w-5 sm:h-5 text-[var(--danger)]" />
               </div>
-              <div>
-                <p className="text-sm text-[var(--brand-gray)]">Deuda total</p>
-                <p className="text-xl font-bold text-[var(--danger)]">{formatCurrency(totalDebt)}</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="card p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-[var(--success)]/10">
-                <CheckCircle className="w-5 h-5 text-[var(--success)]" />
-              </div>
-              <div>
-                <p className="text-sm text-[var(--brand-gray)]">Total pagado</p>
-                <p className="text-xl font-bold text-[var(--success)]">{formatCurrency(totalPaid)}</p>
+              <div className="min-w-0">
+                <p className="text-[10px] sm:text-sm text-[var(--brand-gray)]">Deuda total</p>
+                <p className="text-sm sm:text-xl font-bold text-[var(--danger)] truncate">{formatCurrency(totalDebt)}</p>
               </div>
             </div>
           </div>
 
-          <div className="card p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-[var(--warning)]/10">
-                <Calendar className="w-5 h-5 text-[var(--warning)]" />
+          <div className="card p-2.5 sm:p-4">
+            <div className="flex items-center gap-2 sm:gap-3">
+              <div className="p-1.5 sm:p-2 rounded-lg bg-[var(--success)]/10">
+                <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 text-[var(--success)]" />
               </div>
-              <div>
-                <p className="text-sm text-[var(--brand-gray)]">Cuota mensual</p>
-                <p className="text-xl font-bold">{formatCurrency(totalMonthlyPayment)}</p>
+              <div className="min-w-0">
+                <p className="text-[10px] sm:text-sm text-[var(--brand-gray)]">Total pagado</p>
+                <p className="text-sm sm:text-xl font-bold text-[var(--success)] truncate">{formatCurrency(totalPaid)}</p>
               </div>
             </div>
           </div>
 
-          <div className="card p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-[var(--brand-purple)]/10">
-                <CreditCard className="w-5 h-5 text-[var(--brand-purple)]" />
+          <div className="card p-2.5 sm:p-4">
+            <div className="flex items-center gap-2 sm:gap-3">
+              <div className="p-1.5 sm:p-2 rounded-lg bg-[var(--warning)]/10">
+                <Calendar className="w-4 h-4 sm:w-5 sm:h-5 text-[var(--warning)]" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-[10px] sm:text-sm text-[var(--brand-gray)]">Cuota mensual</p>
+                <p className="text-sm sm:text-xl font-bold truncate">{formatCurrency(totalMonthlyPayment)}</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="card p-2.5 sm:p-4">
+            <div className="flex items-center gap-2 sm:gap-3">
+              <div className="p-1.5 sm:p-2 rounded-lg bg-[var(--brand-purple)]/10">
+                <CreditCard className="w-4 h-4 sm:w-5 sm:h-5 text-[var(--brand-purple)]" />
               </div>
               <div>
-                <p className="text-sm text-[var(--brand-gray)]">Deudas activas</p>
-                <p className="text-xl font-bold">{activeDebts}</p>
+                <p className="text-[10px] sm:text-sm text-[var(--brand-gray)]">Deudas activas</p>
+                <p className="text-sm sm:text-xl font-bold">{activeDebts}</p>
               </div>
             </div>
           </div>
         </div>
 
         {/* Filter Tabs */}
-        <div className="flex items-center gap-2 flex-wrap">
+        <div className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto pb-1">
           {[
             { value: "all", label: "Todas" },
             { value: "active", label: "Activas" },
@@ -467,7 +467,7 @@ function DeudaPageContent() {
             <button
               key={tab.value}
               onClick={() => setFilter(tab.value as typeof filter)}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+              className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors whitespace-nowrap ${
                 filter === tab.value
                   ? "bg-[var(--brand-purple)] text-white"
                   : "bg-[var(--background-secondary)] hover:bg-[var(--border)]"

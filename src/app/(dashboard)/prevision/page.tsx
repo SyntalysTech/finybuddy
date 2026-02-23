@@ -997,17 +997,15 @@ function PrevisionPageContent() {
         }
       />
 
-      <div className="p-6 space-y-6">
+      <div className="p-3 sm:p-6 space-y-3 sm:space-y-6">
         {/* Finy Info Panel */}
         <FinyInfoPanel
           messages={[
-            "Aquí planificas los ingresos, gastos y ahorro del mes por categorías.",
-            "Al cuadrar ingresos con necesidades, deseos y ahorro, estás definiendo tu propia regla financiera adaptada a tu realidad.",
-            "La previsión no es un presupuesto rígido, sino una referencia para tomar mejores decisiones durante el mes.",
+            "Planifica cuánto esperas ingresar, gastar y ahorrar este mes. No es un tope rígido, sino una guía para tomar mejores decisiones.",
           ]}
           dynamicMessages={finyDynamicMessages}
-          tip="Una previsión bien ajustada facilita después la lectura de desviaciones en 'Previsión vs Realidad' y ayuda a mejorar la planificación en meses futuros."
-          finybotMessage="Puedes preguntarme cómo configurar tu previsión o resolver cualquier duda sobre tu presupuesto."
+          tip="Cuanto más ajustada esté tu previsión, más útil será la comparativa en 'Previsión vs Realidad'."
+          finybotMessage="Pregúntame cómo configurar tu previsión mensual."
           storageKey="prevision"
           defaultExpanded={true}
         />

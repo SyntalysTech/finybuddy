@@ -542,11 +542,10 @@ export default function CategoriasPage() {
         {/* Finy Info Panel */}
         <FinyInfoPanel
           messages={[
-            "En este apartado configuras las categorías que se utilizarán en toda la aplicación: Calendario, Previsión, Operaciones, Previsión vs Realidad y Dashboard.",
-            "Las categorías son la base para clasificar correctamente los ingresos, gastos y ahorro, y determinan cómo se calculan y se muestran los indicadores, comparativas y gráficos de la app.",
+            "Las categorías organizan tus ingresos, gastos y ahorro en toda la app.",
           ]}
-          tip="En las categorías de gasto es especialmente importante asignar un segmento (Necesidades o Deseos), ya que permite entender mejor en qué se va el dinero y cómo se distribuye. Las Necesidades son gastos esenciales para vivir (alquiler, hipoteca, alimentación, suministros). Los Deseos son gastos no esenciales u opcionales (restaurantes, viajes, entretenimiento)."
-          finybotMessage="Si tienes dudas sobre cómo configurar tus categorías, pregúntame por texto o audio."
+          tip="En gastos, asigna segmento: Necesidades (alquiler, luz, comida) o Deseos (restaurantes, viajes). Esto mejora tus indicadores."
+          finybotMessage="Pregúntame si no sabes en qué segmento clasificar una categoría."
           storageKey="categorias"
           defaultExpanded={true}
         />

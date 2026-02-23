@@ -476,12 +476,10 @@ export default function CalendarioPage() {
         {/* Finy Info Panel */}
         <FinyInfoPanel
           messages={[
-            "Cada día del calendario muestra los registros introducidos en Operaciones (ingresos, gastos y ahorro).",
-            "Puedes crear recordatorios de pagos futuros u otros hitos financieros (seguros, impuestos, renovaciones) con el botón \"Nuevo recordatorio\".",
+            "Visualiza tus operaciones día a día y crea recordatorios para pagos futuros (seguros, impuestos, etc.).",
           ]}
-          dynamicMessages={[]}
-          tip="El objetivo principal del calendario es anticiparse y organizar, no solo revisar el pasado."
-          finybotMessage="Pregúntame cómo usar el calendario, crear recordatorios o planificar tus finanzas."
+          tip="Usa los recordatorios para anticiparte a gastos importantes y no tener sorpresas."
+          finybotMessage="Pregúntame cómo organizar tu calendario financiero."
           storageKey="calendario"
           defaultExpanded={true}
         />

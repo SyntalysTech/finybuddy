@@ -566,28 +566,6 @@ export default function AjustesPage() {
                 </button>
               </div>
 
-              {/* Resumen mensual */}
-              <div className="flex items-center justify-between p-4 rounded-xl bg-[var(--background-secondary)]">
-                <div className="flex items-center gap-3">
-                  <Bell className="w-5 h-5 text-[var(--brand-gray)]" />
-                  <div>
-                    <p className="font-medium text-sm">Resumen mensual</p>
-                    <p className="text-xs text-[var(--brand-gray)]">Recibe el día 2 de cada mes un resumen del mes anterior en el panel de notificaciones de la app</p>
-                  </div>
-                </div>
-                <button
-                  onClick={() => handleNotificationChange("in_app_monthly_summary")}
-                  className={`relative w-11 h-6 rounded-full transition-colors ${
-                    notifications.in_app_monthly_summary ? "bg-[var(--brand-cyan)]" : "bg-[var(--border)]"
-                  }`}
-                >
-                  <div
-                    className={`absolute top-1 w-4 h-4 rounded-full bg-white shadow-sm transition-all ${
-                      notifications.in_app_monthly_summary ? "left-6" : "left-1"
-                    }`}
-                  />
-                </button>
-              </div>
             </div>
           </div>
 

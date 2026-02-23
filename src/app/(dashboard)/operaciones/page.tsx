@@ -289,12 +289,10 @@ export default function OperacionesPage() {
         {/* Finy Info Panel */}
         <FinyInfoPanel
           messages={[
-            "Aquí registras las operaciones reales del día a día: ingresos, gastos y ahorro.",
-            "Las operaciones reflejan lo que realmente ha pasado, no lo que habías planificado.",
-            "Registrar correctamente las operaciones es la base para que los gráficos, indicadores y comparativas del resto de la app funcionen correctamente.",
+            "Registra tus ingresos, gastos y ahorro reales. Son la base de todos los indicadores y gráficos de la app.",
           ]}
-          tip="Puedes introducir operaciones manualmente con el botón 'Nueva Operación' o usando Finybot con texto o audio (por ejemplo: 'He pagado 30 € en gasolina')."
-          finybotMessage="Finybot está pensado para ahorrar tiempo. Escribe o habla de forma natural para registrar operaciones."
+          tip="Puedes registrar operaciones con el botón o dictándoselas a Finybot (ej: 'He pagado 30 € en gasolina')."
+          finybotMessage="Dicta tus operaciones por texto o audio para ahorrar tiempo."
           storageKey="operaciones"
           defaultExpanded={true}
         />

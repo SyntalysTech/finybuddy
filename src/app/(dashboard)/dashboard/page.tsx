@@ -466,23 +466,24 @@ export default function DashboardPage() {
 
       <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
         {/* Frase contextual dinámica con mascota */}
-        <div className="glass-brand p-3 sm:p-4 rounded-xl sm:rounded-2xl animate-slide-in-down">
-          <div className="flex items-start gap-2 sm:gap-3">
+        <div className="glass-brand p-3 sm:p-4 rounded-xl sm:rounded-2xl animate-slide-in-down relative overflow-hidden">
+          <div className="absolute top-0 left-0 w-24 h-24 bg-gradient-to-br from-[var(--brand-cyan)]/8 to-transparent rounded-br-full pointer-events-none" />
+          <div className="flex items-center gap-2.5 sm:gap-3 relative">
             <div className="animate-float-slow flex-shrink-0">
               <Image
                 src="/assets/finybuddy-mascot.png"
                 alt="FinyBuddy"
                 width={40}
                 height={40}
-                className="rounded-full w-10 h-10 sm:w-12 sm:h-12"
+                className="rounded-full w-9 h-9 sm:w-11 sm:h-11"
               />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-xs sm:text-sm font-medium text-[var(--brand-purple)] mb-1 animate-fade-in">
+              <p className="text-xs sm:text-sm font-semibold text-[var(--brand-cyan)] mb-0.5 animate-fade-in leading-tight">
                 {loading ? "Analizando tus datos..." : contextualPhrase}
               </p>
-              <p className="text-xs sm:text-sm text-[var(--brand-gray)] italic line-clamp-2">
-                "{dailyQuote}"
+              <p className="text-[10px] sm:text-xs text-[var(--brand-gray)] italic line-clamp-2 leading-relaxed">
+                &ldquo;{dailyQuote}&rdquo;
               </p>
             </div>
           </div>
@@ -706,8 +707,11 @@ export default function DashboardPage() {
           </div>
 
           {/* Finy Interpretation Panel */}
-          <div className="glass-brand rounded-xl sm:rounded-2xl p-4 sm:p-6 animate-slide-in-right">
-            <div className="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4">
+          <div className="glass-brand rounded-xl sm:rounded-2xl p-4 sm:p-6 animate-slide-in-right relative overflow-hidden">
+            {/* Subtle decorative gradient */}
+            <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-[var(--brand-cyan)]/5 to-transparent rounded-bl-full pointer-events-none" />
+
+            <div className="flex items-center gap-2.5 sm:gap-3 mb-3 sm:mb-4 relative">
               <div className="animate-bounce-subtle flex-shrink-0">
                 <Image
                   src="/assets/finybuddy-mascot.png"
@@ -718,26 +722,26 @@ export default function DashboardPage() {
                 />
               </div>
               <div className="min-w-0">
-                <h3 className="text-base sm:text-lg font-semibold animate-gradient-text">Finy</h3>
-                <p className="text-xs text-[var(--brand-gray)]">Tu asistente financiero</p>
-              </div>
-              <div className="ml-auto flex-shrink-0">
-                <Sparkles className="w-4 h-4 sm:w-5 sm:h-5 text-[var(--brand-cyan)] animate-sparkle" />
+                <div className="flex items-center gap-1.5">
+                  <h3 className="text-sm sm:text-base font-bold text-[var(--brand-cyan)]">Finy</h3>
+                  <Sparkles className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[var(--brand-cyan)] opacity-60 animate-sparkle" />
+                </div>
+                <p className="text-[10px] sm:text-xs text-[var(--brand-gray)]">Tu asistente financiero</p>
               </div>
             </div>
-            <div className="space-y-2 sm:space-y-3">
+            <div className="space-y-2 sm:space-y-2.5 relative">
               {loading ? (
-                <div className="flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-[var(--brand-cyan)] animate-typing-dot"></span>
-                  <span className="w-2 h-2 rounded-full bg-[var(--brand-cyan)] animate-typing-dot"></span>
-                  <span className="w-2 h-2 rounded-full bg-[var(--brand-cyan)] animate-typing-dot"></span>
-                  <span className="text-xs sm:text-sm text-[var(--brand-gray)] ml-2">Analizando...</span>
+                <div className="flex items-center gap-2 py-2">
+                  <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-[var(--brand-cyan)] animate-typing-dot"></span>
+                  <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-[var(--brand-cyan)] animate-typing-dot"></span>
+                  <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-[var(--brand-cyan)] animate-typing-dot"></span>
+                  <span className="text-xs sm:text-sm text-[var(--brand-gray)] ml-1">Analizando...</span>
                 </div>
               ) : (
                 getFinyMessage()?.map((message, index) => (
-                  <div key={index} className={`flex items-start gap-2 animate-slide-in-left stagger-${index + 1}`}>
-                    <span className="text-[var(--brand-cyan)] mt-0.5 animate-pulse flex-shrink-0">•</span>
-                    <p className="text-xs sm:text-sm text-[var(--foreground)]">{message}</p>
+                  <div key={index} className={`flex items-start gap-2 animate-slide-in-left stagger-${Math.min(index + 1, 3)}`}>
+                    <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-[var(--brand-cyan)] mt-1.5 sm:mt-1 flex-shrink-0 animate-pulse" />
+                    <p className="text-xs sm:text-sm text-[var(--foreground)] leading-relaxed">{message}</p>
                   </div>
                 ))
               )}

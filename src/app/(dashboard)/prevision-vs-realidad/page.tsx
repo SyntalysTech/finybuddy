@@ -437,16 +437,15 @@ function PrevisionVsRealidadPageContent() {
         }
       />
 
-      <div className="p-6 space-y-6">
+      <div className="p-3 sm:p-6 space-y-3 sm:space-y-6">
         {/* Finy Info Panel */}
         <FinyInfoPanel
           messages={[
-            "Este apartado te muestra qué está ocurriendo ahora mismo respecto al plan del mes.",
-            "Aquí puedes ver cuánto margen te queda para seguir gastando o ahorrando en cada partida.",
+            "Compara lo que planificaste con lo que realmente ha pasado. Mira tu margen en cada partida.",
           ]}
           dynamicMessages={finyDynamicMessages}
-          tip="Las desviaciones no son un problema, son oportunidades de ajuste y aprendizaje para planificar mejor el próximo mes."
-          finybotMessage="Puedes preguntarme sobre tu situación financiera actual o cómo interpretar estos datos."
+          tip="Las desviaciones son normales. Úsalas para planificar mejor el mes siguiente."
+          finybotMessage="Pregúntame cómo interpretar las desviaciones de tu presupuesto."
           storageKey="prevision-vs-realidad"
           defaultExpanded={true}
         />

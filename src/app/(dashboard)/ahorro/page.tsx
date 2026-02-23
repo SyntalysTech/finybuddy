@@ -353,72 +353,72 @@ function AhorroPageContent() {
         }
       />
 
-      <div className="p-6 space-y-6">
+      <div className="p-3 sm:p-6 space-y-3 sm:space-y-6">
         {/* Finy Info Panel */}
         <FinyInfoPanel
           messages={[
-            "Todo lo que has ahorrado con tus operaciones puedes reflejarlo aquí para aumentar el progreso de tus metas.",
+            "Registra aportes a tus metas para ir viendo tu progreso. El ahorro de Operaciones no se suma solo: refleja aquí cuánto destinas a cada meta.",
           ]}
           dynamicMessages={finyDynamicMessages}
           tip={finyTip}
-          finybotMessage="Puedes preguntarme sobre tus metas de ahorro, pedir consejos o resolver cualquier duda."
+          finybotMessage="Pregúntame sobre estrategias de ahorro o cómo gestionar tus metas."
           storageKey="ahorro"
           defaultExpanded={true}
         />
 
         {/* Summary Cards */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="card p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-[var(--brand-cyan)]/10">
-                <Target className="w-5 h-5 text-[var(--brand-cyan)]" />
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4">
+          <div className="card p-2.5 sm:p-4">
+            <div className="flex items-center gap-2 sm:gap-3">
+              <div className="p-1.5 sm:p-2 rounded-lg bg-[var(--brand-cyan)]/10">
+                <Target className="w-4 h-4 sm:w-5 sm:h-5 text-[var(--brand-cyan)]" />
               </div>
-              <div>
-                <p className="text-sm text-[var(--brand-gray)]">Objetivo total</p>
-                <p className="text-xl font-bold">{formatCurrency(totalTarget)}</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="card p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-[var(--success)]/10">
-                <PiggyBank className="w-5 h-5 text-[var(--success)]" />
-              </div>
-              <div>
-                <p className="text-sm text-[var(--brand-gray)]">Total ahorrado</p>
-                <p className="text-xl font-bold text-[var(--success)]">{formatCurrency(totalSaved)}</p>
+              <div className="min-w-0">
+                <p className="text-[10px] sm:text-sm text-[var(--brand-gray)]">Objetivo total</p>
+                <p className="text-sm sm:text-xl font-bold truncate">{formatCurrency(totalTarget)}</p>
               </div>
             </div>
           </div>
 
-          <div className="card p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-[var(--brand-purple)]/10">
-                <Sparkles className="w-5 h-5 text-[var(--brand-purple)]" />
+          <div className="card p-2.5 sm:p-4">
+            <div className="flex items-center gap-2 sm:gap-3">
+              <div className="p-1.5 sm:p-2 rounded-lg bg-[var(--success)]/10">
+                <PiggyBank className="w-4 h-4 sm:w-5 sm:h-5 text-[var(--success)]" />
               </div>
-              <div>
-                <p className="text-sm text-[var(--brand-gray)]">Metas activas</p>
-                <p className="text-xl font-bold">{activeGoals}</p>
+              <div className="min-w-0">
+                <p className="text-[10px] sm:text-sm text-[var(--brand-gray)]">Total ahorrado</p>
+                <p className="text-sm sm:text-xl font-bold text-[var(--success)] truncate">{formatCurrency(totalSaved)}</p>
               </div>
             </div>
           </div>
 
-          <div className="card p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-[var(--success)]/10">
-                <CheckCircle className="w-5 h-5 text-[var(--success)]" />
+          <div className="card p-2.5 sm:p-4">
+            <div className="flex items-center gap-2 sm:gap-3">
+              <div className="p-1.5 sm:p-2 rounded-lg bg-[var(--brand-purple)]/10">
+                <Sparkles className="w-4 h-4 sm:w-5 sm:h-5 text-[var(--brand-purple)]" />
               </div>
               <div>
-                <p className="text-sm text-[var(--brand-gray)]">Completadas</p>
-                <p className="text-xl font-bold">{completedGoals}</p>
+                <p className="text-[10px] sm:text-sm text-[var(--brand-gray)]">Metas activas</p>
+                <p className="text-sm sm:text-xl font-bold">{activeGoals}</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="card p-2.5 sm:p-4">
+            <div className="flex items-center gap-2 sm:gap-3">
+              <div className="p-1.5 sm:p-2 rounded-lg bg-[var(--success)]/10">
+                <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 text-[var(--success)]" />
+              </div>
+              <div>
+                <p className="text-[10px] sm:text-sm text-[var(--brand-gray)]">Completadas</p>
+                <p className="text-sm sm:text-xl font-bold">{completedGoals}</p>
               </div>
             </div>
           </div>
         </div>
 
         {/* Filter Tabs */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto pb-1">
           {[
             { value: "all", label: "Todas" },
             { value: "active", label: "Activas" },
@@ -428,7 +428,7 @@ function AhorroPageContent() {
             <button
               key={tab.value}
               onClick={() => setFilter(tab.value as typeof filter)}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+              className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors whitespace-nowrap ${
                 filter === tab.value
                   ? "bg-[var(--brand-purple)] text-white"
                   : "bg-[var(--background-secondary)] hover:bg-[var(--border)]"
@@ -478,11 +478,11 @@ function AhorroPageContent() {
                   className={`card overflow-hidden ${goal.status === "completed" ? "opacity-75" : ""}`}
                 >
                   {/* Main Content */}
-                  <div className="p-5">
-                    <div className="flex items-start gap-4">
+                  <div className="p-3 sm:p-5">
+                    <div className="flex items-start gap-2.5 sm:gap-4">
                       {/* Icon */}
                       <div
-                        className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl shrink-0"
+                        className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg sm:rounded-xl flex items-center justify-center text-xl sm:text-2xl shrink-0"
                         style={{ backgroundColor: `${goal.color}20` }}
                       >
                         {goal.icon}
@@ -490,10 +490,10 @@ function AhorroPageContent() {
 
                       {/* Content */}
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-start justify-between gap-4">
-                          <div>
-                            <div className="flex items-center gap-2">
-                              <h3 className="font-semibold text-lg">{goal.name}</h3>
+                        <div className="flex items-start justify-between gap-2 sm:gap-4">
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
+                              <h3 className="font-semibold text-sm sm:text-lg truncate">{goal.name}</h3>
                               {goal.status === "paused" && (
                                 <span className="px-2 py-0.5 rounded-full text-xs bg-[var(--warning)]/10 text-[var(--warning)]">
                                   Pausada
@@ -587,19 +587,19 @@ function AhorroPageContent() {
                         </div>
 
                         {/* Progress */}
-                        <div className="mt-4">
-                          <div className="flex items-center justify-between mb-2">
-                            <span className="text-sm text-[var(--brand-gray)]">
+                        <div className="mt-3 sm:mt-4">
+                          <div className="flex items-center justify-between mb-1.5 sm:mb-2">
+                            <span className="text-xs sm:text-sm text-[var(--brand-gray)] truncate mr-2">
                               {formatCurrency(goal.current_amount)} de {formatCurrency(goal.target_amount)}
                             </span>
                             <span
-                              className="text-sm font-semibold"
+                              className="text-xs sm:text-sm font-semibold shrink-0"
                               style={{ color: goal.color }}
                             >
                               {progress.toFixed(0)}%
                             </span>
                           </div>
-                          <div className="h-3 bg-[var(--background-secondary)] rounded-full overflow-hidden">
+                          <div className="h-2 sm:h-3 bg-[var(--background-secondary)] rounded-full overflow-hidden">
                             <div
                               className="h-full rounded-full transition-all duration-500"
                               style={{
@@ -611,7 +611,7 @@ function AhorroPageContent() {
                         </div>
 
                         {/* Meta Info */}
-                        <div className="flex items-center gap-4 mt-3 text-sm">
+                        <div className="flex items-center gap-2 sm:gap-4 mt-2 sm:mt-3 text-xs sm:text-sm flex-wrap">
                           {goal.target_date && (
                             <div className="flex items-center gap-1 text-[var(--brand-gray)]">
                               <Calendar className="w-4 h-4" />
