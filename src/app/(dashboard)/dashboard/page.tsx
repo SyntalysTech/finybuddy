@@ -350,8 +350,8 @@ export default function DashboardPage() {
   const getFinyMessage = () => {
     if (!monthlySummary) return null;
 
-    const { total_income, total_expenses, needs_total, wants_total, savings_total } = monthlySummary;
-    const balance = total_income - total_expenses;
+    const { total_income, total_expenses, total_savings, needs_total, wants_total, savings_total } = monthlySummary;
+    const balance = total_income - total_expenses - total_savings;
     const ruleNeeds = profile?.rule_needs_percent ?? 50;
     const ruleWants = profile?.rule_wants_percent ?? 30;
     const ruleSavings = profile?.rule_savings_percent ?? 20;

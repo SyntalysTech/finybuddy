@@ -197,7 +197,7 @@ async function getFinancialContext(userId: string): Promise<FinancialContext> {
       income: monthlyIncome,
       expenses: monthlyExpenses,
       savings: monthlySavings,
-      balance: monthlyIncome - monthlyExpenses,
+      balance: monthlyIncome - monthlyExpenses - monthlySavings,
       available: monthlyIncome - monthlyExpenses - monthlySavings,
       savingsRate: monthlyIncome > 0 ? Math.round((monthlySavings / monthlyIncome) * 100) : 0,
     },
@@ -819,8 +819,8 @@ export async function POST(request: NextRequest) {
     const context = await getFinancialContext(userId);
     const systemPrompt = buildSystemPrompt(context);
 
-    // Call OpenAI API with tools
-    const response = await fetch("https://api.openai.com/v1/chat/completions", {
+    // First call: non-streaming to detect tool calls
+    const firstResponse = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -839,16 +839,16 @@ export async function POST(request: NextRequest) {
       }),
     });
 
-    if (!response.ok) {
-      const error = await response.text();
+    if (!firstResponse.ok) {
+      const error = await firstResponse.text();
       console.error("OpenAI error:", error);
       return NextResponse.json({ error: "Failed to get AI response" }, { status: 500 });
     }
 
-    const data = await response.json();
-    const assistantMessage = data.choices[0]?.message;
+    const firstData = await firstResponse.json();
+    const assistantMessage = firstData.choices[0]?.message;
 
-    // Check if the AI wants to call a function
+    // If tool calls needed, execute them and stream the follow-up
     if (assistantMessage.tool_calls && assistantMessage.tool_calls.length > 0) {
       const toolResults = [];
 
@@ -881,7 +881,7 @@ export async function POST(request: NextRequest) {
         }
       }
 
-      // Call OpenAI again with the tool results to get the final response
+      // Stream the follow-up response after tool execution
       const followUpResponse = await fetch("https://api.openai.com/v1/chat/completions", {
         method: "POST",
         headers: {
@@ -896,25 +896,62 @@ export async function POST(request: NextRequest) {
             assistantMessage,
             ...toolResults,
           ],
+          stream: true,
           temperature: 0.7,
           max_tokens: 1000,
         }),
       });
 
-      if (!followUpResponse.ok) {
+      if (!followUpResponse.ok || !followUpResponse.body) {
         const error = await followUpResponse.text();
         console.error("OpenAI follow-up error:", error);
         return NextResponse.json({ error: "Failed to get AI response" }, { status: 500 });
       }
 
-      const followUpData = await followUpResponse.json();
-      const finalMessage = followUpData.choices[0]?.message?.content || "Operacion completada!";
-      return NextResponse.json({ message: finalMessage });
+      // Pipe the SSE stream directly to the client
+      return new Response(followUpResponse.body, {
+        headers: {
+          "Content-Type": "text/event-stream",
+          "Cache-Control": "no-cache",
+          "Connection": "keep-alive",
+        },
+      });
     }
 
-    // No tool calls, return the regular response
-    const messageContent = assistantMessage?.content || "Lo siento, no pude generar una respuesta.";
-    return NextResponse.json({ message: messageContent });
+    // No tool calls: stream the response directly
+    const streamResponse = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${OPENAI_API_KEY}`,
+      },
+      body: JSON.stringify({
+        model: "gpt-4o-mini",
+        messages: [
+          { role: "system", content: systemPrompt },
+          ...messages,
+        ],
+        tools,
+        tool_choice: "auto",
+        stream: true,
+        temperature: 0.7,
+        max_tokens: 1000,
+      }),
+    });
+
+    if (!streamResponse.ok || !streamResponse.body) {
+      const error = await streamResponse.text();
+      console.error("OpenAI stream error:", error);
+      return NextResponse.json({ error: "Failed to get AI response" }, { status: 500 });
+    }
+
+    return new Response(streamResponse.body, {
+      headers: {
+        "Content-Type": "text/event-stream",
+        "Cache-Control": "no-cache",
+        "Connection": "keep-alive",
+      },
+    });
   } catch (error) {
     console.error("Chat error:", error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });

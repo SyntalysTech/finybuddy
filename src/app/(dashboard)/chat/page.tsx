@@ -220,12 +220,67 @@ function ChatPageContent() {
         throw new Error("Failed to get response");
       }
 
-      const data = await response.json();
-      const assistantMessage: Message = { role: "assistant", content: data.message };
-      setMessages(prev => [...prev, assistantMessage]);
+      // Add empty assistant message that we'll stream into
+      setMessages(prev => [...prev, { role: "assistant", content: "" }]);
+
+      // Read the SSE stream from OpenAI
+      const reader = response.body?.getReader();
+      const decoder = new TextDecoder();
+      let fullContent = "";
+      let buffer = "";
+
+      if (reader) {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split("\n");
+          buffer = lines.pop() || "";
+
+          for (const line of lines) {
+            const trimmed = line.trim();
+            if (!trimmed || !trimmed.startsWith("data: ")) continue;
+            const data = trimmed.slice(6);
+            if (data === "[DONE]") break;
+
+            try {
+              const parsed = JSON.parse(data);
+              const delta = parsed.choices?.[0]?.delta?.content;
+              if (delta) {
+                fullContent += delta;
+                const snapshot = fullContent;
+                setMessages(prev => {
+                  const updated = [...prev];
+                  updated[updated.length - 1] = { role: "assistant", content: snapshot };
+                  return updated;
+                });
+              }
+            } catch {
+              // skip malformed chunks
+            }
+          }
+        }
+      }
+
+      // If no content was streamed (fallback for non-stream responses)
+      if (!fullContent) {
+        try {
+          const text = await response.text();
+          const data = JSON.parse(text);
+          fullContent = data.message || "Lo siento, no pude generar una respuesta.";
+          setMessages(prev => {
+            const updated = [...prev];
+            updated[updated.length - 1] = { role: "assistant", content: fullContent };
+            return updated;
+          });
+        } catch {
+          fullContent = "Lo siento, no pude generar una respuesta.";
+        }
+      }
 
       // Save assistant message
-      await saveMessage(convId, "assistant", data.message);
+      await saveMessage(convId, "assistant", fullContent);
 
       // Reload conversations list to update titles
       await loadConversations(userId);
@@ -573,8 +628,8 @@ function ChatPageContent() {
               </div>
             ))}
 
-            {/* Loading indicator */}
-            {loading && (
+            {/* Loading indicator - hide once streaming starts */}
+            {loading && !(messages.length > 0 && messages[messages.length - 1]?.role === "assistant" && messages[messages.length - 1]?.content) && (
               <div className="flex gap-2 sm:gap-3 max-w-4xl">
                 <div className="w-7 h-7 sm:w-8 sm:h-8 relative shrink-0">
                   <Image
@@ -628,12 +683,18 @@ function ChatPageContent() {
             </button>
 
             <div className="flex-1 relative">
+              {isTranscribing && (
+                <div className="absolute -top-8 left-0 flex items-center gap-2 text-xs text-[var(--brand-purple)] animate-pulse">
+                  <Loader2 className="w-3 h-3 animate-spin" />
+                  Transcribiendo audio...
+                </div>
+              )}
               <textarea
                 ref={inputRef}
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={handleKeyDown}
-                placeholder={isRecording ? "Grabando..." : "Escribe tu mensaje..."}
+                placeholder={isRecording ? "Grabando..." : isTranscribing ? "Transcribiendo audio..." : "Escribe tu mensaje..."}
                 rows={1}
                 className="w-full px-3 sm:px-4 py-2.5 sm:py-3 bg-[var(--background-secondary)] border border-[var(--border)] rounded-xl sm:rounded-2xl resize-none focus:outline-none focus:border-[var(--brand-purple)] focus:ring-2 focus:ring-[var(--brand-purple)]/20 text-xs sm:text-sm"
                 disabled={loading || isRecording}

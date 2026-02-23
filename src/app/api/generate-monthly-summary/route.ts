@@ -63,7 +63,7 @@ export async function POST(request: Request) {
       const savings = operations
         .filter((op) => op.type === "savings")
         .reduce((sum, op) => sum + Number(op.amount), 0);
-      const balance = income - expenses;
+      const balance = income - expenses - savings;
 
       // Formatear cantidades
       const formatAmount = (amount: number) =>

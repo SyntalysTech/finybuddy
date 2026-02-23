@@ -347,7 +347,7 @@ export default function CalendarioPage() {
     if (loading) return [];
 
     const messages: string[] = [];
-    const balance = monthSummary.totalIncome - monthSummary.totalExpenses;
+    const balance = monthSummary.totalIncome - monthSummary.totalExpenses - monthSummary.totalSavings;
     const pendingReminders = calendarDays
       .filter(d => isSameMonth(d.date, currentDate))
       .flatMap(d => d.reminders)
