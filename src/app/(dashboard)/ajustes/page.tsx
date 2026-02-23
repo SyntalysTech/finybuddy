@@ -300,7 +300,7 @@ export default function AjustesPage() {
       // Delete all financial data (NOT the profile/account, NOT the categories)
       await supabase.from("savings_goals").delete().eq("user_id", user.id);
       await supabase.from("debts").delete().eq("user_id", user.id);
-      await supabase.from("reminders").delete().eq("user_id", user.id);
+      await supabase.from("calendar_reminders").delete().eq("user_id", user.id);
       await supabase.from("planned_savings").delete().eq("user_id", user.id);
       await supabase.from("operations").delete().eq("user_id", user.id);
       await supabase.from("budgets").delete().eq("user_id", user.id);
@@ -357,7 +357,7 @@ export default function AjustesPage() {
       // Delete all user data in correct order (respecting foreign keys)
       await supabase.from("savings_goals").delete().eq("user_id", user.id);
       await supabase.from("debts").delete().eq("user_id", user.id);
-      await supabase.from("reminders").delete().eq("user_id", user.id);
+      await supabase.from("calendar_reminders").delete().eq("user_id", user.id);
       await supabase.from("planned_savings").delete().eq("user_id", user.id);
       await supabase.from("operations").delete().eq("user_id", user.id);
       await supabase.from("budgets").delete().eq("user_id", user.id);
