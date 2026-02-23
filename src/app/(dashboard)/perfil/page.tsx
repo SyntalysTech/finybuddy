@@ -441,7 +441,7 @@ export default function PerfilPage() {
   );
 }
 
-// Password Change Modal
+// Password Change Modal - sends reset email
 function PasswordModal({
   isOpen,
   onClose,
@@ -449,9 +449,6 @@ function PasswordModal({
   isOpen: boolean;
   onClose: () => void;
 }) {
-  const [newPassword, setNewPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [showNewPassword, setShowNewPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
@@ -460,41 +457,29 @@ function PasswordModal({
 
   useEffect(() => {
     if (isOpen) {
-      setNewPassword("");
-      setConfirmPassword("");
       setError("");
       setSuccess(false);
     }
   }, [isOpen]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSendResetEmail = async () => {
     setError("");
-
-    if (newPassword.length < 6) {
-      setError("La nueva contraseña debe tener al menos 6 caracteres");
-      return;
-    }
-    if (newPassword !== confirmPassword) {
-      setError("Las contraseñas no coinciden");
-      return;
-    }
-
     setLoading(true);
 
     try {
-      const { error: updateError } = await supabase.auth.updateUser({
-        password: newPassword,
-      });
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user?.email) throw new Error("No se pudo obtener el email");
 
-      if (updateError) throw updateError;
+      const { error: resetError } = await supabase.auth.resetPasswordForEmail(
+        user.email,
+        { redirectTo: `${window.location.origin}/auth/callback?next=/reset-password` }
+      );
+
+      if (resetError) throw resetError;
 
       setSuccess(true);
-      setTimeout(() => {
-        onClose();
-      }, 2000);
     } catch (err: unknown) {
-      const errorMessage = err instanceof Error ? err.message : "Error al cambiar contraseña";
+      const errorMessage = err instanceof Error ? err.message : "Error al enviar el email";
       setError(errorMessage);
     } finally {
       setLoading(false);
@@ -519,52 +504,26 @@ function PasswordModal({
         {success ? (
           <div className="p-6 text-center">
             <div className="w-16 h-16 rounded-full bg-[var(--success)]/10 flex items-center justify-center mx-auto mb-4">
-              <CheckCircle className="w-8 h-8 text-[var(--success)]" />
+              <Mail className="w-8 h-8 text-[var(--success)]" />
             </div>
-            <h3 className="text-lg font-semibold mb-2">Contraseña cambiada</h3>
+            <h3 className="text-lg font-semibold mb-2">Email enviado</h3>
             <p className="text-sm text-[var(--brand-gray)]">
-              Tu contraseña se ha actualizado correctamente.
+              Te hemos enviado un enlace para restablecer tu contraseña. Revisa tu bandeja de entrada.
             </p>
+            <button
+              onClick={onClose}
+              className="mt-4 px-6 py-2.5 rounded-xl gradient-brand text-white font-medium hover:opacity-90 transition-opacity"
+            >
+              Entendido
+            </button>
           </div>
         ) : (
-          <form onSubmit={handleSubmit} className="p-6 space-y-4">
-            <div>
-              <label className="block text-sm font-medium mb-2">Nueva contraseña</label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[var(--brand-gray)]" />
-                <input
-                  type={showNewPassword ? "text" : "password"}
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
-                  placeholder="Mínimo 6 caracteres"
-                  className="w-full pl-10 pr-12 py-3 bg-[var(--background-secondary)] border border-[var(--border)] rounded-xl focus:outline-none focus:border-[var(--brand-cyan)] focus:ring-1 focus:ring-[var(--brand-cyan)]"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowNewPassword(!showNewPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 p-1"
-                >
-                  {showNewPassword ? (
-                    <EyeOff className="w-5 h-5 text-[var(--brand-gray)]" />
-                  ) : (
-                    <Eye className="w-5 h-5 text-[var(--brand-gray)]" />
-                  )}
-                </button>
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium mb-2">Confirmar contraseña</label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[var(--brand-gray)]" />
-                <input
-                  type="password"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  placeholder="Repite la contraseña"
-                  className="w-full pl-10 pr-4 py-3 bg-[var(--background-secondary)] border border-[var(--border)] rounded-xl focus:outline-none focus:border-[var(--brand-cyan)] focus:ring-1 focus:ring-[var(--brand-cyan)]"
-                />
-              </div>
+          <div className="p-6 space-y-4">
+            <div className="flex items-start gap-3 p-4 rounded-xl bg-[var(--brand-cyan)]/5 border border-[var(--brand-cyan)]/20">
+              <Lock className="w-5 h-5 text-[var(--brand-cyan)] mt-0.5 shrink-0" />
+              <p className="text-sm text-[var(--brand-gray)]">
+                Por seguridad, te enviaremos un enlace a tu email para que puedas establecer una nueva contraseña.
+              </p>
             </div>
 
             {error && (
@@ -582,14 +541,14 @@ function PasswordModal({
                 Cancelar
               </button>
               <button
-                type="submit"
+                onClick={handleSendResetEmail}
                 disabled={loading}
                 className="flex-1 px-4 py-3 rounded-xl gradient-brand text-white font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
               >
-                {loading ? "Cambiando..." : "Cambiar contraseña"}
+                {loading ? "Enviando..." : "Enviar email"}
               </button>
             </div>
-          </form>
+          </div>
         )}
       </div>
     </div>
