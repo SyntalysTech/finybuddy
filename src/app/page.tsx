@@ -28,6 +28,15 @@ import {
   Menu,
   LayoutDashboard,
   PieChart as PieChartIcon,
+  Database,
+  Play,
+  ShoppingCart,
+  Home,
+  Car,
+  Utensils,
+  Wifi,
+  Dumbbell,
+  Gift,
 } from "lucide-react";
 
 // Newsletter subscription form
@@ -128,6 +137,217 @@ function AnimatedNumber({ value, prefix = "", suffix = "" }: { value: number; pr
     <span>
       {prefix}{current % 1 === 0 ? current.toLocaleString("es-ES") : current.toLocaleString("es-ES", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}{suffix}
     </span>
+  );
+}
+
+// Interactive Finy AI Demo
+const DEMO_TRANSACTIONS = [
+  { raw: "AMZN MKTPLACE ES 34,50€", concept: "Amazon", amount: -34.50, category: "Compras online", icon: ShoppingCart, color: "#8B4DFF", type: "wants" as const },
+  { raw: "ALQUILER MENSUAL 650,00€", concept: "Alquiler", amount: -650.00, category: "Vivienda", icon: Home, color: "#EF4444", type: "needs" as const },
+  { raw: "UBER *TRIP 8,90€", concept: "Uber", amount: -8.90, category: "Transporte", icon: Car, color: "#F59E0B", type: "needs" as const },
+  { raw: "REST EL PINO 24,00€", concept: "Restaurante El Pino", amount: -24.00, category: "Restaurantes", icon: Utensils, color: "#EC4899", type: "wants" as const },
+  { raw: "VODAFONE FIBRA 39,99€", concept: "Vodafone Fibra", amount: -39.99, category: "Suministros", icon: Wifi, color: "#06B6D4", type: "needs" as const },
+  { raw: "BASIC FIT 29,90€", concept: "Basic-Fit", amount: -29.90, category: "Deporte", icon: Dumbbell, color: "#10B981", type: "wants" as const },
+  { raw: "TRANSFERENCIA AHORRO 200€", concept: "Ahorro mensual", amount: -200.00, category: "Ahorro", icon: PiggyBank, color: "#02EAFF", type: "savings" as const },
+  { raw: "REGALO CUMPLE MAMA 45€", concept: "Regalo cumpleaños", amount: -45.00, category: "Regalos", icon: Gift, color: "#A855F7", type: "wants" as const },
+];
+
+const DEMO_INSIGHTS = [
+  "Has gastado un 18% más en restaurantes que el mes pasado",
+  "Tu ahorro representa el 19% de tus ingresos — casi llegas al 20%",
+  "Sugerencia: Reduce 15€ en ocio para alcanzar tu meta de ahorro",
+];
+
+function FinyAIDemo() {
+  const [demoPhase, setDemoPhase] = useState<"idle" | "processing" | "done">("idle");
+  const [processedCount, setProcessedCount] = useState(0);
+  const [showInsights, setShowInsights] = useState(false);
+  const [visibleInsights, setVisibleInsights] = useState(0);
+
+  const startDemo = () => {
+    if (demoPhase === "processing") return;
+    setDemoPhase("processing");
+    setProcessedCount(0);
+    setShowInsights(false);
+    setVisibleInsights(0);
+
+    // Animate transactions one by one
+    DEMO_TRANSACTIONS.forEach((_, i) => {
+      setTimeout(() => {
+        setProcessedCount(i + 1);
+        if (i === DEMO_TRANSACTIONS.length - 1) {
+          setTimeout(() => {
+            setDemoPhase("done");
+            setShowInsights(true);
+            // Show insights one by one
+            DEMO_INSIGHTS.forEach((_, j) => {
+              setTimeout(() => setVisibleInsights(j + 1), (j + 1) * 600);
+            });
+          }, 400);
+        }
+      }, (i + 1) * 300);
+    });
+  };
+
+  const resetDemo = () => {
+    setDemoPhase("idle");
+    setProcessedCount(0);
+    setShowInsights(false);
+    setVisibleInsights(0);
+  };
+
+  const needsTotal = DEMO_TRANSACTIONS.filter(t => t.type === "needs").reduce((s, t) => s + Math.abs(t.amount), 0);
+  const wantsTotal = DEMO_TRANSACTIONS.filter(t => t.type === "wants").reduce((s, t) => s + Math.abs(t.amount), 0);
+  const savingsTotal = DEMO_TRANSACTIONS.filter(t => t.type === "savings").reduce((s, t) => s + Math.abs(t.amount), 0);
+  const total = needsTotal + wantsTotal + savingsTotal;
+
+  return (
+    <div className="space-y-6">
+      {/* Two columns: raw data → categorized */}
+      <div className="grid lg:grid-cols-2 gap-4 sm:gap-6">
+        {/* Left: Raw bank data */}
+        <div className="rounded-xl border border-[var(--border)] bg-[var(--background)] overflow-hidden">
+          <div className="px-4 py-3 border-b border-[var(--border)] bg-[var(--background-secondary)]">
+            <p className="text-xs sm:text-sm font-semibold flex items-center gap-2">
+              <Database className="w-4 h-4 text-[var(--brand-gray)]" />
+              Extracto bancario
+            </p>
+          </div>
+          <div className="p-3 sm:p-4 space-y-1.5 font-mono text-[10px] sm:text-xs">
+            {DEMO_TRANSACTIONS.map((t, i) => (
+              <div
+                key={i}
+                className={`px-2.5 sm:px-3 py-2 rounded-lg transition-all duration-500 ${
+                  processedCount > i
+                    ? "bg-[var(--brand-cyan)]/5 border border-[var(--brand-cyan)]/20"
+                    : "bg-[var(--background-secondary)]"
+                }`}
+              >
+                <span className={`transition-colors duration-500 ${processedCount > i ? "text-[var(--brand-cyan)]" : "text-[var(--brand-gray)]"}`}>
+                  {t.raw}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Right: Categorized result */}
+        <div className="rounded-xl border border-[var(--border)] bg-[var(--background)] overflow-hidden">
+          <div className="px-4 py-3 border-b border-[var(--border)] bg-[var(--background-secondary)]">
+            <p className="text-xs sm:text-sm font-semibold flex items-center gap-2">
+              <Sparkles className="w-4 h-4 text-[var(--brand-cyan)]" />
+              Categorizado por Finy AI
+            </p>
+          </div>
+          <div className="p-3 sm:p-4 space-y-1.5">
+            {DEMO_TRANSACTIONS.map((t, i) => {
+              const Icon = t.icon;
+              const isVisible = processedCount > i;
+              return (
+                <div
+                  key={i}
+                  className={`flex items-center justify-between px-2.5 sm:px-3 py-2 rounded-lg transition-all duration-500 ${
+                    isVisible ? "opacity-100 translate-x-0" : "opacity-0 translate-x-4"
+                  } ${isVisible ? "bg-[var(--background-secondary)]" : ""}`}
+                >
+                  <div className="flex items-center gap-2 sm:gap-2.5 min-w-0">
+                    <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-lg flex items-center justify-center flex-shrink-0" style={{ backgroundColor: `${t.color}20` }}>
+                      <Icon className="w-3 h-3 sm:w-3.5 sm:h-3.5" style={{ color: t.color }} />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-[10px] sm:text-xs font-medium truncate">{t.concept}</p>
+                      <p className="text-[8px] sm:text-[10px] truncate" style={{ color: t.color }}>{t.category}</p>
+                    </div>
+                  </div>
+                  <span className="text-[10px] sm:text-xs font-semibold text-[var(--danger)] flex-shrink-0 ml-2">
+                    {t.amount.toLocaleString("es-ES", { minimumFractionDigits: 2 })} €
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+
+      {/* Distribution bar + insights */}
+      <div className={`transition-all duration-700 ${demoPhase === "done" ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}`}>
+        <div className="grid sm:grid-cols-2 gap-4 sm:gap-6">
+          {/* Distribution summary */}
+          <div className="rounded-xl border border-[var(--border)] bg-[var(--background)] p-4 sm:p-5">
+            <p className="text-xs sm:text-sm font-semibold mb-3">Distribución detectada</p>
+            <div className="space-y-3">
+              {[
+                { label: "Necesidades", value: needsTotal, pct: Math.round((needsTotal / total) * 100), color: "#2EEB8F" },
+                { label: "Deseos", value: wantsTotal, pct: Math.round((wantsTotal / total) * 100), color: "#8B4DFF" },
+                { label: "Ahorro", value: savingsTotal, pct: Math.round((savingsTotal / total) * 100), color: "#02EAFF" },
+              ].map((item, i) => (
+                <div key={i}>
+                  <div className="flex justify-between text-[10px] sm:text-xs mb-1">
+                    <span className="text-[var(--brand-gray)]">{item.label} ({item.pct}%)</span>
+                    <span className="font-medium">{item.value.toLocaleString("es-ES", { minimumFractionDigits: 2 })} €</span>
+                  </div>
+                  <div className="h-2 rounded-full bg-[var(--border)] overflow-hidden">
+                    <div className="h-full rounded-full transition-all duration-1000" style={{ width: `${item.pct}%`, backgroundColor: item.color }} />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Finy AI Insights */}
+          <div className="rounded-xl border border-[var(--brand-cyan)]/20 bg-gradient-to-br from-[var(--brand-cyan)]/5 to-[var(--brand-purple)]/5 p-4 sm:p-5">
+            <div className="flex items-center gap-2 mb-3">
+              <Image src="/assets/finybuddy-mascot.png" alt="Finy" width={28} height={28} className="rounded-full w-7 h-7" />
+              <div className="flex items-center gap-1">
+                <span className="text-xs sm:text-sm font-bold text-[var(--brand-cyan)]">Insights de Finy</span>
+                <Sparkles className="w-3 h-3 text-[var(--brand-cyan)] opacity-60" />
+              </div>
+            </div>
+            <div className="space-y-2">
+              {DEMO_INSIGHTS.map((insight, i) => (
+                <div
+                  key={i}
+                  className={`flex items-start gap-2 transition-all duration-500 ${
+                    visibleInsights > i ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"
+                  }`}
+                >
+                  <span className="w-1.5 h-1.5 rounded-full bg-[var(--brand-cyan)] mt-1.5 flex-shrink-0" />
+                  <p className="text-[10px] sm:text-xs text-[var(--foreground)] leading-relaxed">{insight}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* CTA Button */}
+      <div className="text-center">
+        {demoPhase === "idle" && (
+          <button
+            onClick={startDemo}
+            className="inline-flex items-center gap-2 px-6 sm:px-8 py-3 sm:py-4 rounded-xl bg-gradient-to-r from-[var(--brand-purple)] to-[var(--brand-cyan)] text-white font-semibold hover:opacity-90 transition-all hover:scale-105 active:scale-95 shadow-xl shadow-[var(--brand-purple)]/30"
+          >
+            <Play className="w-4 h-4 sm:w-5 sm:h-5" />
+            Probar la magia de Finy
+          </button>
+        )}
+        {demoPhase === "processing" && (
+          <div className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-[var(--background-secondary)] border border-[var(--brand-cyan)]/30">
+            <Loader2 className="w-4 h-4 animate-spin text-[var(--brand-cyan)]" />
+            <span className="text-sm text-[var(--brand-cyan)] font-medium">Analizando {processedCount}/{DEMO_TRANSACTIONS.length} movimientos...</span>
+          </div>
+        )}
+        {demoPhase === "done" && (
+          <button
+            onClick={resetDemo}
+            className="inline-flex items-center gap-2 px-6 py-3 rounded-xl border border-[var(--border)] hover:bg-[var(--background-secondary)] transition-colors text-sm font-medium"
+          >
+            <Play className="w-4 h-4" />
+            Repetir demo
+          </button>
+        )}
+      </div>
+    </div>
   );
 }
 
@@ -960,6 +1180,26 @@ export default function HomePage() {
               </div>
             ))}
           </div>
+        </div>
+      </section>
+
+      {/* Finy AI Interactive Demo */}
+      <section className="py-16 sm:py-20 px-4 sm:px-6 bg-[var(--background-secondary)] relative">
+        <div className="max-w-5xl mx-auto">
+          <div className="text-center mb-10 sm:mb-12">
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[var(--brand-cyan)]/10 border border-[var(--brand-cyan)]/20 text-[var(--brand-cyan)] text-sm font-medium mb-6">
+              <Sparkles className="w-4 h-4" />
+              Finy AI en acción
+            </div>
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-3 sm:mb-4">
+              De datos en bruto a <span className="gradient-brand-text">decisiones</span>
+            </h2>
+            <p className="text-[var(--brand-gray)] max-w-2xl mx-auto text-sm sm:text-lg">
+              Pega tu extracto bancario y Finy categoriza, analiza y te aconseja al instante
+            </p>
+          </div>
+
+          <FinyAIDemo />
         </div>
       </section>
 
