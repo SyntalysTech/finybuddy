@@ -729,8 +729,8 @@ export default function AdminPage() {
             onClick={() => { setActiveTab("users"); setSearchTerm(""); }}
             className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all ${
               activeTab === "users"
-                ? "bg-[var(--card-bg)] text-white shadow-sm"
-                : "text-[var(--brand-gray)] hover:text-white"
+                ? "bg-[var(--card-bg)] text-[var(--foreground)] shadow-sm"
+                : "text-[var(--brand-gray)] hover:text-[var(--foreground)]"
             }`}
           >
             <Users className="w-4 h-4" />
@@ -740,8 +740,8 @@ export default function AdminPage() {
             onClick={() => { setActiveTab("newsletter"); setSearchTerm(""); }}
             className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all ${
               activeTab === "newsletter"
-                ? "bg-[var(--card-bg)] text-white shadow-sm"
-                : "text-[var(--brand-gray)] hover:text-white"
+                ? "bg-[var(--card-bg)] text-[var(--foreground)] shadow-sm"
+                : "text-[var(--brand-gray)] hover:text-[var(--foreground)]"
             }`}
           >
             <Newspaper className="w-4 h-4" />
@@ -921,8 +921,8 @@ export default function AdminPage() {
                       onClick={() => switchEditorMode("visual")}
                       className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
                         editorMode === "visual"
-                          ? "bg-[var(--card-bg)] text-white shadow-sm"
-                          : "text-[var(--brand-gray)] hover:text-white"
+                          ? "bg-[var(--card-bg)] text-[var(--foreground)] shadow-sm"
+                          : "text-[var(--brand-gray)] hover:text-[var(--foreground)]"
                       }`}
                     >
                       <FileText className="w-3.5 h-3.5" />
@@ -932,8 +932,8 @@ export default function AdminPage() {
                       onClick={() => switchEditorMode("html")}
                       className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
                         editorMode === "html"
-                          ? "bg-[var(--card-bg)] text-white shadow-sm"
-                          : "text-[var(--brand-gray)] hover:text-white"
+                          ? "bg-[var(--card-bg)] text-[var(--foreground)] shadow-sm"
+                          : "text-[var(--brand-gray)] hover:text-[var(--foreground)]"
                       }`}
                     >
                       <Code className="w-3.5 h-3.5" />
