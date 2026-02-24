@@ -1067,27 +1067,6 @@ export default function HomePage() {
               )}
               {isLoggedIn && <div className="mb-10" />}
 
-              {/* Trust badges */}
-              <div className="flex flex-wrap gap-6">
-                <div className="flex items-center gap-2 text-sm text-[var(--brand-gray)]">
-                  <div className="w-8 h-8 rounded-lg bg-[var(--success)]/10 flex items-center justify-center">
-                    <CheckCircle className="w-4 h-4 text-[var(--success)]" />
-                  </div>
-                  <span>Control total</span>
-                </div>
-                <div className="flex items-center gap-2 text-sm text-[var(--brand-gray)]">
-                  <div className="w-8 h-8 rounded-lg bg-[var(--brand-cyan)]/10 flex items-center justify-center">
-                    <Zap className="w-4 h-4 text-[var(--brand-cyan)]" />
-                  </div>
-                  <span>Tiempo real</span>
-                </div>
-                <div className="flex items-center gap-2 text-sm text-[var(--brand-gray)]">
-                  <div className="w-8 h-8 rounded-lg bg-[var(--brand-purple)]/10 flex items-center justify-center">
-                    <Shield className="w-4 h-4 text-[var(--brand-purple)]" />
-                  </div>
-                  <span>100% privado</span>
-                </div>
-              </div>
             </div>
 
             {/* Mascot with animated effects */}
