@@ -430,7 +430,7 @@ function FinyAIDemo() {
 
               <div className="flex items-center gap-2.5 mb-4">
                 <div className="relative">
-                  <Image src="/assets/finy-mascota-minimalista.png" alt="Finy" width={36} height={36} className="rounded-full w-9 h-9 object-cover" />
+                  <Image src="/assets/finy-mascota-minimalista.png" alt="Finy" width={36} height={36} className="rounded-xl w-9 h-9 object-contain" />
                   <div className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-[var(--background)] transition-colors duration-300 ${phase !== "idle" ? "bg-[var(--brand-cyan)]" : "bg-[var(--brand-gray)]"}`} />
                 </div>
                 <div>
@@ -1184,7 +1184,7 @@ export default function HomePage() {
 
               {/* Finy greeting */}
               <div className="flex items-center gap-2.5 mb-5 p-3 rounded-xl bg-gradient-to-r from-[var(--brand-cyan)]/5 to-[var(--brand-purple)]/5 border border-[var(--border)]">
-                <Image src="/assets/finy-mascota-minimalista.png" alt="Finy" width={32} height={32} className="rounded-full w-8 h-8 flex-shrink-0 object-cover" />
+                <Image src="/assets/finy-mascota-minimalista.png" alt="Finy" width={32} height={32} className="rounded-xl w-8 h-8 flex-shrink-0 object-contain" />
                 <div className="min-w-0">
                   <p className="text-xs font-semibold text-[var(--brand-cyan)]">Vas bien este mes, sigue así</p>
                   <p className="text-[10px] text-[var(--brand-gray)] italic">&ldquo;El ahorro es la base de la fortuna&rdquo;</p>
@@ -1288,7 +1288,7 @@ export default function HomePage() {
                   {/* Finy AI Panel */}
                   <div className="p-4 sm:p-5 rounded-xl border border-[var(--brand-cyan)]/20 bg-gradient-to-br from-[var(--brand-cyan)]/5 to-[var(--brand-purple)]/5">
                     <div className="flex items-center gap-2 mb-2.5">
-                      <Image src="/assets/finy-mascota-minimalista.png" alt="Finy" width={28} height={28} className="rounded-full w-7 h-7 object-cover" />
+                      <Image src="/assets/finy-mascota-minimalista.png" alt="Finy" width={28} height={28} className="rounded-xl w-7 h-7 object-contain" />
                       <div className="flex items-center gap-1">
                         <span className="text-xs font-bold text-[var(--brand-cyan)]">Finy</span>
                         <Sparkles className="w-3 h-3 text-[var(--brand-cyan)] opacity-60" />
