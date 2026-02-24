@@ -126,7 +126,7 @@ function AnimatedNumber({ value, prefix = "", suffix = "" }: { value: number; pr
 
   return (
     <span>
-      {prefix}{current.toLocaleString("es-ES", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}{suffix}
+      {prefix}{current % 1 === 0 ? current.toLocaleString("es-ES") : current.toLocaleString("es-ES", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}{suffix}
     </span>
   );
 }
