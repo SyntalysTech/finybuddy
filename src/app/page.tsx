@@ -141,211 +141,411 @@ function AnimatedNumber({ value, prefix = "", suffix = "" }: { value: number; pr
 }
 
 // Interactive Finy AI Demo
-const DEMO_TRANSACTIONS = [
-  { raw: "AMZN MKTPLACE ES 34,50€", concept: "Amazon", amount: -34.50, category: "Compras online", icon: ShoppingCart, color: "#8B4DFF", type: "wants" as const },
-  { raw: "ALQUILER MENSUAL 650,00€", concept: "Alquiler", amount: -650.00, category: "Vivienda", icon: Home, color: "#EF4444", type: "needs" as const },
-  { raw: "UBER *TRIP 8,90€", concept: "Uber", amount: -8.90, category: "Transporte", icon: Car, color: "#F59E0B", type: "needs" as const },
-  { raw: "REST EL PINO 24,00€", concept: "Restaurante El Pino", amount: -24.00, category: "Restaurantes", icon: Utensils, color: "#EC4899", type: "wants" as const },
-  { raw: "VODAFONE FIBRA 39,99€", concept: "Vodafone Fibra", amount: -39.99, category: "Suministros", icon: Wifi, color: "#06B6D4", type: "needs" as const },
-  { raw: "BASIC FIT 29,90€", concept: "Basic-Fit", amount: -29.90, category: "Deporte", icon: Dumbbell, color: "#10B981", type: "wants" as const },
-  { raw: "TRANSFERENCIA AHORRO 200€", concept: "Ahorro mensual", amount: -200.00, category: "Ahorro", icon: PiggyBank, color: "#02EAFF", type: "savings" as const },
-  { raw: "REGALO CUMPLE MAMA 45€", concept: "Regalo cumpleaños", amount: -45.00, category: "Regalos", icon: Gift, color: "#A855F7", type: "wants" as const },
+const DEMO_TX = [
+  { raw: "AMZN MKTPLACE ES", rawAmt: "34,50€", concept: "Amazon", amount: -34.50, category: "Compras online", icon: ShoppingCart, color: "#8B4DFF", type: "wants" as const },
+  { raw: "ALQUILER MENSUAL", rawAmt: "650,00€", concept: "Alquiler", amount: -650.00, category: "Vivienda", icon: Home, color: "#EF4444", type: "needs" as const },
+  { raw: "UBER *TRIP ABCD", rawAmt: "8,90€", concept: "Uber", amount: -8.90, category: "Transporte", icon: Car, color: "#F59E0B", type: "needs" as const },
+  { raw: "REST EL PINO", rawAmt: "24,00€", concept: "Restaurante El Pino", amount: -24.00, category: "Restaurantes", icon: Utensils, color: "#EC4899", type: "wants" as const },
+  { raw: "VODAFONE FIBRA SP", rawAmt: "39,99€", concept: "Vodafone Fibra", amount: -39.99, category: "Suministros", icon: Wifi, color: "#06B6D4", type: "needs" as const },
+  { raw: "BASIC FIT BCN", rawAmt: "29,90€", concept: "Basic-Fit", amount: -29.90, category: "Deporte", icon: Dumbbell, color: "#10B981", type: "wants" as const },
+  { raw: "TRANSF AHORRO", rawAmt: "200,00€", concept: "Ahorro mensual", amount: -200.00, category: "Ahorro", icon: PiggyBank, color: "#02EAFF", type: "savings" as const },
+  { raw: "REGALO CUMPLE MAMA", rawAmt: "45,00€", concept: "Regalo cumpleaños", amount: -45.00, category: "Regalos", icon: Gift, color: "#A855F7", type: "wants" as const },
 ];
 
 const DEMO_INSIGHTS = [
-  "Has gastado un 18% más en restaurantes que el mes pasado",
-  "Tu ahorro representa el 19% de tus ingresos — casi llegas al 20%",
-  "Sugerencia: Reduce 15€ en ocio para alcanzar tu meta de ahorro",
+  { text: "Restaurantes +18% vs mes anterior", type: "warning" as const },
+  { text: "Ahorro al 19% — solo 1% para llegar al objetivo", type: "info" as const },
+  { text: "Mueve 15€ de ocio → ahorro para alcanzar el 20%", type: "tip" as const },
 ];
 
 function FinyAIDemo() {
-  const [demoPhase, setDemoPhase] = useState<"idle" | "processing" | "done">("idle");
-  const [processedCount, setProcessedCount] = useState(0);
-  const [showInsights, setShowInsights] = useState(false);
-  const [visibleInsights, setVisibleInsights] = useState(0);
+  const [phase, setPhase] = useState<"idle" | "scanning" | "categorizing" | "analyzing" | "done">("idle");
+  const [scanLine, setScanLine] = useState(-1);
+  const [categorized, setCategorized] = useState(-1);
+  const [showStats, setShowStats] = useState(false);
+  const [showInsights, setShowInsights] = useState(-1);
+  const [totalAnimated, setTotalAnimated] = useState(0);
+  const [showDonut, setShowDonut] = useState(false);
+  const timeoutsRef = useState<NodeJS.Timeout[]>([])[0];
+
+  const clearAllTimeouts = () => { timeoutsRef.forEach(clearTimeout); timeoutsRef.length = 0; };
+  const addTimeout = (fn: () => void, ms: number) => { timeoutsRef.push(setTimeout(fn, ms)); };
+
+  const needsTotal = DEMO_TX.filter(t => t.type === "needs").reduce((s, t) => s + Math.abs(t.amount), 0);
+  const wantsTotal = DEMO_TX.filter(t => t.type === "wants").reduce((s, t) => s + Math.abs(t.amount), 0);
+  const savingsTotal = DEMO_TX.filter(t => t.type === "savings").reduce((s, t) => s + Math.abs(t.amount), 0);
+  const total = needsTotal + wantsTotal + savingsTotal;
 
   const startDemo = () => {
-    if (demoPhase === "processing") return;
-    setDemoPhase("processing");
-    setProcessedCount(0);
-    setShowInsights(false);
-    setVisibleInsights(0);
+    if (phase !== "idle") return;
+    clearAllTimeouts();
+    setScanLine(-1); setCategorized(-1); setShowStats(false); setShowInsights(-1); setTotalAnimated(0); setShowDonut(false);
+    setPhase("scanning");
 
-    // Animate transactions one by one
-    DEMO_TRANSACTIONS.forEach((_, i) => {
-      setTimeout(() => {
-        setProcessedCount(i + 1);
-        if (i === DEMO_TRANSACTIONS.length - 1) {
-          setTimeout(() => {
-            setDemoPhase("done");
-            setShowInsights(true);
-            // Show insights one by one
-            DEMO_INSIGHTS.forEach((_, j) => {
-              setTimeout(() => setVisibleInsights(j + 1), (j + 1) * 600);
-            });
-          }, 400);
-        }
-      }, (i + 1) * 300);
+    // Phase 1: Scan raw transactions with glow line
+    DEMO_TX.forEach((_, i) => {
+      addTimeout(() => setScanLine(i), i * 180);
     });
+
+    // Phase 2: Categorize them (starts overlapping with scan for speed feel)
+    addTimeout(() => setPhase("categorizing"), 400);
+    DEMO_TX.forEach((_, i) => {
+      addTimeout(() => setCategorized(i), 400 + i * 220);
+    });
+
+    // Phase 3: Analysis
+    const catDone = 400 + DEMO_TX.length * 220 + 200;
+    addTimeout(() => {
+      setPhase("analyzing");
+      setShowStats(true);
+      setShowDonut(true);
+      // Animate total counter
+      const steps = 30;
+      const increment = total / steps;
+      for (let s = 1; s <= steps; s++) {
+        addTimeout(() => setTotalAnimated(Math.min(increment * s, total)), catDone + s * 25 - catDone + 100);
+      }
+    }, catDone);
+
+    // Phase 4: Insights
+    DEMO_INSIGHTS.forEach((_, i) => {
+      addTimeout(() => setShowInsights(i), catDone + 600 + i * 500);
+    });
+
+    // Phase 5: Done
+    addTimeout(() => setPhase("done"), catDone + 600 + DEMO_INSIGHTS.length * 500 + 300);
   };
 
   const resetDemo = () => {
-    setDemoPhase("idle");
-    setProcessedCount(0);
-    setShowInsights(false);
-    setVisibleInsights(0);
+    clearAllTimeouts();
+    setPhase("idle"); setScanLine(-1); setCategorized(-1); setShowStats(false); setShowInsights(-1); setTotalAnimated(0); setShowDonut(false);
   };
 
-  const needsTotal = DEMO_TRANSACTIONS.filter(t => t.type === "needs").reduce((s, t) => s + Math.abs(t.amount), 0);
-  const wantsTotal = DEMO_TRANSACTIONS.filter(t => t.type === "wants").reduce((s, t) => s + Math.abs(t.amount), 0);
-  const savingsTotal = DEMO_TRANSACTIONS.filter(t => t.type === "savings").reduce((s, t) => s + Math.abs(t.amount), 0);
-  const total = needsTotal + wantsTotal + savingsTotal;
+  const fmtAmount = (n: number) => n.toLocaleString("es-ES", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+  const distData = [
+    { label: "Necesidades", value: needsTotal, pct: Math.round((needsTotal / total) * 100), color: "#2EEB8F" },
+    { label: "Deseos", value: wantsTotal, pct: Math.round((wantsTotal / total) * 100), color: "#8B4DFF" },
+    { label: "Ahorro", value: savingsTotal, pct: Math.round((savingsTotal / total) * 100), color: "#02EAFF" },
+  ];
+
+  // SVG donut math
+  const radius = 42;
+  const circumference = 2 * Math.PI * radius;
+  let cumulativeOffset = 0;
 
   return (
-    <div className="space-y-6">
-      {/* Two columns: raw data → categorized */}
-      <div className="grid lg:grid-cols-2 gap-4 sm:gap-6">
-        {/* Left: Raw bank data */}
-        <div className="rounded-xl border border-[var(--border)] bg-[var(--background)] overflow-hidden">
-          <div className="px-4 py-3 border-b border-[var(--border)] bg-[var(--background-secondary)]">
-            <p className="text-xs sm:text-sm font-semibold flex items-center gap-2">
-              <Database className="w-4 h-4 text-[var(--brand-gray)]" />
-              Extracto bancario
-            </p>
-          </div>
-          <div className="p-3 sm:p-4 space-y-1.5 font-mono text-[10px] sm:text-xs">
-            {DEMO_TRANSACTIONS.map((t, i) => (
-              <div
-                key={i}
-                className={`px-2.5 sm:px-3 py-2 rounded-lg transition-all duration-500 ${
-                  processedCount > i
-                    ? "bg-[var(--brand-cyan)]/5 border border-[var(--brand-cyan)]/20"
-                    : "bg-[var(--background-secondary)]"
-                }`}
-              >
-                <span className={`transition-colors duration-500 ${processedCount > i ? "text-[var(--brand-cyan)]" : "text-[var(--brand-gray)]"}`}>
-                  {t.raw}
+    <div className="relative">
+      {/* Ambient glow behind the whole demo */}
+      <div className={`absolute -inset-8 rounded-3xl blur-3xl transition-opacity duration-1000 ${phase !== "idle" ? "opacity-100" : "opacity-0"}`}
+        style={{ background: "radial-gradient(ellipse at center, rgba(2,234,255,0.08) 0%, rgba(119,57,254,0.05) 50%, transparent 70%)" }} />
+
+      <div className="relative space-y-5">
+        {/* Main demo area */}
+        <div className="relative rounded-2xl border border-[var(--border)] bg-[var(--background)]/80 backdrop-blur-xl overflow-hidden shadow-2xl">
+          {/* Top bar - terminal style */}
+          <div className="flex items-center justify-between px-4 sm:px-5 py-3 border-b border-[var(--border)] bg-[var(--background-secondary)]/80">
+            <div className="flex items-center gap-1.5">
+              <div className="w-3 h-3 rounded-full bg-[#FF5F57]" />
+              <div className="w-3 h-3 rounded-full bg-[#FFBD2E]" />
+              <div className="w-3 h-3 rounded-full bg-[#28CA41]" />
+            </div>
+            <div className="flex items-center gap-2 px-3 py-1 rounded-lg bg-[var(--background)] border border-[var(--border)]">
+              <Sparkles className={`w-3 h-3 transition-colors duration-300 ${phase !== "idle" ? "text-[var(--brand-cyan)]" : "text-[var(--brand-gray)]"}`} />
+              <span className="text-[10px] sm:text-xs text-[var(--brand-gray)] font-mono">finy-ai-engine v2.0</span>
+              {phase !== "idle" && phase !== "done" && (
+                <span className="relative flex h-2 w-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[var(--brand-cyan)] opacity-75" />
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-[var(--brand-cyan)]" />
                 </span>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Right: Categorized result */}
-        <div className="rounded-xl border border-[var(--border)] bg-[var(--background)] overflow-hidden">
-          <div className="px-4 py-3 border-b border-[var(--border)] bg-[var(--background-secondary)]">
-            <p className="text-xs sm:text-sm font-semibold flex items-center gap-2">
-              <Sparkles className="w-4 h-4 text-[var(--brand-cyan)]" />
-              Categorizado por Finy AI
-            </p>
-          </div>
-          <div className="p-3 sm:p-4 space-y-1.5">
-            {DEMO_TRANSACTIONS.map((t, i) => {
-              const Icon = t.icon;
-              const isVisible = processedCount > i;
-              return (
-                <div
-                  key={i}
-                  className={`flex items-center justify-between px-2.5 sm:px-3 py-2 rounded-lg transition-all duration-500 ${
-                    isVisible ? "opacity-100 translate-x-0" : "opacity-0 translate-x-4"
-                  } ${isVisible ? "bg-[var(--background-secondary)]" : ""}`}
-                >
-                  <div className="flex items-center gap-2 sm:gap-2.5 min-w-0">
-                    <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-lg flex items-center justify-center flex-shrink-0" style={{ backgroundColor: `${t.color}20` }}>
-                      <Icon className="w-3 h-3 sm:w-3.5 sm:h-3.5" style={{ color: t.color }} />
-                    </div>
-                    <div className="min-w-0">
-                      <p className="text-[10px] sm:text-xs font-medium truncate">{t.concept}</p>
-                      <p className="text-[8px] sm:text-[10px] truncate" style={{ color: t.color }}>{t.category}</p>
-                    </div>
-                  </div>
-                  <span className="text-[10px] sm:text-xs font-semibold text-[var(--danger)] flex-shrink-0 ml-2">
-                    {t.amount.toLocaleString("es-ES", { minimumFractionDigits: 2 })} €
-                  </span>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      </div>
-
-      {/* Distribution bar + insights */}
-      <div className={`transition-all duration-700 ${demoPhase === "done" ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}`}>
-        <div className="grid sm:grid-cols-2 gap-4 sm:gap-6">
-          {/* Distribution summary */}
-          <div className="rounded-xl border border-[var(--border)] bg-[var(--background)] p-4 sm:p-5">
-            <p className="text-xs sm:text-sm font-semibold mb-3">Distribución detectada</p>
-            <div className="space-y-3">
-              {[
-                { label: "Necesidades", value: needsTotal, pct: Math.round((needsTotal / total) * 100), color: "#2EEB8F" },
-                { label: "Deseos", value: wantsTotal, pct: Math.round((wantsTotal / total) * 100), color: "#8B4DFF" },
-                { label: "Ahorro", value: savingsTotal, pct: Math.round((savingsTotal / total) * 100), color: "#02EAFF" },
-              ].map((item, i) => (
-                <div key={i}>
-                  <div className="flex justify-between text-[10px] sm:text-xs mb-1">
-                    <span className="text-[var(--brand-gray)]">{item.label} ({item.pct}%)</span>
-                    <span className="font-medium">{item.value.toLocaleString("es-ES", { minimumFractionDigits: 2 })} €</span>
-                  </div>
-                  <div className="h-2 rounded-full bg-[var(--border)] overflow-hidden">
-                    <div className="h-full rounded-full transition-all duration-1000" style={{ width: `${item.pct}%`, backgroundColor: item.color }} />
-                  </div>
-                </div>
-              ))}
+              )}
             </div>
+            <div className="w-[52px]" />
           </div>
 
-          {/* Finy AI Insights */}
-          <div className="rounded-xl border border-[var(--brand-cyan)]/20 bg-gradient-to-br from-[var(--brand-cyan)]/5 to-[var(--brand-purple)]/5 p-4 sm:p-5">
-            <div className="flex items-center gap-2 mb-3">
-              <Image src="/assets/finybuddy-mascot.png" alt="Finy" width={28} height={28} className="rounded-full w-7 h-7" />
-              <div className="flex items-center gap-1">
-                <span className="text-xs sm:text-sm font-bold text-[var(--brand-cyan)]">Insights de Finy</span>
-                <Sparkles className="w-3 h-3 text-[var(--brand-cyan)] opacity-60" />
+          {/* Two column layout */}
+          <div className="grid lg:grid-cols-2">
+            {/* LEFT: Raw bank extract */}
+            <div className="relative border-b lg:border-b-0 lg:border-r border-[var(--border)]">
+              <div className="px-4 sm:px-5 py-2.5 border-b border-[var(--border)] bg-[var(--background-secondary)]/50">
+                <p className="text-[10px] sm:text-xs font-semibold flex items-center gap-2 text-[var(--brand-gray)] uppercase tracking-wider">
+                  <Database className="w-3.5 h-3.5" />
+                  Extracto bancario
+                </p>
+              </div>
+              <div className="p-2 sm:p-3 space-y-0.5 font-mono text-[10px] sm:text-xs relative">
+                {DEMO_TX.map((t, i) => {
+                  const isScanned = scanLine >= i;
+                  const isActive = scanLine === i;
+                  return (
+                    <div
+                      key={i}
+                      className={`relative flex items-center justify-between px-2.5 sm:px-3 py-2 sm:py-2.5 rounded-lg transition-all duration-300 ${
+                        isActive ? "bg-[var(--brand-cyan)]/10 shadow-[0_0_20px_rgba(2,234,255,0.15)]" :
+                        isScanned ? "bg-[var(--brand-cyan)]/5" : "bg-transparent"
+                      }`}
+                    >
+                      {/* Scan line glow */}
+                      {isActive && (
+                        <div className="absolute inset-0 rounded-lg border border-[var(--brand-cyan)]/40 shadow-[inset_0_0_12px_rgba(2,234,255,0.1)]" />
+                      )}
+                      <span className={`relative transition-all duration-300 ${isScanned ? "text-[var(--foreground)]" : "text-[var(--brand-gray)]/50"}`}>
+                        {t.raw}
+                      </span>
+                      <span className={`relative font-semibold transition-all duration-300 tabular-nums ${isScanned ? "text-[var(--foreground)]" : "text-[var(--brand-gray)]/50"}`}>
+                        {t.rawAmt}
+                      </span>
+                      {/* Check mark when scanned */}
+                      {isScanned && !isActive && (
+                        <div className="absolute right-1 top-1/2 -translate-y-1/2 w-4 h-4 rounded-full bg-[var(--brand-cyan)]/10 flex items-center justify-center">
+                          <Check className="w-2.5 h-2.5 text-[var(--brand-cyan)]" />
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             </div>
-            <div className="space-y-2">
-              {DEMO_INSIGHTS.map((insight, i) => (
-                <div
-                  key={i}
-                  className={`flex items-start gap-2 transition-all duration-500 ${
-                    visibleInsights > i ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"
-                  }`}
-                >
-                  <span className="w-1.5 h-1.5 rounded-full bg-[var(--brand-cyan)] mt-1.5 flex-shrink-0" />
-                  <p className="text-[10px] sm:text-xs text-[var(--foreground)] leading-relaxed">{insight}</p>
-                </div>
-              ))}
+
+            {/* RIGHT: Categorized output */}
+            <div className="relative">
+              <div className="px-4 sm:px-5 py-2.5 border-b border-[var(--border)] bg-[var(--background-secondary)]/50">
+                <p className="text-[10px] sm:text-xs font-semibold flex items-center gap-2 text-[var(--brand-gray)] uppercase tracking-wider">
+                  <Sparkles className="w-3.5 h-3.5" />
+                  Categorizado por Finy AI
+                </p>
+              </div>
+              <div className="p-2 sm:p-3 space-y-0.5">
+                {DEMO_TX.map((t, i) => {
+                  const Icon = t.icon;
+                  const isVisible = categorized >= i;
+                  const isJustAppeared = categorized === i;
+                  return (
+                    <div
+                      key={i}
+                      className="relative overflow-hidden rounded-lg"
+                      style={{ minHeight: "40px" }}
+                    >
+                      {/* Flash effect on appear */}
+                      {isJustAppeared && (
+                        <div className="absolute inset-0 rounded-lg animate-[fadeIn_0.5s_ease-out]"
+                          style={{ boxShadow: `inset 0 0 20px ${t.color}15, 0 0 15px ${t.color}10` }} />
+                      )}
+                      <div
+                        className={`relative flex items-center justify-between px-2.5 sm:px-3 py-2 sm:py-2.5 rounded-lg transition-all duration-500 ${
+                          isVisible ? "opacity-100 translate-x-0 scale-100" : "opacity-0 translate-x-8 scale-95"
+                        }`}
+                        style={isVisible ? { borderLeft: `3px solid ${t.color}` } : {}}
+                      >
+                        <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+                          <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center flex-shrink-0 transition-transform duration-300"
+                            style={{ backgroundColor: `${t.color}15`, boxShadow: isJustAppeared ? `0 0 12px ${t.color}30` : "none" }}>
+                            <Icon className="w-3.5 h-3.5 sm:w-4 sm:h-4" style={{ color: t.color }} />
+                          </div>
+                          <div className="min-w-0">
+                            <p className="text-xs sm:text-sm font-medium truncate">{t.concept}</p>
+                            <div className="flex items-center gap-1.5">
+                              <span className="inline-block w-1.5 h-1.5 rounded-full" style={{ backgroundColor: t.color }} />
+                              <p className="text-[9px] sm:text-[10px] font-medium truncate" style={{ color: t.color }}>{t.category}</p>
+                            </div>
+                          </div>
+                        </div>
+                        <span className="text-xs sm:text-sm font-bold flex-shrink-0 ml-2" style={{ color: t.type === "savings" ? "#02EAFF" : "var(--danger)" }}>
+                          {fmtAmount(t.amount)} €
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           </div>
         </div>
-      </div>
 
-      {/* CTA Button */}
-      <div className="text-center">
-        {demoPhase === "idle" && (
-          <button
-            onClick={startDemo}
-            className="inline-flex items-center gap-2 px-6 sm:px-8 py-3 sm:py-4 rounded-xl bg-gradient-to-r from-[var(--brand-purple)] to-[var(--brand-cyan)] text-white font-semibold hover:opacity-90 transition-all hover:scale-105 active:scale-95 shadow-xl shadow-[var(--brand-purple)]/30"
-          >
-            <Play className="w-4 h-4 sm:w-5 sm:h-5" />
-            Probar la magia de Finy
-          </button>
-        )}
-        {demoPhase === "processing" && (
-          <div className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-[var(--background-secondary)] border border-[var(--brand-cyan)]/30">
-            <Loader2 className="w-4 h-4 animate-spin text-[var(--brand-cyan)]" />
-            <span className="text-sm text-[var(--brand-cyan)] font-medium">Analizando {processedCount}/{DEMO_TRANSACTIONS.length} movimientos...</span>
+        {/* Stats + Insights Panel */}
+        <div className={`transition-all duration-700 ${showStats ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8 pointer-events-none"}`}>
+          <div className="grid lg:grid-cols-5 gap-4 sm:gap-5">
+            {/* Total + Donut */}
+            <div className="lg:col-span-2 rounded-2xl border border-[var(--border)] bg-[var(--background)]/80 backdrop-blur-xl p-4 sm:p-5 shadow-xl relative overflow-hidden">
+              {/* Subtle gradient accent */}
+              <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-[var(--brand-cyan)]/5 to-transparent rounded-bl-full pointer-events-none" />
+              <p className="text-[10px] sm:text-xs font-semibold text-[var(--brand-gray)] uppercase tracking-wider mb-4">Análisis instantáneo</p>
+
+              <div className="flex items-center gap-4 sm:gap-5">
+                {/* Donut chart */}
+                <div className={`relative w-24 h-24 sm:w-28 sm:h-28 flex-shrink-0 transition-all duration-1000 ${showDonut ? "opacity-100 scale-100" : "opacity-0 scale-50"}`}>
+                  <svg viewBox="0 0 100 100" className="w-full h-full -rotate-90">
+                    {distData.map((item, i) => {
+                      const dashLen = (item.pct / 100) * circumference;
+                      const offset = cumulativeOffset;
+                      cumulativeOffset += dashLen;
+                      return (
+                        <circle
+                          key={i}
+                          cx="50" cy="50" r={radius}
+                          fill="none"
+                          stroke={item.color}
+                          strokeWidth="8"
+                          strokeLinecap="round"
+                          strokeDasharray={`${dashLen} ${circumference - dashLen}`}
+                          strokeDashoffset={-offset}
+                          className="transition-all duration-1000"
+                          style={{ filter: `drop-shadow(0 0 4px ${item.color}40)` }}
+                        />
+                      );
+                    })}
+                  </svg>
+                  {/* Center total */}
+                  <div className="absolute inset-0 flex flex-col items-center justify-center">
+                    <span className="text-[9px] text-[var(--brand-gray)]">Total</span>
+                    <span className="text-sm sm:text-base font-bold tabular-nums">{fmtAmount(totalAnimated)} €</span>
+                  </div>
+                </div>
+
+                {/* Legend */}
+                <div className="space-y-2.5 flex-1">
+                  {distData.map((item, i) => (
+                    <div key={i} className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: item.color, boxShadow: `0 0 6px ${item.color}50` }} />
+                        <span className="text-[10px] sm:text-xs text-[var(--brand-gray)]">{item.label}</span>
+                      </div>
+                      <div className="text-right">
+                        <span className="text-[10px] sm:text-xs font-bold" style={{ color: item.color }}>{item.pct}%</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Mini progress bars */}
+              <div className="mt-4 space-y-1.5">
+                {distData.map((item, i) => (
+                  <div key={i} className="h-1.5 rounded-full bg-[var(--border)] overflow-hidden">
+                    <div className="h-full rounded-full transition-all duration-[1500ms] ease-out"
+                      style={{ width: showDonut ? `${item.pct}%` : "0%", backgroundColor: item.color, boxShadow: `0 0 8px ${item.color}40` }} />
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Finy Insights */}
+            <div className="lg:col-span-3 rounded-2xl border border-[var(--brand-cyan)]/20 bg-gradient-to-br from-[var(--background)]/80 to-[var(--brand-cyan)]/[0.02] backdrop-blur-xl p-4 sm:p-5 shadow-xl relative overflow-hidden">
+              {/* Animated gradient border accent */}
+              <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-[var(--brand-cyan)] to-transparent opacity-40" />
+
+              <div className="flex items-center gap-2.5 mb-4">
+                <div className="relative">
+                  <Image src="/assets/finybuddy-mascot.png" alt="Finy" width={36} height={36} className="rounded-full w-9 h-9" />
+                  <div className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-[var(--background)] transition-colors duration-300 ${phase !== "idle" ? "bg-[var(--brand-cyan)]" : "bg-[var(--brand-gray)]"}`} />
+                </div>
+                <div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-sm font-bold text-[var(--brand-cyan)]">Finy AI</span>
+                    <Sparkles className="w-3.5 h-3.5 text-[var(--brand-cyan)] opacity-70" />
+                  </div>
+                  <p className="text-[9px] sm:text-[10px] text-[var(--brand-gray)]">Analizando tus movimientos...</p>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                {DEMO_INSIGHTS.map((insight, i) => {
+                  const isVisible = showInsights >= i;
+                  const colors = { warning: { bg: "var(--warning)", icon: "!" }, info: { bg: "var(--brand-cyan)", icon: "i" }, tip: { bg: "var(--success)", icon: "✓" } };
+                  const c = colors[insight.type];
+                  return (
+                    <div
+                      key={i}
+                      className={`flex items-start gap-3 p-3 rounded-xl transition-all duration-600 ${
+                        isVisible ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-4"
+                      }`}
+                      style={isVisible ? { backgroundColor: `color-mix(in srgb, ${c.bg} 8%, transparent)`, border: `1px solid color-mix(in srgb, ${c.bg} 15%, transparent)` } : {}}
+                    >
+                      <div className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 text-[9px] font-bold text-white"
+                        style={{ backgroundColor: c.bg, boxShadow: `0 0 8px color-mix(in srgb, ${c.bg} 40%, transparent)` }}>
+                        {c.icon}
+                      </div>
+                      <p className="text-xs sm:text-sm text-[var(--foreground)] leading-relaxed">{insight.text}</p>
+                    </div>
+                  );
+                })}
+
+                {/* Savings opportunity highlight */}
+                <div className={`mt-2 p-3 sm:p-4 rounded-xl transition-all duration-700 ${
+                  phase === "done" ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
+                }`}
+                  style={{ background: "linear-gradient(135deg, rgba(2,234,255,0.08) 0%, rgba(119,57,254,0.08) 100%)", border: "1px solid rgba(2,234,255,0.2)" }}>
+                  <div className="flex items-center justify-between flex-wrap gap-2">
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-br from-[var(--brand-cyan)] to-[var(--brand-purple)] flex items-center justify-center shadow-lg">
+                        <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
+                      </div>
+                      <div>
+                        <p className="text-[10px] sm:text-xs text-[var(--brand-gray)]">Potencial de ahorro detectado</p>
+                        <p className="text-sm sm:text-lg font-bold gradient-brand-text">+15,00 € / mes</p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-[10px] sm:text-xs text-[var(--brand-gray)]">Proyección anual</p>
+                      <p className="text-sm sm:text-base font-bold text-[var(--success)]">+180,00 €</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
-        )}
-        {demoPhase === "done" && (
-          <button
-            onClick={resetDemo}
-            className="inline-flex items-center gap-2 px-6 py-3 rounded-xl border border-[var(--border)] hover:bg-[var(--background-secondary)] transition-colors text-sm font-medium"
-          >
-            <Play className="w-4 h-4" />
-            Repetir demo
-          </button>
-        )}
+        </div>
+
+        {/* CTA Button */}
+        <div className="text-center pt-2">
+          {phase === "idle" && (
+            <button
+              onClick={startDemo}
+              className="group relative inline-flex items-center gap-2.5 px-8 sm:px-10 py-4 sm:py-5 rounded-2xl bg-gradient-to-r from-[var(--brand-purple)] to-[var(--brand-cyan)] text-white font-bold text-sm sm:text-base hover:opacity-90 transition-all hover:scale-105 active:scale-95 shadow-2xl shadow-[var(--brand-purple)]/30"
+            >
+              {/* Animated border glow */}
+              <div className="absolute -inset-[1px] rounded-2xl bg-gradient-to-r from-[var(--brand-cyan)] via-[var(--brand-purple)] to-[var(--brand-cyan)] opacity-0 group-hover:opacity-50 blur-sm transition-opacity duration-500" />
+              <Play className="w-5 h-5 relative" />
+              <span className="relative">Probar la magia de Finy</span>
+            </button>
+          )}
+          {(phase === "scanning" || phase === "categorizing" || phase === "analyzing") && (
+            <div className="inline-flex items-center gap-3 px-6 sm:px-8 py-3 sm:py-4 rounded-xl bg-[var(--background)] border border-[var(--brand-cyan)]/30 shadow-lg shadow-[var(--brand-cyan)]/5">
+              <div className="relative w-5 h-5">
+                <div className="absolute inset-0 rounded-full border-2 border-[var(--brand-cyan)]/20" />
+                <div className="absolute inset-0 rounded-full border-2 border-transparent border-t-[var(--brand-cyan)] animate-spin" />
+              </div>
+              <span className="text-sm font-medium text-[var(--brand-cyan)]">
+                {phase === "scanning" && "Escaneando movimientos..."}
+                {phase === "categorizing" && "Categorizando con IA..."}
+                {phase === "analyzing" && "Generando insights..."}
+              </span>
+              <div className="flex gap-1">
+                {[0, 1, 2].map(d => (
+                  <div key={d} className="w-1.5 h-1.5 rounded-full bg-[var(--brand-cyan)] animate-bounce" style={{ animationDelay: `${d * 0.15}s` }} />
+                ))}
+              </div>
+            </div>
+          )}
+          {phase === "done" && (
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+              <button
+                onClick={resetDemo}
+                className="inline-flex items-center gap-2 px-6 py-3 rounded-xl border border-[var(--border)] hover:bg-[var(--background-secondary)] transition-all text-sm font-medium hover:scale-105 active:scale-95"
+              >
+                <Play className="w-4 h-4" />
+                Repetir demo
+              </button>
+              <Link
+                href="/register"
+                className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-[var(--brand-purple)] to-[var(--brand-cyan)] text-white font-semibold hover:opacity-90 transition-all hover:scale-105 active:scale-95 shadow-lg"
+              >
+                Empieza gratis
+                <ArrowRight className="w-4 h-4" />
+              </Link>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -1184,18 +1384,23 @@ export default function HomePage() {
       </section>
 
       {/* Finy AI Interactive Demo */}
-      <section className="py-16 sm:py-20 px-4 sm:px-6 bg-[var(--background-secondary)] relative">
-        <div className="max-w-5xl mx-auto">
-          <div className="text-center mb-10 sm:mb-12">
+      <section className="py-16 sm:py-24 px-4 sm:px-6 relative overflow-hidden">
+        <GridBackground />
+        {/* Ambient glow orbs */}
+        <div className="absolute top-1/4 left-0 w-72 h-72 bg-[var(--brand-cyan)]/10 rounded-full blur-[100px] pointer-events-none" />
+        <div className="absolute bottom-1/4 right-0 w-72 h-72 bg-[var(--brand-purple)]/10 rounded-full blur-[100px] pointer-events-none" />
+
+        <div className="max-w-6xl mx-auto relative z-10">
+          <div className="text-center mb-10 sm:mb-14">
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[var(--brand-cyan)]/10 border border-[var(--brand-cyan)]/20 text-[var(--brand-cyan)] text-sm font-medium mb-6">
               <Sparkles className="w-4 h-4" />
               Finy AI en acción
             </div>
-            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-3 sm:mb-4">
-              De datos en bruto a <span className="gradient-brand-text">decisiones</span>
+            <h2 className="text-2xl sm:text-3xl md:text-5xl font-bold mb-3 sm:mb-4">
+              De caos bancario a <span className="gradient-brand-text">claridad total</span>
             </h2>
             <p className="text-[var(--brand-gray)] max-w-2xl mx-auto text-sm sm:text-lg">
-              Pega tu extracto bancario y Finy categoriza, analiza y te aconseja al instante
+              Tus movimientos transformados en decisiones financieras inteligentes. En milisegundos.
             </p>
           </div>
 
