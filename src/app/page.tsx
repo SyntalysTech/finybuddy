@@ -209,25 +209,30 @@ function GlowOrb({ color, size, top, left, delay = 0 }: { color: string; size: n
 
 // Pricing section with monthly/annual toggle
 const BASIC_FEATURES = [
-  "Dashboard con regla 50/30/20",
+  "Dashboard con KPIs y graficos",
   "Registro de ingresos y gastos",
   "Calendario financiero",
-  "Operaciones recurrentes",
-  "Categorías personalizadas",
+  "Prevision (presupuestos)",
+  "Categorias predefinidas",
+  "Regla 50/30/20",
+  "Tema claro/oscuro",
 ];
 
 const PRO_FEATURES = [
   "Todo lo del plan Basic",
-  "Previsión vs Realidad",
-  "Previsión de gastos",
+  "Prevision vs Realidad",
   "Metas de ahorro",
-  "Gestión de deudas",
-  "FinyBot - asistente IA",
-  "Soporte prioritario",
+  "Gestion de deudas",
+  "FinyBot - Chat IA + voz",
+  "Categorias personalizadas",
+  "Regla financiera personalizable",
+  "Recordatorios y notificaciones",
+  "Exportacion CSV/JSON",
+  "Insights de Finy",
 ];
 
-const MONTHLY_PRICE_ID = process.env.NEXT_PUBLIC_STRIPE_PRICE_PRO_MONTHLY || "price_1T44ivK6uoz4D92qkesCNGLd";
-const ANNUAL_PRICE_ID = process.env.NEXT_PUBLIC_STRIPE_PRICE_PRO_ANNUAL || "price_1T44jjK6uoz4D92qcKQ1q3vp";
+const MONTHLY_PRICE_ID = process.env.NEXT_PUBLIC_STRIPE_PRICE_PRO_MONTHLY || "price_1T49EIK6uoz4D92qYPcT6qho";
+const ANNUAL_PRICE_ID = process.env.NEXT_PUBLIC_STRIPE_PRICE_PRO_ANNUAL || "";
 
 function PricingToggle({ isLoggedIn, hasUsedTrial }: { isLoggedIn: boolean; hasUsedTrial: boolean }) {
   const [annual, setAnnual] = useState(false);
@@ -275,7 +280,7 @@ function PricingToggle({ isLoggedIn, hasUsedTrial }: { isLoggedIn: boolean; hasU
           Anual
         </span>
         <span className={`text-xs px-2 py-1 rounded-full bg-[var(--success)]/10 text-[var(--success)] font-medium transition-opacity ${annual ? "opacity-100" : "opacity-0"}`}>
-          Ahorra 22%
+          Ahorra ~20 EUR
         </span>
       </div>
 
@@ -284,8 +289,8 @@ function PricingToggle({ isLoggedIn, hasUsedTrial }: { isLoggedIn: boolean; hasU
         {/* Basic */}
         <div className="p-8 rounded-2xl border border-[var(--border)] bg-[var(--background)] hover:border-[var(--brand-cyan)]/50 transition-all">
           <div className="mb-6">
-            <h3 className="text-xl font-bold mb-1">Basic</h3>
-            <p className="text-sm text-[var(--brand-gray)]">Para empezar a controlar tus finanzas</p>
+            <h3 className="text-xl font-bold mb-1">FinyBuddy - Basic</h3>
+            <p className="text-sm text-[var(--brand-gray)]">Controla tus finanzas con lo esencial</p>
           </div>
           <div className="mb-6 h-[72px] flex flex-col justify-center">
             <div>
@@ -308,11 +313,11 @@ function PricingToggle({ isLoggedIn, hasUsedTrial }: { isLoggedIn: boolean; hasU
             ))}
             <li className="flex items-start gap-3 text-sm text-[var(--brand-gray)]">
               <X className="w-4 h-4 text-[var(--brand-gray)]/50 shrink-0 mt-0.5" />
-              <span>Previsión y metas de ahorro</span>
+              <span>FinyBot - Chat IA + voz</span>
             </li>
             <li className="flex items-start gap-3 text-sm text-[var(--brand-gray)]">
               <X className="w-4 h-4 text-[var(--brand-gray)]/50 shrink-0 mt-0.5" />
-              <span>FinyBot - asistente IA</span>
+              <span>Metas de ahorro y deudas</span>
             </li>
           </ul>
         </div>
@@ -328,19 +333,19 @@ function PricingToggle({ isLoggedIn, hasUsedTrial }: { isLoggedIn: boolean; hasU
 
           <div className="mb-6">
             <div className="flex items-center gap-2 mb-1">
-              <h3 className="text-xl font-bold">Pro</h3>
+              <h3 className="text-xl font-bold">FinyBuddy - Pro</h3>
               <Crown className="w-5 h-5 text-[var(--brand-purple)]" />
             </div>
-            <p className="text-sm text-[var(--brand-gray)]">Todas las herramientas para dominar tus finanzas</p>
+            <p className="text-sm text-[var(--brand-gray)]">Desbloquea todo el potencial de FinyBuddy</p>
           </div>
           <div className="mb-6 h-[72px] flex flex-col justify-center">
             <div>
-              <span className="text-4xl font-bold">{annual ? "139,99 €" : "14,99 €"}</span>
+              <span className="text-4xl font-bold">{annual ? "39,99 €" : "4,99 €"}</span>
               <span className="text-[var(--brand-gray)] ml-1">{annual ? "/año" : "/mes"}</span>
             </div>
             <p className={`text-sm mt-1 ${annual ? "text-[var(--brand-gray)]" : "invisible"}`}>
-              <span className="line-through">179,88 €</span>{" "}
-              <span className="text-[var(--success)] font-medium">Ahorras 39,89 €</span>
+              <span className="line-through">59,88 €</span>{" "}
+              <span className="text-[var(--success)] font-medium">Ahorras ~20 €</span>
             </p>
           </div>
           {isLoggedIn ? (

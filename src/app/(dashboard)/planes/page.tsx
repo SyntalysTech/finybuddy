@@ -24,12 +24,11 @@ import {
   Download,
   Settings,
   Clock,
-  CheckCircle,
-  AlertTriangle,
 } from "lucide-react";
+import Toast from "@/components/ui/Toast";
 
-const MONTHLY_PRICE_ID = process.env.NEXT_PUBLIC_STRIPE_PRICE_PRO_MONTHLY || "price_1T44ivK6uoz4D92qkesCNGLd";
-const ANNUAL_PRICE_ID = process.env.NEXT_PUBLIC_STRIPE_PRICE_PRO_ANNUAL || "price_1T44jjK6uoz4D92qcKQ1q3vp";
+const MONTHLY_PRICE_ID = process.env.NEXT_PUBLIC_STRIPE_PRICE_PRO_MONTHLY || "price_1T49EIK6uoz4D92qYPcT6qho";
+const ANNUAL_PRICE_ID = process.env.NEXT_PUBLIC_STRIPE_PRICE_PRO_ANNUAL || "";
 
 interface Feature {
   name: string;
@@ -42,21 +41,20 @@ const features: Feature[] = [
   { name: "Dashboard con KPIs y graficos", icon: LayoutDashboard, basic: true, pro: true },
   { name: "Registro de operaciones", icon: Receipt, basic: true, pro: true },
   { name: "Calendario financiero", icon: Calendar, basic: true, pro: true },
+  { name: "Prevision (presupuestos)", icon: TrendingUp, basic: true, pro: true },
   { name: "Categorias predefinidas", icon: FolderOpen, basic: true, pro: true },
   { name: "Regla 50/30/20 (vista basica)", icon: Scale, basic: true, pro: true },
   { name: "Tema claro/oscuro", icon: Settings, basic: true, pro: true },
-  { name: "Prevision (presupuestos)", icon: TrendingUp, basic: false, pro: true },
   { name: "Prevision vs Realidad", icon: TrendingUp, basic: false, pro: true },
-  { name: "Metas de ahorro ilimitadas", icon: PiggyBank, basic: false, pro: true },
+  { name: "Metas de ahorro", icon: PiggyBank, basic: false, pro: true },
   { name: "Gestion de deudas", icon: CreditCard, basic: false, pro: true },
-  { name: "FinyBot - Chat IA", icon: Bot, basic: false, pro: true },
-  { name: "FinyBot - Entrada y salida por voz", icon: Bot, basic: false, pro: true },
+  { name: "FinyBot - Chat IA + voz", icon: Bot, basic: false, pro: true },
   { name: "Categorias personalizadas", icon: FolderOpen, basic: false, pro: true },
   { name: "Regla financiera personalizable", icon: Scale, basic: false, pro: true },
   { name: "Recordatorios financieros", icon: Bell, basic: false, pro: true },
   { name: "Notificaciones y emails automaticos", icon: Bell, basic: false, pro: true },
   { name: "Exportacion de datos (CSV/JSON)", icon: Download, basic: false, pro: true },
-  { name: "Finy - Insights inteligentes", icon: Sparkles, basic: false, pro: true },
+  { name: "Insights de Finy", icon: Sparkles, basic: false, pro: true },
 ];
 
 export default function PlanesPage() {
@@ -147,27 +145,9 @@ export default function PlanesPage() {
       <Header title="Planes" subtitle="Elige el plan que mejor se adapte a ti" />
 
       <div className="p-6 space-y-6">
-        {/* Messages */}
-        {showSuccess && (
-          <div className="p-4 rounded-xl bg-[var(--success)]/10 text-[var(--success)] flex items-center gap-3">
-            <CheckCircle className="w-5 h-5 shrink-0" />
-            <span className="text-sm font-medium">
-              Suscripcion activada correctamente. Bienvenido a FinyBuddy Pro!
-            </span>
-            <button onClick={() => setShowSuccess(false)} className="ml-auto">
-              <X className="w-4 h-4" />
-            </button>
-          </div>
-        )}
-        {showCanceled && (
-          <div className="p-4 rounded-xl bg-[#F59E0B]/10 text-[#F59E0B] flex items-center gap-3">
-            <AlertTriangle className="w-5 h-5 shrink-0" />
-            <span className="text-sm">Proceso de pago cancelado. Puedes intentarlo de nuevo cuando quieras.</span>
-            <button onClick={() => setShowCanceled(false)} className="ml-auto">
-              <X className="w-4 h-4" />
-            </button>
-          </div>
-        )}
+        {/* Toast notifications */}
+        {showSuccess && <Toast type="success" message="Suscripcion activada correctamente. Bienvenido a FinyBuddy Pro!" onClose={() => setShowSuccess(false)} />}
+        {showCanceled && <Toast type="error" message="Proceso de pago cancelado. Puedes intentarlo de nuevo cuando quieras." onClose={() => setShowCanceled(false)} />}
 
         {/* Current Plan Status Banner */}
         <div className="card p-5">
@@ -261,7 +241,7 @@ export default function PlanesPage() {
           </span>
           {isAnnual && (
             <span className="text-xs px-2 py-1 rounded-full bg-[#22C55E]/20 text-[#22C55E] font-semibold">
-              Ahorra ~40 EUR
+              Ahorra ~20 EUR
             </span>
           )}
         </div>
@@ -271,7 +251,7 @@ export default function PlanesPage() {
           {/* Basic Card */}
           <div className="card p-6 flex flex-col">
             <div className="mb-6">
-              <h3 className="text-lg font-bold mb-1">Basic</h3>
+              <h3 className="text-lg font-bold mb-1">FinyBuddy - Basic</h3>
               <p className="text-xs text-[var(--brand-gray)]">
                 Lo esencial para empezar
               </p>
@@ -309,22 +289,22 @@ export default function PlanesPage() {
             <div className="mb-6">
               <h3 className="text-lg font-bold mb-1 flex items-center gap-2">
                 <Crown className="w-5 h-5 text-[#7739FE]" />
-                Pro
+                FinyBuddy - Pro
               </h3>
               <p className="text-xs text-[var(--brand-gray)]">
-                Todas las funcionalidades
+                Desbloquea todo el potencial de FinyBuddy
               </p>
             </div>
             <div className="mb-6">
               <div className="flex items-baseline gap-1">
                 <span className="text-4xl font-bold">
-                  {isAnnual ? "139,99" : "14,99"}
+                  {isAnnual ? "39,99" : "4,99"}
                 </span>
                 <span className="text-[var(--brand-gray)]">EUR</span>
               </div>
               <p className="text-xs text-[var(--brand-gray)] mt-1">
                 {isAnnual
-                  ? "al ano (~11,67 EUR/mes)"
+                  ? "al ano (~3,33 EUR/mes)"
                   : "al mes"}
               </p>
             </div>

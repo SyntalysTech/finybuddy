@@ -24,21 +24,21 @@ export const stripe = new Proxy({} as Stripe, {
 
 export const PLANS = {
   basic: {
-    name: "Basic",
-    nameEs: "Basic",
+    name: "FinyBuddy - Basic",
+    nameEs: "FinyBuddy - Basic",
     price: 0,
     priceId: null as string | null,
   },
   pro_monthly: {
-    name: "Pro Monthly",
-    nameEs: "Pro Mensual",
-    price: 14.99,
+    name: "FinyBuddy - Pro",
+    nameEs: "FinyBuddy - Pro",
+    price: 4.99,
     priceId: process.env.STRIPE_PRICE_PRO_MONTHLY || null,
   },
   pro_annual: {
-    name: "Pro Annual",
-    nameEs: "Pro Anual",
-    price: 139.99,
+    name: "FinyBuddy - Pro Anual",
+    nameEs: "FinyBuddy - Pro Anual",
+    price: 39.99,
     priceId: process.env.STRIPE_PRICE_PRO_ANNUAL || null,
   },
 } as const;
