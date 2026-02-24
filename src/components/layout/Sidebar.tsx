@@ -112,8 +112,8 @@ export default function Sidebar() {
   const NavContent = () => (
     <>
       {/* Logo */}
-      <div className="h-16 px-4 border-b border-[var(--sidebar-border)] flex items-center justify-center relative">
-        <Link href="/dashboard" className="flex items-center justify-center overflow-hidden" onClick={handleNavClick}>
+      <div className="h-16 px-4 border-b border-[var(--sidebar-border)] flex items-center relative">
+        <Link href="/dashboard" className="flex items-center overflow-hidden" onClick={handleNavClick}>
           <div
             className={`transition-all duration-300 ease-in-out ${
               collapsed && !isMobile ? "w-0 opacity-0" : "w-[140px] opacity-100"
