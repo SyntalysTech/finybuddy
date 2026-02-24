@@ -116,7 +116,7 @@ export default function Sidebar() {
         <Link href="/dashboard" className="flex items-center gap-3 overflow-hidden" onClick={handleNavClick}>
           <div className="w-9 h-9 relative flex-shrink-0">
             <Image
-              src="/assets/finybuddy-mascot.png"
+              src="/assets/logo-isotope.png"
               alt="FinyBuddy"
               fill
               className="object-contain"
@@ -412,7 +412,7 @@ export default function Sidebar() {
           <Link href="/dashboard" className="flex items-center gap-2">
             <div className="w-8 h-8 relative">
               <Image
-                src="/assets/finybuddy-mascot.png"
+                src="/assets/logo-isotope.png"
                 alt="FinyBuddy"
                 fill
                 className="object-contain"
