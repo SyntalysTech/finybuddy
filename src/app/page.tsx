@@ -608,8 +608,8 @@ export default function HomePage() {
 
               <p className="text-lg md:text-xl text-[var(--brand-gray)] mb-8 max-w-lg leading-relaxed">
                 Gestiona tus finanzas de forma inteligente. Controla ingresos,
-                gastos, ahorros y deudas en un solo lugar con la regla{" "}
-                <span className="font-semibold text-[var(--foreground)]">50/30/20</span>.
+                gastos, ahorros y deudas en un solo lugar con{" "}
+                <span className="font-semibold text-[var(--foreground)]">IA integrada</span>.
               </p>
 
               <div className="flex flex-col sm:flex-row gap-4 mb-4">
@@ -653,7 +653,7 @@ export default function HomePage() {
                   <div className="w-8 h-8 rounded-lg bg-[var(--success)]/10 flex items-center justify-center">
                     <CheckCircle className="w-4 h-4 text-[var(--success)]" />
                   </div>
-                  <span>Regla 50/30/20</span>
+                  <span>Control total</span>
                 </div>
                 <div className="flex items-center gap-2 text-sm text-[var(--brand-gray)]">
                   <div className="w-8 h-8 rounded-lg bg-[var(--brand-cyan)]/10 flex items-center justify-center">
@@ -719,8 +719,8 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Live Stats Section */}
-      <section className="py-16 px-6 bg-gradient-to-r from-[var(--brand-purple)] to-[var(--brand-cyan)] relative overflow-hidden">
+      {/* Stats Banner */}
+      <section className="py-12 sm:py-16 px-6 bg-gradient-to-r from-[var(--brand-purple)] to-[var(--brand-cyan)] relative overflow-hidden">
         <div className="absolute inset-0 opacity-10">
           <div className="absolute inset-0" style={{
             backgroundImage: "url(\"data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E\")",
@@ -728,28 +728,30 @@ export default function HomePage() {
         </div>
 
         <div className="max-w-7xl mx-auto relative z-10">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 sm:gap-8">
             <div className="text-center text-white">
-              <p className="text-4xl md:text-5xl font-bold mb-2">
-                <AnimatedNumber value={50} suffix="%" />
+              <p className="text-3xl sm:text-4xl md:text-5xl font-bold mb-1 sm:mb-2">
+                <AnimatedNumber value={100} suffix="%" />
               </p>
-              <p className="text-white/80 text-sm">Necesidades</p>
+              <p className="text-white/80 text-xs sm:text-sm">Privado y seguro</p>
             </div>
             <div className="text-center text-white">
-              <p className="text-4xl md:text-5xl font-bold mb-2">
-                <AnimatedNumber value={30} suffix="%" />
+              <p className="text-3xl sm:text-4xl md:text-5xl font-bold mb-1 sm:mb-2">
+                <AnimatedNumber value={24} suffix="/7" />
               </p>
-              <p className="text-white/80 text-sm">Deseos</p>
+              <p className="text-white/80 text-xs sm:text-sm">Finy AI disponible</p>
             </div>
             <div className="text-center text-white">
-              <p className="text-4xl md:text-5xl font-bold mb-2">
-                <AnimatedNumber value={20} suffix="%" />
+              <p className="text-3xl sm:text-4xl md:text-5xl font-bold mb-1 sm:mb-2">
+                <AnimatedNumber value={6} suffix="+" />
               </p>
-              <p className="text-white/80 text-sm">Ahorro</p>
+              <p className="text-white/80 text-xs sm:text-sm">Herramientas financieras</p>
             </div>
             <div className="text-center text-white">
-              <p className="text-4xl md:text-5xl font-bold mb-2">100%</p>
-              <p className="text-white/80 text-sm">Control total</p>
+              <p className="text-3xl sm:text-4xl md:text-5xl font-bold mb-1 sm:mb-2">
+                <AnimatedNumber value={0} suffix=" €" />
+              </p>
+              <p className="text-white/80 text-xs sm:text-sm">Para empezar gratis</p>
             </div>
           </div>
         </div>
