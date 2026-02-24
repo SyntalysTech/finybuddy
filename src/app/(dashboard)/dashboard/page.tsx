@@ -475,7 +475,7 @@ export default function DashboardPage() {
                 alt="FinyBuddy"
                 width={40}
                 height={40}
-                className="rounded-full w-9 h-9 sm:w-11 sm:h-11"
+                className="rounded-full w-9 h-9 sm:w-11 sm:h-11 object-cover"
               />
             </div>
             <div className="flex-1 min-w-0">
@@ -718,7 +718,7 @@ export default function DashboardPage() {
                   alt="Finy"
                   width={40}
                   height={40}
-                  className="rounded-full w-10 h-10 sm:w-12 sm:h-12"
+                  className="rounded-full w-10 h-10 sm:w-12 sm:h-12 object-cover"
                 />
               </div>
               <div className="min-w-0">

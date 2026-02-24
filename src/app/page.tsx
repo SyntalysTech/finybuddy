@@ -240,7 +240,7 @@ function FinyAIDemo() {
       <div className={`absolute -inset-8 rounded-3xl blur-3xl transition-opacity duration-1000 ${phase !== "idle" ? "opacity-100" : "opacity-0"}`}
         style={{ background: "radial-gradient(ellipse at center, rgba(2,234,255,0.08) 0%, rgba(119,57,254,0.05) 50%, transparent 70%)" }} />
 
-      <div className="relative space-y-5">
+      <div className="relative space-y-4">
         {/* Main demo area */}
         <div className="relative rounded-2xl border border-[var(--border)] bg-[var(--background)]/80 backdrop-blur-xl overflow-hidden shadow-2xl">
           {/* Top bar - terminal style */}
@@ -270,7 +270,7 @@ function FinyAIDemo() {
               <div className="px-4 sm:px-5 py-2.5 border-b border-[var(--border)] bg-[var(--background-secondary)]/50">
                 <p className="text-[10px] sm:text-xs font-semibold flex items-center gap-2 text-[var(--brand-gray)] uppercase tracking-wider">
                   <Database className="w-3.5 h-3.5" />
-                  Extracto bancario
+                  Movimientos en bruto
                 </p>
               </div>
               <div className="p-2 sm:p-3 space-y-0.5 font-mono text-[10px] sm:text-xs relative">
@@ -295,12 +295,6 @@ function FinyAIDemo() {
                       <span className={`relative font-semibold transition-all duration-300 tabular-nums ${isScanned ? "text-[var(--foreground)]" : "text-[var(--brand-gray)]/50"}`}>
                         {t.rawAmt}
                       </span>
-                      {/* Check mark when scanned */}
-                      {isScanned && !isActive && (
-                        <div className="absolute right-1 top-1/2 -translate-y-1/2 w-4 h-4 rounded-full bg-[var(--brand-cyan)]/10 flex items-center justify-center">
-                          <Check className="w-2.5 h-2.5 text-[var(--brand-cyan)]" />
-                        </div>
-                      )}
                     </div>
                   );
                 })}
@@ -436,7 +430,7 @@ function FinyAIDemo() {
 
               <div className="flex items-center gap-2.5 mb-4">
                 <div className="relative">
-                  <Image src="/assets/finy-mascota-minimalista.png" alt="Finy" width={36} height={36} className="rounded-full w-9 h-9" />
+                  <Image src="/assets/finy-mascota-minimalista.png" alt="Finy" width={36} height={36} className="rounded-full w-9 h-9 object-cover" />
                   <div className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-[var(--background)] transition-colors duration-300 ${phase !== "idle" ? "bg-[var(--brand-cyan)]" : "bg-[var(--brand-gray)]"}`} />
                 </div>
                 <div>
@@ -497,7 +491,7 @@ function FinyAIDemo() {
         </div>
 
         {/* CTA Button */}
-        <div className="text-center pt-2">
+        <div className="text-center">
           {phase === "idle" && (
             <button
               onClick={startDemo}
@@ -1190,7 +1184,7 @@ export default function HomePage() {
 
               {/* Finy greeting */}
               <div className="flex items-center gap-2.5 mb-5 p-3 rounded-xl bg-gradient-to-r from-[var(--brand-cyan)]/5 to-[var(--brand-purple)]/5 border border-[var(--border)]">
-                <Image src="/assets/finy-mascota-minimalista.png" alt="Finy" width={32} height={32} className="rounded-full w-8 h-8 flex-shrink-0" />
+                <Image src="/assets/finy-mascota-minimalista.png" alt="Finy" width={32} height={32} className="rounded-full w-8 h-8 flex-shrink-0 object-cover" />
                 <div className="min-w-0">
                   <p className="text-xs font-semibold text-[var(--brand-cyan)]">Vas bien este mes, sigue así</p>
                   <p className="text-[10px] text-[var(--brand-gray)] italic">&ldquo;El ahorro es la base de la fortuna&rdquo;</p>
@@ -1294,7 +1288,7 @@ export default function HomePage() {
                   {/* Finy AI Panel */}
                   <div className="p-4 sm:p-5 rounded-xl border border-[var(--brand-cyan)]/20 bg-gradient-to-br from-[var(--brand-cyan)]/5 to-[var(--brand-purple)]/5">
                     <div className="flex items-center gap-2 mb-2.5">
-                      <Image src="/assets/finy-mascota-minimalista.png" alt="Finy" width={28} height={28} className="rounded-full w-7 h-7" />
+                      <Image src="/assets/finy-mascota-minimalista.png" alt="Finy" width={28} height={28} className="rounded-full w-7 h-7 object-cover" />
                       <div className="flex items-center gap-1">
                         <span className="text-xs font-bold text-[var(--brand-cyan)]">Finy</span>
                         <Sparkles className="w-3 h-3 text-[var(--brand-cyan)] opacity-60" />

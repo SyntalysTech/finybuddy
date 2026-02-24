@@ -510,7 +510,7 @@ function ChatPageContent() {
                 src="/assets/finy-mascota-minimalista.png"
                 alt="FinyBot"
                 fill
-                className="object-contain"
+                className="object-cover"
               />
             </div>
             <div className="min-w-0 flex-1">
@@ -545,7 +545,7 @@ function ChatPageContent() {
                 src="/assets/finy-mascota-minimalista.png"
                 alt="FinyBot"
                 fill
-                className="object-contain"
+                className="object-cover"
               />
             </div>
             <h2 className="text-lg sm:text-xl font-bold mb-2 text-center">¿En qué te puedo ayudar?</h2>
@@ -604,7 +604,7 @@ function ChatPageContent() {
                       src="/assets/finy-mascota-minimalista.png"
                       alt="FinyBot"
                       fill
-                      className="object-contain"
+                      className="object-cover"
                     />
                   </div>
                 )}
