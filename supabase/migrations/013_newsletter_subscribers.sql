@@ -22,10 +22,12 @@ CREATE INDEX IF NOT EXISTS idx_newsletter_active ON public.newsletter_subscriber
 ALTER TABLE public.newsletter_subscribers ENABLE ROW LEVEL SECURITY;
 
 -- Política para insertar (cualquiera puede suscribirse)
+DROP POLICY IF EXISTS "Anyone can subscribe to newsletter" ON public.newsletter_subscribers;
 CREATE POLICY "Anyone can subscribe to newsletter" ON public.newsletter_subscribers
     FOR INSERT WITH CHECK (true);
 
 -- Política para que solo admins puedan ver/gestionar suscriptores
+DROP POLICY IF EXISTS "Only service role can manage subscribers" ON public.newsletter_subscribers;
 CREATE POLICY "Only service role can manage subscribers" ON public.newsletter_subscribers
     FOR ALL USING (auth.role() = 'service_role');
 
