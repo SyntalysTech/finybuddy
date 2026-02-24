@@ -782,7 +782,7 @@ export default function HomePage() {
                 </div>
                 <div className="flex-1 flex justify-center">
                   <div className="px-4 py-1 rounded-lg bg-[var(--background-secondary)] text-xs text-[var(--brand-gray)]">
-                    app.finybuddy.com/dashboard
+                    www.finybuddy.com/dashboard
                   </div>
                 </div>
               </div>
