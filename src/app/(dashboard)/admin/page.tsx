@@ -1050,15 +1050,7 @@ export default function AdminPage() {
                 </div>
               </div>
 
-              {!hasContent && (
-                <div className="px-4 sm:px-6 py-8 text-center text-[var(--brand-gray)]">
-                  <Newspaper className="w-8 h-8 mx-auto mb-3 opacity-40" />
-                  <p className="text-sm">Escribe el asunto y contenido de la newsletter y guarda el borrador para poder enviar</p>
-                </div>
-              )}
-
-              {hasContent && (
-                <div>
+              <div>
                   {/* Search */}
                   <div className="px-4 sm:px-6 py-3 border-b border-[var(--border)]">
                     <div className="relative">
@@ -1102,7 +1094,8 @@ export default function AdminPage() {
                             ) : (
                               <button
                                 onClick={() => handleSendToSubscriber(subscriber.email)}
-                                disabled={isSending}
+                                disabled={isSending || !hasContent}
+                                title={!hasContent ? "Escribe y guarda el borrador primero" : ""}
                                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[var(--brand-cyan)]/10 text-[var(--brand-cyan)] hover:bg-[var(--brand-cyan)]/20 transition-colors text-xs font-medium disabled:opacity-50"
                               >
                                 {isSending ? (
@@ -1149,7 +1142,6 @@ export default function AdminPage() {
                     </div>
                   )}
                 </div>
-              )}
             </div>
           </>
         )}
