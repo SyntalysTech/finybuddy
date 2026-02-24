@@ -637,7 +637,7 @@ export default function AjustesPage() {
 
             <div className="p-6 space-y-4">
               <p className="text-sm text-[var(--brand-gray)]">
-                Descarga todas tus operaciones en un archivo compatible con Excel y otras hojas de cálculo.
+                Descarga una copia de tus datos. Elige el formato que prefieras.
               </p>
 
               <button
@@ -649,8 +649,22 @@ export default function AjustesPage() {
                   <Download className="w-6 h-6 text-[var(--brand-cyan)]" />
                 </div>
                 <div className="text-left">
-                  <p className="font-medium">Descargar operaciones</p>
-                  <p className="text-xs text-[var(--brand-gray)]">Archivo CSV compatible con Excel</p>
+                  <p className="font-medium">Exportar CSV</p>
+                  <p className="text-xs text-[var(--brand-gray)]">Operaciones en formato compatible con Excel</p>
+                </div>
+              </button>
+
+              <button
+                onClick={() => handleExportData("json")}
+                disabled={exporting}
+                className="w-full flex items-center gap-4 p-4 rounded-xl border border-[var(--brand-purple)] bg-[var(--brand-purple)]/5 hover:bg-[var(--brand-purple)]/10 transition-colors disabled:opacity-50"
+              >
+                <div className="p-3 rounded-lg bg-[var(--brand-purple)]/10">
+                  <Database className="w-6 h-6 text-[var(--brand-purple)]" />
+                </div>
+                <div className="text-left">
+                  <p className="font-medium">Exportar JSON</p>
+                  <p className="text-xs text-[var(--brand-gray)]">Todos los datos: operaciones, categorías, presupuestos, metas y deudas</p>
                 </div>
               </button>
 
