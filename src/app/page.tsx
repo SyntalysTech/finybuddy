@@ -14,7 +14,6 @@ import {
   BarChart3,
   ArrowRight,
   CheckCircle,
-  Clock,
   Sun,
   Moon,
   Sparkles,
@@ -28,6 +27,7 @@ import {
   X,
   Menu,
   LayoutDashboard,
+  PieChart as PieChartIcon,
 } from "lucide-react";
 
 // Newsletter subscription form
@@ -674,30 +674,30 @@ export default function HomePage() {
             <div className={`relative flex justify-center transition-all duration-1000 delay-300 ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"}`}>
               {/* Animated rings */}
               <div className="absolute inset-0 flex items-center justify-center">
-                <div className="w-72 h-72 md:w-96 md:h-96 rounded-full border border-[var(--brand-cyan)]/20 animate-spin-slow" />
-                <div className="absolute w-64 h-64 md:w-80 md:h-80 rounded-full border border-[var(--brand-purple)]/20 animate-spin-reverse" />
-                <div className="absolute w-56 h-56 md:w-72 md:h-72 rounded-full border-2 border-dashed border-[var(--brand-yellow)]/30 animate-spin-slower" />
+                <div className="w-56 h-56 sm:w-72 sm:h-72 md:w-96 md:h-96 rounded-full border border-[var(--brand-cyan)]/20 animate-spin-slow" />
+                <div className="absolute w-48 h-48 sm:w-64 sm:h-64 md:w-80 md:h-80 rounded-full border border-[var(--brand-purple)]/20 animate-spin-reverse" />
+                <div className="absolute w-40 h-40 sm:w-56 sm:h-56 md:w-72 md:h-72 rounded-full border-2 border-dashed border-[var(--brand-yellow)]/30 animate-spin-slower" />
               </div>
 
               {/* Floating stats around mascot */}
-              <div className="absolute top-0 right-0 md:right-10 p-3 rounded-xl bg-[var(--background)] border border-[var(--border)] shadow-lg animate-float">
-                <div className="flex items-center gap-2">
-                  <TrendingUp className="w-4 h-4 text-[var(--success)]" />
-                  <span className="text-sm font-semibold text-[var(--success)]">+2.850 €</span>
+              <div className="absolute -top-2 sm:top-0 right-0 md:right-10 p-2 sm:p-3 rounded-lg sm:rounded-xl bg-[var(--background)] border border-[var(--border)] shadow-lg animate-float">
+                <div className="flex items-center gap-1.5 sm:gap-2">
+                  <TrendingUp className="w-3 h-3 sm:w-4 sm:h-4 text-[var(--success)]" />
+                  <span className="text-xs sm:text-sm font-semibold text-[var(--success)]">+2.850 €</span>
                 </div>
               </div>
 
-              <div className="absolute bottom-10 left-0 md:left-5 p-3 rounded-xl bg-[var(--background)] border border-[var(--border)] shadow-lg animate-float-delayed">
-                <div className="flex items-center gap-2">
-                  <PiggyBank className="w-4 h-4 text-[var(--brand-cyan)]" />
-                  <span className="text-sm font-semibold">570 € ahorrado</span>
+              <div className="absolute bottom-4 sm:bottom-10 left-0 md:left-5 p-2 sm:p-3 rounded-lg sm:rounded-xl bg-[var(--background)] border border-[var(--border)] shadow-lg animate-float-delayed">
+                <div className="flex items-center gap-1.5 sm:gap-2">
+                  <PiggyBank className="w-3 h-3 sm:w-4 sm:h-4 text-[var(--brand-cyan)]" />
+                  <span className="text-xs sm:text-sm font-semibold">570 € ahorrado</span>
                 </div>
               </div>
 
-              <div className="absolute top-1/3 left-0 md:-left-5 p-3 rounded-xl bg-[var(--background)] border border-[var(--border)] shadow-lg animate-float-slow">
-                <div className="flex items-center gap-2">
-                  <Target className="w-4 h-4 text-[var(--brand-purple)]" />
-                  <span className="text-sm font-semibold">Meta: 85%</span>
+              <div className="absolute top-1/3 left-0 md:-left-5 p-2 sm:p-3 rounded-lg sm:rounded-xl bg-[var(--background)] border border-[var(--border)] shadow-lg animate-float-slow">
+                <div className="flex items-center gap-1.5 sm:gap-2">
+                  <Target className="w-3 h-3 sm:w-4 sm:h-4 text-[var(--brand-purple)]" />
+                  <span className="text-xs sm:text-sm font-semibold">Meta: 85%</span>
                 </div>
               </div>
 
@@ -706,7 +706,7 @@ export default function HomePage() {
                 alt="FinyBuddy Mascot"
                 width={350}
                 height={350}
-                className="relative z-10 drop-shadow-2xl animate-bounce-subtle"
+                className="relative z-10 drop-shadow-2xl animate-bounce-subtle w-[220px] h-[220px] sm:w-[280px] sm:h-[280px] md:w-[350px] md:h-[350px]"
                 style={{ transform: `translateY(${scrollY * 0.1}px)` }}
               />
             </div>
@@ -787,102 +787,128 @@ export default function HomePage() {
                 </div>
               </div>
 
-              {/* Stats Row */}
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-                <div className="p-4 rounded-xl bg-[var(--background-secondary)] border border-[var(--border)] hover:border-[var(--brand-cyan)] transition-colors group">
-                  <div className="flex items-center gap-2 text-[var(--brand-gray)] mb-2">
-                    <TrendingUp className="w-4 h-4 text-[var(--success)] group-hover:scale-110 transition-transform" />
-                    <span className="text-xs">Ingresos</span>
-                  </div>
-                  <p className="text-xl font-bold text-[var(--success)]">2.850,00 €</p>
-                </div>
-                <div className="p-4 rounded-xl bg-[var(--background-secondary)] border border-[var(--border)] hover:border-[var(--brand-cyan)] transition-colors group">
-                  <div className="flex items-center gap-2 text-[var(--brand-gray)] mb-2">
-                    <TrendingDown className="w-4 h-4 text-[var(--danger)] group-hover:scale-110 transition-transform" />
-                    <span className="text-xs">Gastos</span>
-                  </div>
-                  <p className="text-xl font-bold text-[var(--danger)]">1.423,50 €</p>
-                </div>
-                <div className="p-4 rounded-xl bg-[var(--background-secondary)] border border-[var(--border)] hover:border-[var(--brand-cyan)] transition-colors group">
-                  <div className="flex items-center gap-2 text-[var(--brand-gray)] mb-2">
-                    <PiggyBank className="w-4 h-4 text-[var(--brand-cyan)] group-hover:scale-110 transition-transform" />
-                    <span className="text-xs">Ahorro</span>
-                  </div>
-                  <p className="text-xl font-bold">570,00 €</p>
-                </div>
-                <div className="p-4 rounded-xl bg-[var(--background-secondary)] border border-[var(--border)] hover:border-[var(--brand-cyan)] transition-colors group">
-                  <div className="flex items-center gap-2 text-[var(--brand-gray)] mb-2">
-                    <BarChart3 className="w-4 h-4 text-[var(--brand-purple)] group-hover:scale-110 transition-transform" />
-                    <span className="text-xs">Balance</span>
-                  </div>
-                  <p className="text-xl font-bold text-[var(--success)]">+856,50 €</p>
+              {/* Finy greeting */}
+              <div className="flex items-center gap-2.5 mb-5 p-3 rounded-xl bg-gradient-to-r from-[var(--brand-cyan)]/5 to-[var(--brand-purple)]/5 border border-[var(--border)]">
+                <Image src="/assets/finybuddy-mascot.png" alt="Finy" width={32} height={32} className="rounded-full w-8 h-8 flex-shrink-0" />
+                <div className="min-w-0">
+                  <p className="text-xs font-semibold text-[var(--brand-cyan)]">Vas bien este mes, sigue así</p>
+                  <p className="text-[10px] text-[var(--brand-gray)] italic">&ldquo;El ahorro es la base de la fortuna&rdquo;</p>
                 </div>
               </div>
 
-              {/* Progress Bars */}
-              <div className="grid lg:grid-cols-2 gap-6">
-                <div className="p-5 rounded-xl bg-[var(--background-secondary)] border border-[var(--border)]">
-                  <h3 className="font-semibold mb-4 flex items-center gap-2">
+              {/* KPI Cards - 3 like real dashboard */}
+              <div className="grid grid-cols-3 gap-2 sm:gap-4 mb-5">
+                <div className="p-2.5 sm:p-4 rounded-xl bg-[var(--background-secondary)] border border-[var(--border)]">
+                  <div className="flex items-center gap-1.5 text-[var(--brand-gray)] mb-1.5">
+                    <TrendingUp className="w-3.5 h-3.5 text-[var(--success)]" />
+                    <span className="text-[10px] sm:text-xs">Ingresos</span>
+                  </div>
+                  <p className="text-sm sm:text-xl font-bold text-[var(--success)]">2.850 €</p>
+                </div>
+                <div className="p-2.5 sm:p-4 rounded-xl bg-[var(--background-secondary)] border border-[var(--border)]">
+                  <div className="flex items-center gap-1.5 text-[var(--brand-gray)] mb-1.5">
+                    <TrendingDown className="w-3.5 h-3.5 text-[var(--danger)]" />
+                    <span className="text-[10px] sm:text-xs">Gastos</span>
+                  </div>
+                  <p className="text-sm sm:text-xl font-bold text-[var(--danger)]">1.424 €</p>
+                </div>
+                <div className="p-2.5 sm:p-4 rounded-xl bg-[var(--background-secondary)] border border-[var(--border)]">
+                  <div className="flex items-center gap-1.5 text-[var(--brand-gray)] mb-1.5">
+                    <PiggyBank className="w-3.5 h-3.5 text-[var(--brand-cyan)]" />
+                    <span className="text-[10px] sm:text-xs">Ahorro</span>
+                  </div>
+                  <p className="text-sm sm:text-xl font-bold text-[var(--brand-cyan)]">570 €</p>
+                </div>
+              </div>
+
+              {/* Main content grid */}
+              <div className="grid lg:grid-cols-2 gap-4 sm:gap-5">
+                {/* Evolución mensual - bar chart mockup */}
+                <div className="p-4 sm:p-5 rounded-xl bg-[var(--background-secondary)] border border-[var(--border)]">
+                  <h3 className="font-semibold mb-4 flex items-center gap-2 text-xs sm:text-sm">
                     <BarChart3 className="w-4 h-4 text-[var(--brand-purple)]" />
-                    Distribución 50/30/20
+                    Evolución mensual
                   </h3>
-                  <div className="space-y-4">
-                    <div>
-                      <div className="flex justify-between text-sm mb-1">
-                        <span className="text-[var(--brand-gray)]">Necesidades (50%)</span>
-                        <span className="font-medium">712 € / 1.425 €</span>
+                  {/* Simulated bar chart */}
+                  <div className="flex items-end gap-1.5 sm:gap-3 h-28 sm:h-32">
+                    {[
+                      { label: "Sep", income: 60, expense: 45, savings: 15 },
+                      { label: "Oct", income: 70, expense: 55, savings: 15 },
+                      { label: "Nov", income: 65, expense: 50, savings: 15 },
+                      { label: "Dic", income: 80, expense: 48, savings: 32 },
+                      { label: "Ene", income: 75, expense: 52, savings: 23 },
+                      { label: "Feb", income: 85, expense: 50, savings: 35 },
+                    ].map((m, i) => (
+                      <div key={i} className="flex-1 flex flex-col items-center gap-1">
+                        <div className="w-full flex gap-0.5 items-end h-24 sm:h-28">
+                          <div className="flex-1 rounded-t bg-[var(--success)]/80" style={{ height: `${m.income}%` }} />
+                          <div className="flex-1 rounded-t bg-[var(--danger)]/80" style={{ height: `${m.expense}%` }} />
+                          <div className="flex-1 rounded-t bg-[var(--brand-cyan)]/80" style={{ height: `${m.savings}%` }} />
+                        </div>
+                        <span className="text-[8px] sm:text-[10px] text-[var(--brand-gray)]">{m.label}</span>
                       </div>
-                      <div className="h-3 rounded-full bg-[var(--border)] overflow-hidden">
-                        <div className="h-full rounded-full bg-gradient-to-r from-[var(--brand-cyan)] to-[var(--brand-cyan)]/70 animate-progress-50" style={{ width: "50%" }} />
-                      </div>
-                    </div>
-                    <div>
-                      <div className="flex justify-between text-sm mb-1">
-                        <span className="text-[var(--brand-gray)]">Deseos (30%)</span>
-                        <span className="font-medium">641 € / 855 €</span>
-                      </div>
-                      <div className="h-3 rounded-full bg-[var(--border)] overflow-hidden">
-                        <div className="h-full rounded-full bg-gradient-to-r from-[var(--brand-purple)] to-[var(--brand-purple)]/70 animate-progress-75" style={{ width: "75%" }} />
-                      </div>
-                    </div>
-                    <div>
-                      <div className="flex justify-between text-sm mb-1">
-                        <span className="text-[var(--brand-gray)]">Ahorro (20%)</span>
-                        <span className="font-medium">570 € / 570 €</span>
-                      </div>
-                      <div className="h-3 rounded-full bg-[var(--border)] overflow-hidden">
-                        <div className="h-full rounded-full bg-gradient-to-r from-[var(--success)] to-[var(--success)]/70 animate-progress-100" style={{ width: "100%" }} />
-                      </div>
-                    </div>
+                    ))}
+                  </div>
+                  <div className="flex justify-center gap-3 sm:gap-4 mt-3">
+                    <div className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-[var(--success)]" /><span className="text-[8px] sm:text-[10px] text-[var(--brand-gray)]">Ingresos</span></div>
+                    <div className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-[var(--danger)]" /><span className="text-[8px] sm:text-[10px] text-[var(--brand-gray)]">Gastos</span></div>
+                    <div className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-[var(--brand-cyan)]" /><span className="text-[8px] sm:text-[10px] text-[var(--brand-gray)]">Ahorro</span></div>
                   </div>
                 </div>
 
-                <div className="p-5 rounded-xl bg-[var(--background-secondary)] border border-[var(--border)]">
-                  <h3 className="font-semibold mb-4 flex items-center gap-2">
-                    <Clock className="w-4 h-4 text-[var(--brand-cyan)]" />
-                    Últimas operaciones
-                  </h3>
-                  <div className="space-y-3">
-                    {[
-                      { icon: "🛒", name: "Supermercado", date: "Hoy", amount: "-45,80 €", type: "expense" },
-                      { icon: "💼", name: "Nómina", date: "1 dic", amount: "+2.850,00 €", type: "income" },
-                      { icon: "🏠", name: "Alquiler", date: "1 dic", amount: "-650,00 €", type: "expense" },
-                    ].map((op, i) => (
-                      <div key={i} className="flex items-center justify-between p-2 rounded-lg hover:bg-[var(--background)] transition-colors">
-                        <div className="flex items-center gap-3">
-                          <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-lg ${op.type === "income" ? "bg-[var(--success)]/10" : "bg-[var(--danger)]/10"}`}>
-                            {op.icon}
-                          </div>
-                          <div>
-                            <p className="text-sm font-medium">{op.name}</p>
-                            <p className="text-xs text-[var(--brand-gray)]">{op.date}</p>
-                          </div>
-                        </div>
-                        <span className={`text-sm font-semibold ${op.type === "income" ? "text-[var(--success)]" : "text-[var(--danger)]"}`}>
-                          {op.amount}
-                        </span>
+                {/* Distribución + Finy AI */}
+                <div className="space-y-4 sm:space-y-5">
+                  {/* Distribución pie chart mockup */}
+                  <div className="p-4 sm:p-5 rounded-xl bg-[var(--background-secondary)] border border-[var(--border)]">
+                    <h3 className="font-semibold mb-3 flex items-center gap-2 text-xs sm:text-sm">
+                      <PieChartIcon className="w-4 h-4 text-[var(--brand-cyan)]" />
+                      Distribución 50/30/20
+                    </h3>
+                    <div className="flex items-center gap-4">
+                      {/* Simulated donut chart */}
+                      <div className="relative w-20 h-20 sm:w-24 sm:h-24 flex-shrink-0">
+                        <svg viewBox="0 0 36 36" className="w-full h-full -rotate-90">
+                          <circle cx="18" cy="18" r="14" fill="none" stroke="#2EEB8F" strokeWidth="4" strokeDasharray="44 88" strokeDashoffset="0" />
+                          <circle cx="18" cy="18" r="14" fill="none" stroke="#8B4DFF" strokeWidth="4" strokeDasharray="26.4 88" strokeDashoffset="-44" />
+                          <circle cx="18" cy="18" r="14" fill="none" stroke="#00E5FF" strokeWidth="4" strokeDasharray="17.6 88" strokeDashoffset="-70.4" />
+                        </svg>
                       </div>
-                    ))}
+                      <div className="space-y-1.5 flex-1 min-w-0">
+                        <div className="flex items-center gap-1.5">
+                          <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: "#2EEB8F" }} />
+                          <span className="text-[10px] sm:text-xs text-[var(--brand-gray)]">Necesidades: 712 €</span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: "#8B4DFF" }} />
+                          <span className="text-[10px] sm:text-xs text-[var(--brand-gray)]">Deseos: 641 €</span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: "#00E5FF" }} />
+                          <span className="text-[10px] sm:text-xs text-[var(--brand-gray)]">Ahorro: 570 €</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Finy AI Panel */}
+                  <div className="p-4 sm:p-5 rounded-xl border border-[var(--brand-cyan)]/20 bg-gradient-to-br from-[var(--brand-cyan)]/5 to-[var(--brand-purple)]/5">
+                    <div className="flex items-center gap-2 mb-2.5">
+                      <Image src="/assets/finybuddy-mascot.png" alt="Finy" width={28} height={28} className="rounded-full w-7 h-7" />
+                      <div className="flex items-center gap-1">
+                        <span className="text-xs font-bold text-[var(--brand-cyan)]">Finy</span>
+                        <Sparkles className="w-3 h-3 text-[var(--brand-cyan)] opacity-60" />
+                      </div>
+                    </div>
+                    <div className="space-y-1.5">
+                      <div className="flex items-start gap-1.5">
+                        <span className="w-1.5 h-1.5 rounded-full bg-[var(--brand-cyan)] mt-1.5 flex-shrink-0" />
+                        <p className="text-[10px] sm:text-xs text-[var(--foreground)]">Has ahorrado un 20% de tus ingresos este mes</p>
+                      </div>
+                      <div className="flex items-start gap-1.5">
+                        <span className="w-1.5 h-1.5 rounded-full bg-[var(--brand-cyan)] mt-1.5 flex-shrink-0" />
+                        <p className="text-[10px] sm:text-xs text-[var(--foreground)]">Gastas un 12% menos que el mes pasado</p>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
