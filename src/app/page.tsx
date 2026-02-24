@@ -266,7 +266,7 @@ function FinyAIDemo() {
           {/* Two column layout */}
           <div className="grid lg:grid-cols-2">
             {/* LEFT: Raw bank extract */}
-            <div className="relative border-b lg:border-b-0 lg:border-r border-[var(--border)]">
+            <div className={`relative lg:border-r border-[var(--border)] ${phase === "idle" ? "" : "border-b lg:border-b-0"}`}>
               <div className="px-4 sm:px-5 py-2.5 border-b border-[var(--border)] bg-[var(--background-secondary)]/50">
                 <p className="text-[10px] sm:text-xs font-semibold flex items-center gap-2 text-[var(--brand-gray)] uppercase tracking-wider">
                   <Database className="w-3.5 h-3.5" />
@@ -301,8 +301,8 @@ function FinyAIDemo() {
               </div>
             </div>
 
-            {/* RIGHT: Categorized output */}
-            <div className="relative">
+            {/* RIGHT: Categorized output - hidden on mobile until demo starts */}
+            <div className={`relative ${phase === "idle" ? "hidden lg:block" : ""}`}>
               <div className="px-4 sm:px-5 py-2.5 border-b border-[var(--border)] bg-[var(--background-secondary)]/50">
                 <p className="text-[10px] sm:text-xs font-semibold flex items-center gap-2 text-[var(--brand-gray)] uppercase tracking-wider">
                   <Sparkles className="w-3.5 h-3.5" />
@@ -357,7 +357,7 @@ function FinyAIDemo() {
         </div>
 
         {/* Stats + Insights Panel */}
-        <div className={`transition-all duration-700 ${showStats ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8 pointer-events-none"}`}>
+        <div className={`transition-all duration-700 ${showStats ? "opacity-100 translate-y-0" : "hidden"}`}>
           <div className="grid lg:grid-cols-5 gap-4 sm:gap-5">
             {/* Total + Donut */}
             <div className="lg:col-span-2 rounded-2xl border border-[var(--border)] bg-[var(--background)]/80 backdrop-blur-xl p-4 sm:p-5 shadow-xl relative overflow-hidden">
