@@ -864,7 +864,7 @@ export default function HomePage() {
                   <div className="p-4 sm:p-5 rounded-xl bg-[var(--background-secondary)] border border-[var(--border)]">
                     <h3 className="font-semibold mb-3 flex items-center gap-2 text-xs sm:text-sm">
                       <PieChartIcon className="w-4 h-4 text-[var(--brand-cyan)]" />
-                      Distribución 50/30/20
+                      Distribución del mes
                     </h3>
                     <div className="flex items-center gap-4">
                       {/* Simulated donut chart */}
