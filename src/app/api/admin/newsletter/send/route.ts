@@ -8,7 +8,7 @@ const resend = new Resend(process.env.RESEND_API_KEY);
 
 export async function POST(request: NextRequest) {
   try {
-    const { subject, content, testEmail } = await request.json();
+    const { subject, content, testEmail, subscriberEmail } = await request.json();
 
     if (!subject || !content) {
       return NextResponse.json({ error: "Asunto y contenido son requeridos" }, { status: 400 });
@@ -16,28 +16,28 @@ export async function POST(request: NextRequest) {
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // If testEmail is provided, only send to that email
+    // Determine recipients
     let recipients: string[] = [];
 
     if (testEmail) {
       recipients = [testEmail];
+    } else if (subscriberEmail) {
+      recipients = [subscriberEmail];
     } else {
-      // Get active subscribers
       const { data: subscribers, error } = await supabase
         .from("newsletter_subscribers")
         .select("email")
         .eq("is_active", true);
 
       if (error) throw error;
-
       recipients = subscribers?.map(s => s.email) || [];
     }
 
     if (recipients.length === 0) {
-      return NextResponse.json({ error: "No hay destinatarios activos" }, { status: 400 });
+      return NextResponse.json({ error: "No hay destinatarios" }, { status: 400 });
     }
 
-    // Build HTML email
+    // Build HTML email - content is already HTML from the editor
     const htmlContent = `
       <!DOCTYPE html>
       <html>
@@ -61,7 +61,7 @@ export async function POST(request: NextRequest) {
 
             <!-- Contenido -->
             <div style="padding: 28px; color: #f1f5f9; font-size: 15px; line-height: 1.7;">
-              ${content.replace(/\n/g, '<br>')}
+              ${content}
             </div>
           </div>
 
@@ -82,7 +82,7 @@ export async function POST(request: NextRequest) {
     let sent = 0;
     const errors: string[] = [];
 
-    // Send emails in batches of 10 to avoid rate limits
+    // Send emails in batches of 10
     const batchSize = 10;
     for (let i = 0; i < recipients.length; i += batchSize) {
       const batch = recipients.slice(i, i + batchSize);
@@ -104,7 +104,6 @@ export async function POST(request: NextRequest) {
 
       await Promise.all(promises);
 
-      // Small delay between batches
       if (i + batchSize < recipients.length) {
         await new Promise(resolve => setTimeout(resolve, 500));
       }
@@ -115,7 +114,8 @@ export async function POST(request: NextRequest) {
       sent,
       total: recipients.length,
       errors: errors.length > 0 ? errors : undefined,
-      isTest: !!testEmail
+      isTest: !!testEmail,
+      isIndividual: !!subscriberEmail,
     });
   } catch (error) {
     console.error("Error sending newsletter:", error);
