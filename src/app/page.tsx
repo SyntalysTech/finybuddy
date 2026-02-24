@@ -431,19 +431,13 @@ export default function HomePage() {
       {/* Fixed Header */}
       <header className="fixed top-0 left-0 right-0 z-50 bg-[var(--background)]/80 backdrop-blur-xl border-b border-[var(--border)]">
         <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2">
-            <Image
-              src="/assets/finybuddy-mascot.png"
-              alt="FinyBuddy"
-              width={40}
-              height={40}
-            />
+          <Link href="/">
             <Image
               src="/assets/logo-finybuddy-wordmark.png"
               alt="FinyBuddy"
-              width={120}
-              height={30}
-              className="object-contain hidden sm:block"
+              width={130}
+              height={32}
+              className="object-contain"
             />
           </Link>
 
@@ -1017,17 +1011,14 @@ export default function HomePage() {
       <footer className="py-12 px-6 border-t border-[var(--border)] bg-[var(--background-secondary)]">
         <div className="max-w-7xl mx-auto">
           <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-            <div className="flex items-center gap-3">
+            <div className="flex items-center">
               <Image
-                src="/assets/finybuddy-mascot.png"
+                src="/assets/logo-finybuddy-wordmark.png"
                 alt="FinyBuddy"
-                width={36}
-                height={36}
+                width={120}
+                height={28}
+                className="object-contain"
               />
-              <div>
-                <p className="font-semibold">FinyBuddy</p>
-                <p className="text-xs text-[var(--brand-gray)]">Tu asistente financiero</p>
-              </div>
             </div>
 
             <div className="flex flex-wrap items-center gap-4 text-sm text-[var(--brand-gray)]">

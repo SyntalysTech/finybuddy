@@ -113,15 +113,7 @@ export default function Sidebar() {
     <>
       {/* Logo */}
       <div className="h-16 px-4 border-b border-[var(--sidebar-border)] flex items-center justify-between">
-        <Link href="/dashboard" className="flex items-center gap-3 overflow-hidden" onClick={handleNavClick}>
-          <div className="w-9 h-9 relative flex-shrink-0">
-            <Image
-              src="/assets/logo-isotope.png"
-              alt="FinyBuddy"
-              fill
-              className="object-contain"
-            />
-          </div>
+        <Link href="/dashboard" className="flex items-center overflow-hidden" onClick={handleNavClick}>
           <div
             className={`transition-all duration-300 ease-in-out ${
               collapsed && !isMobile ? "w-0 opacity-0" : "w-[140px] opacity-100"
@@ -409,20 +401,12 @@ export default function Sidebar() {
           <Menu className="w-6 h-6" />
         </button>
         <div className="flex-1 flex justify-center">
-          <Link href="/dashboard" className="flex items-center gap-2">
-            <div className="w-8 h-8 relative">
-              <Image
-                src="/assets/logo-isotope.png"
-                alt="FinyBuddy"
-                fill
-                className="object-contain"
-              />
-            </div>
+          <Link href="/dashboard">
             <Image
               src="/assets/logo-finybuddy-wordmark.png"
               alt="FinyBuddy"
-              width={100}
-              height={24}
+              width={120}
+              height={28}
               className="object-contain"
             />
           </Link>
