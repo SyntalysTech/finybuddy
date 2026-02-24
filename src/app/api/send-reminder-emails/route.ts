@@ -4,6 +4,104 @@ import { NextResponse } from "next/server";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
+function buildReminderEmailHtml(
+  profile: { full_name: string | null; email: string },
+  reminders: { name: string; amount: number | null }[],
+  dateLabel: string,
+  dateFormatted: string
+) {
+  const formatAmount = (amount: number) =>
+    amount.toLocaleString("es-ES", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    });
+
+  const colors = ["#3b82f6", "#8b5cf6", "#10b981", "#f59e0b", "#ef4444"];
+  const remindersList = reminders
+    .map(
+      (r, i) =>
+        `<div style="background: #1e293b; border-radius: 10px; padding: 16px; margin: 8px; border-left: 4px solid ${colors[i % colors.length]};">
+          <table style="width: 100%;"><tr>
+            <td style="color: #f1f5f9; font-weight: 600; font-size: 15px;">${r.name}</td>
+            ${r.amount ? `<td style="color: ${colors[i % colors.length]}; font-weight: 700; font-size: 18px; text-align: right;">${formatAmount(Number(r.amount))} €</td>` : ""}
+          </tr></table>
+        </div>`
+    )
+    .join("");
+
+  const remindersWithAmount = reminders.filter((r) => r.amount);
+  const totalAmount = remindersWithAmount.reduce(
+    (sum, r) => sum + Number(r.amount),
+    0
+  );
+
+  return `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    </head>
+    <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #0f172a; margin: 0; padding: 24px;">
+      <div style="max-width: 480px; margin: 0 auto;">
+        <!-- Header con logo -->
+        <div style="text-align: center; padding: 32px 0;">
+          <img src="https://finybuddy.com/assets/logo-finybuddy-wordmark.png" alt="FinyBuddy" style="height: 48px; width: auto;">
+        </div>
+
+        <!-- Card principal -->
+        <div style="background: linear-gradient(145deg, #1e293b 0%, #334155 100%); border-radius: 20px; overflow: hidden; border: 1px solid #475569;">
+          <!-- Alerta -->
+          <div style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); padding: 16px 24px; text-align: center;">
+            <span style="color: white; font-size: 16px; font-weight: 600;">⏰ Recordatorio de vencimientos</span>
+          </div>
+
+          <!-- Contenido -->
+          <div style="padding: 28px;">
+            <h2 style="color: #f1f5f9; margin: 0 0 8px 0; font-size: 22px; font-weight: 600; text-align: center;">
+              ¡Hola${profile.full_name ? ` ${profile.full_name}` : ""}! 👋
+            </h2>
+            <p style="color: #94a3b8; margin: 0 0 24px 0; font-size: 15px; line-height: 1.6; text-align: center;">
+              Te recordamos que ${dateLabel} <strong style="color: #f1f5f9;">${dateFormatted}</strong> vence${reminders.length === 1 ? "" : "n"}:
+            </p>
+
+            <!-- Recordatorios -->
+            <div style="background: #0f172a; border-radius: 12px; padding: 4px; margin-bottom: 20px;">
+              ${remindersList}
+            </div>
+
+            <!-- Total -->
+            ${
+              remindersWithAmount.length > 1
+                ? `<div style="background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); border-radius: 12px; padding: 16px; text-align: center; margin-bottom: 24px;">
+                <div style="color: rgba(255,255,255,0.8); font-size: 13px; text-transform: uppercase; letter-spacing: 1px;">Total ${dateLabel}</div>
+                <div style="color: white; font-size: 32px; font-weight: 700; margin-top: 4px;">${formatAmount(totalAmount)} €</div>
+              </div>`
+                : ""
+            }
+
+            <!-- Botón -->
+            <a href="https://finybuddy.com/calendario" style="display: block; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); color: white; text-decoration: none; padding: 16px 24px; border-radius: 12px; font-weight: 600; text-align: center; font-size: 15px;">
+              📅 Ver mi calendario
+            </a>
+          </div>
+        </div>
+
+        <!-- Footer -->
+        <div style="text-align: center; padding: 24px 0;">
+          <p style="color: #64748b; margin: 0 0 8px 0; font-size: 13px;">
+            Puedes desactivar estos emails desde Ajustes en tu cuenta.
+          </p>
+          <p style="color: #475569; margin: 0; font-size: 12px;">
+            © 2025 FinyBuddy · Tu asistente financiero personal
+          </p>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+}
+
 export async function POST(request: Request) {
   // Verificar que viene de Vercel Cron
   const authHeader = request.headers.get("authorization");
@@ -16,24 +114,17 @@ export async function POST(request: Request) {
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   );
 
-  // Obtener recordatorios que vencen mañana
+  // Obtener recordatorios que vencen hoy y mañana
+  const today = new Date();
+  const todayStr = today.toISOString().split("T")[0];
   const tomorrow = new Date();
   tomorrow.setDate(tomorrow.getDate() + 1);
   const tomorrowStr = tomorrow.toISOString().split("T")[0];
 
-  // Obtener recordatorios con usuarios que tienen email_reminder_alerts activado
   const { data: reminders, error: remindersError } = await supabase
-    .from("reminders")
-    .select(
-      `
-      id,
-      concept,
-      amount,
-      reminder_date,
-      user_id
-    `
-    )
-    .eq("reminder_date", tomorrowStr)
+    .from("calendar_reminders")
+    .select("id, name, amount, reminder_date, user_id")
+    .in("reminder_date", [todayStr, tomorrowStr])
     .eq("is_completed", false);
 
   if (remindersError) {
@@ -45,13 +136,13 @@ export async function POST(request: Request) {
   }
 
   if (!reminders || reminders.length === 0) {
-    return NextResponse.json({ sent: 0, message: "No reminders for tomorrow" });
+    return NextResponse.json({ sent: 0, message: "No reminders for today or tomorrow" });
   }
 
   // Obtener los user_ids únicos
   const userIds = [...new Set(reminders.map((r) => r.user_id))];
 
-  // Obtener perfiles de esos usuarios con email_reminder_alerts activado
+  // Obtener perfiles con email_reminder_alerts activado
   const { data: profiles, error: profilesError } = await supabase
     .from("profiles")
     .select("id, email, full_name, email_reminder_alerts")
@@ -66,141 +157,61 @@ export async function POST(request: Request) {
     );
   }
 
-  // Crear mapa de perfiles
   const profileMap = new Map(profiles?.map((p) => [p.id, p]) || []);
 
   let sent = 0;
   const errors: string[] = [];
 
-  // Agrupar recordatorios por usuario
-  const remindersByUser = new Map<string, typeof reminders>();
+  // Agrupar recordatorios por usuario y por fecha
+  const remindersByUserAndDate = new Map<string, Map<string, typeof reminders>>();
   for (const reminder of reminders) {
     const profile = profileMap.get(reminder.user_id);
-    if (!profile) continue; // Usuario no tiene emails activados
+    if (!profile) continue;
 
-    if (!remindersByUser.has(reminder.user_id)) {
-      remindersByUser.set(reminder.user_id, []);
+    if (!remindersByUserAndDate.has(reminder.user_id)) {
+      remindersByUserAndDate.set(reminder.user_id, new Map());
     }
-    remindersByUser.get(reminder.user_id)!.push(reminder);
+    const userMap = remindersByUserAndDate.get(reminder.user_id)!;
+    if (!userMap.has(reminder.reminder_date)) {
+      userMap.set(reminder.reminder_date, []);
+    }
+    userMap.get(reminder.reminder_date)!.push(reminder);
   }
 
-  // Enviar un email por usuario con todos sus recordatorios
-  for (const [userId, userReminders] of remindersByUser) {
+  // Enviar emails por usuario y fecha
+  for (const [userId, dateMap] of remindersByUserAndDate) {
     const profile = profileMap.get(userId);
     if (!profile?.email) continue;
 
-    const formatAmount = (amount: number) =>
-      amount.toLocaleString("es-ES", {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2,
+    for (const [date, userReminders] of dateMap) {
+      const isToday = date === todayStr;
+      const dateLabel = isToday ? "hoy" : "mañana";
+      const dateFormatted = new Date(date + "T00:00:00").toLocaleDateString("es-ES", {
+        weekday: "long",
+        day: "numeric",
+        month: "long",
       });
 
-    const colors = ["#3b82f6", "#8b5cf6", "#10b981", "#f59e0b", "#ef4444"];
-    const remindersList = userReminders
-      .map(
-        (r, i) =>
-          `<div style="background: #1e293b; border-radius: 10px; padding: 16px; margin: 8px; border-left: 4px solid ${colors[i % colors.length]};">
-            <table style="width: 100%;"><tr>
-              <td style="color: #f1f5f9; font-weight: 600; font-size: 15px;">${r.concept}</td>
-              <td style="color: ${colors[i % colors.length]}; font-weight: 700; font-size: 18px; text-align: right;">${formatAmount(Number(r.amount))} €</td>
-            </tr></table>
-          </div>`
-      )
-      .join("");
+      const subjectPrefix = isToday ? "⏰ Hoy vence" : "Recordatorio";
+      const subject =
+        userReminders.length === 1
+          ? `${subjectPrefix}: ${userReminders[0].name}`
+          : isToday
+            ? `⏰ Tienes ${userReminders.length} recordatorios que vencen hoy`
+            : `Tienes ${userReminders.length} recordatorios que vencen mañana`;
 
-    const totalAmount = userReminders.reduce(
-      (sum, r) => sum + Number(r.amount),
-      0
-    );
-
-    const tomorrowFormatted = new Date(tomorrowStr).toLocaleDateString("es-ES", {
-      weekday: "long",
-      day: "numeric",
-      month: "long",
-    });
-
-    try {
-      await resend.emails.send({
-        from: "FinyBuddy <notificaciones@finybuddy.com>",
-        to: profile.email,
-        subject:
-          userReminders.length === 1
-            ? `Recordatorio: ${userReminders[0].concept} vence mañana`
-            : `Tienes ${userReminders.length} recordatorios que vencen mañana`,
-        html: `
-          <!DOCTYPE html>
-          <html>
-          <head>
-            <meta charset="utf-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-          </head>
-          <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #0f172a; margin: 0; padding: 24px;">
-            <div style="max-width: 480px; margin: 0 auto;">
-              <!-- Header con logo -->
-              <div style="text-align: center; padding: 32px 0;">
-                <img src="https://finybuddy.com/assets/logo-finybuddy-wordmark.png" alt="FinyBuddy" style="height: 48px; width: auto;">
-              </div>
-
-              <!-- Card principal -->
-              <div style="background: linear-gradient(145deg, #1e293b 0%, #334155 100%); border-radius: 20px; overflow: hidden; border: 1px solid #475569;">
-                <!-- Alerta -->
-                <div style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); padding: 16px 24px; text-align: center;">
-                  <span style="color: white; font-size: 16px; font-weight: 600;">⏰ Recordatorio de vencimientos</span>
-                </div>
-
-                <!-- Contenido -->
-                <div style="padding: 28px;">
-                  <div style="text-align: center; margin-bottom: 20px;">
-                    <img src="https://finybuddy.com/assets/finybuddy-mascot.png" alt="FinyBuddy" style="height: 80px; width: auto;">
-                  </div>
-
-                  <h2 style="color: #f1f5f9; margin: 0 0 8px 0; font-size: 22px; font-weight: 600; text-align: center;">
-                    ¡Hola${profile.full_name ? ` ${profile.full_name}` : ""}! 👋
-                  </h2>
-                  <p style="color: #94a3b8; margin: 0 0 24px 0; font-size: 15px; line-height: 1.6; text-align: center;">
-                    Te recordamos que mañana <strong style="color: #f1f5f9;">${tomorrowFormatted}</strong> vence${userReminders.length === 1 ? "" : "n"}:
-                  </p>
-
-                  <!-- Recordatorios -->
-                  <div style="background: #0f172a; border-radius: 12px; padding: 4px; margin-bottom: 20px;">
-                    ${remindersList}
-                  </div>
-
-                  <!-- Total -->
-                  ${
-                    userReminders.length > 1
-                      ? `<div style="background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); border-radius: 12px; padding: 16px; text-align: center; margin-bottom: 24px;">
-                      <div style="color: rgba(255,255,255,0.8); font-size: 13px; text-transform: uppercase; letter-spacing: 1px;">Total a pagar mañana</div>
-                      <div style="color: white; font-size: 32px; font-weight: 700; margin-top: 4px;">${formatAmount(totalAmount)} €</div>
-                    </div>`
-                      : ""
-                  }
-
-                  <!-- Botón -->
-                  <a href="https://finybuddy.com/calendario" style="display: block; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); color: white; text-decoration: none; padding: 16px 24px; border-radius: 12px; font-weight: 600; text-align: center; font-size: 15px;">
-                    📅 Ver mi calendario
-                  </a>
-                </div>
-              </div>
-
-              <!-- Footer -->
-              <div style="text-align: center; padding: 24px 0;">
-                <p style="color: #64748b; margin: 0 0 8px 0; font-size: 13px;">
-                  Puedes desactivar estos emails desde Ajustes en tu cuenta.
-                </p>
-                <p style="color: #475569; margin: 0; font-size: 12px;">
-                  © 2025 FinyBuddy · Tu asistente financiero personal
-                </p>
-              </div>
-            </div>
-          </body>
-          </html>
-        `,
-      });
-      sent++;
-    } catch (error) {
-      console.error(`Error sending email to ${profile.email}:`, error);
-      errors.push(`${profile.email}: ${String(error)}`);
+      try {
+        await resend.emails.send({
+          from: "FinyBuddy <notificaciones@finybuddy.com>",
+          to: profile.email,
+          subject,
+          html: buildReminderEmailHtml(profile, userReminders, dateLabel, dateFormatted),
+        });
+        sent++;
+      } catch (error) {
+        console.error(`Error sending email to ${profile.email}:`, error);
+        errors.push(`${profile.email}: ${String(error)}`);
+      }
     }
   }
 

@@ -1113,6 +1113,21 @@ function ReminderModal({
           .insert(reminderData);
 
         if (insertError) throw insertError;
+
+        // Enviar email si el recordatorio es para hoy o mañana
+        try {
+          await fetch("/api/reminder-notify", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              reminderName: reminderData.name,
+              reminderAmount: reminderData.amount,
+              reminderDate: reminderData.reminder_date,
+            }),
+          });
+        } catch {
+          // No bloquear si falla el email
+        }
       }
 
       onSave();
