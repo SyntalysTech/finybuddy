@@ -781,9 +781,9 @@ export default function DashboardPage() {
                     <p className="text-xs sm:text-sm text-[var(--brand-gray)]">progreso total</p>
                   </div>
                 </div>
-                <div className="progress-bar h-1.5 sm:h-2 overflow-hidden">
+                <div className="h-1.5 sm:h-2 rounded-full overflow-hidden bg-[#02EAFF]/15">
                   <div
-                    className="progress-bar-fill bg-gradient-to-r from-[var(--brand-purple)] to-[var(--brand-cyan)] animate-shimmer"
+                    className="h-full rounded-full bg-gradient-to-r from-[#0284C7] via-[#02EAFF] to-[#38BDF8] animate-shimmer"
                     style={{ width: `${Math.min(savingsSummary.overall_progress, 100)}%` }}
                   />
                 </div>

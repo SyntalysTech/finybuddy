@@ -1044,12 +1044,12 @@ function PrevisionPageContent() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-[var(--brand-gray)]">Ahorro previsto</p>
-                <p className={`text-xl font-bold ${plannedSavings >= 0 ? "text-[var(--brand-purple)]" : "text-[var(--danger)]"}`}>
+                <p className={`text-xl font-bold ${plannedSavings >= 0 ? "text-[var(--brand-cyan)]" : "text-[var(--danger)]"}`}>
                   {formatCurrency(plannedSavings)}
                 </p>
               </div>
-              <div className="p-2 rounded-lg bg-[var(--brand-purple)]/10">
-                <PiggyBank className="w-5 h-5 text-[var(--brand-purple)]" />
+              <div className="p-2 rounded-lg bg-[var(--brand-cyan)]/10">
+                <PiggyBank className="w-5 h-5 text-[var(--brand-cyan)]" />
               </div>
             </div>
           </div>
@@ -1296,14 +1296,14 @@ function PrevisionPageContent() {
 
               {/* Planned Savings Panel - User defined savings */}
               <div className="card overflow-hidden">
-                <div className="px-6 py-4 border-b border-[var(--border)] bg-[var(--brand-purple)]/5">
+                <div className="px-6 py-4 border-b border-[var(--border)] bg-[var(--brand-cyan)]/5">
                   <div className="flex items-center justify-between">
                     <h3 className="font-semibold flex items-center gap-2">
-                      <PiggyBank className="w-5 h-5 text-[var(--brand-purple)]" />
+                      <PiggyBank className="w-5 h-5 text-[var(--brand-cyan)]" />
                       Ahorro previsto ({ruleSavings}%)
                     </h3>
                     <div className="text-right">
-                      <span className="text-lg font-bold text-[var(--brand-purple)]">
+                      <span className="text-lg font-bold text-[var(--brand-cyan)]">
                         {formatCurrency(plannedSavings)}
                       </span>
                       {totalIncome > 0 && (
@@ -1363,7 +1363,7 @@ function PrevisionPageContent() {
                       </div>
                       <button
                         onClick={startEditingPlannedSavings}
-                        className="flex items-center gap-2 px-4 py-2 rounded-lg bg-[var(--brand-purple)]/10 text-[var(--brand-purple)] hover:bg-[var(--brand-purple)]/20 transition-colors"
+                        className="flex items-center gap-2 px-4 py-2 rounded-lg bg-[var(--brand-cyan)]/10 text-[var(--brand-cyan)] hover:bg-[var(--brand-cyan)]/20 transition-colors"
                       >
                         <Edit2 className="w-4 h-4" />
                         Editar
