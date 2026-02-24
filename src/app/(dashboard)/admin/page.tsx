@@ -718,7 +718,7 @@ export default function AdminPage() {
         }
       />
 
-      <div className="p-6 space-y-6">
+      <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
         {/* Toast notifications */}
         {error && <Toast type="error" message={error} onClose={() => setError("")} />}
         {success && <Toast type="success" message={success} onClose={() => setSuccess("")} />}
@@ -877,10 +877,10 @@ export default function AdminPage() {
             {/* Editor Section */}
             <div className="bg-[var(--card-bg)] border border-[var(--border)] rounded-2xl overflow-hidden">
               {/* Editor Header */}
-              <div className="px-6 py-4 border-b border-[var(--border)] flex items-center justify-between">
+              <div className="px-4 sm:px-6 py-3 sm:py-4 border-b border-[var(--border)] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div className="flex items-center gap-3">
                   <FileText className="w-5 h-5 text-[var(--brand-purple)]" />
-                  <h3 className="font-semibold">Editor de Newsletter</h3>
+                  <h3 className="font-semibold text-sm sm:text-base">Editor de Newsletter</h3>
                 </div>
                 <div className="flex items-center gap-2">
                   {draftSaved && (
@@ -893,7 +893,7 @@ export default function AdminPage() {
                   )}
                   <button
                     onClick={saveDraft}
-                    className="flex items-center gap-2 px-4 py-2 rounded-xl gradient-brand text-white text-sm font-medium hover:opacity-90 transition-opacity"
+                    className="flex items-center gap-2 px-3 sm:px-4 py-2 rounded-xl gradient-brand text-white text-xs sm:text-sm font-medium hover:opacity-90 transition-opacity"
                   >
                     <Save className="w-4 h-4" />
                     Guardar borrador
@@ -901,7 +901,7 @@ export default function AdminPage() {
                 </div>
               </div>
 
-              <div className="p-6 space-y-4">
+              <div className="p-4 sm:p-6 space-y-4">
                 {/* Subject */}
                 <div>
                   <label className="block text-sm font-medium mb-2">Asunto</label>
@@ -980,7 +980,7 @@ export default function AdminPage() {
                       ref={editorRef}
                       contentEditable
                       onInput={syncFromVisual}
-                      className="min-h-[300px] max-h-[500px] overflow-y-auto px-4 py-3 bg-[var(--background-secondary)] border border-[var(--border)] rounded-b-xl focus:outline-none focus:border-[var(--brand-purple)] focus:ring-1 focus:ring-[var(--brand-purple)]/20 prose prose-invert prose-sm max-w-none [&_a]:text-[var(--brand-cyan)] [&_h2]:text-lg [&_h2]:font-bold [&_h2]:mt-4 [&_h2]:mb-2 [&_img]:rounded-lg [&_img]:max-w-full [&_ul]:list-disc [&_ul]:pl-5"
+                      className="min-h-[200px] sm:min-h-[300px] max-h-[400px] sm:max-h-[500px] overflow-y-auto px-4 py-3 bg-[var(--background-secondary)] border border-[var(--border)] rounded-b-xl focus:outline-none focus:border-[var(--brand-purple)] focus:ring-1 focus:ring-[var(--brand-purple)]/20 prose prose-sm max-w-none text-[var(--foreground)] [&_a]:text-[var(--brand-cyan)] [&_h2]:text-lg [&_h2]:font-bold [&_h2]:mt-4 [&_h2]:mb-2 [&_img]:rounded-lg [&_img]:max-w-full [&_ul]:list-disc [&_ul]:pl-5"
                       suppressContentEditableWarning
                     />
                   </div>
@@ -992,8 +992,8 @@ export default function AdminPage() {
                     <textarea
                       value={htmlContent}
                       onChange={(e) => setHtmlContent(e.target.value)}
-                      rows={16}
-                      className="w-full px-4 py-3 bg-[var(--background-secondary)] border border-[var(--border)] rounded-xl focus:outline-none focus:border-[var(--brand-purple)] focus:ring-2 focus:ring-[var(--brand-purple)]/20 font-mono text-sm resize-none"
+                      rows={10}
+                      className="w-full px-4 py-3 bg-[var(--background-secondary)] border border-[var(--border)] rounded-xl focus:outline-none focus:border-[var(--brand-purple)] focus:ring-2 focus:ring-[var(--brand-purple)]/20 font-mono text-xs sm:text-sm resize-y min-h-[200px] sm:min-h-[300px]"
                       placeholder="<h2>Tu newsletter aquí...</h2>&#10;<p>Escribe HTML directamente...</p>"
                       spellCheck={false}
                     />
@@ -1001,7 +1001,7 @@ export default function AdminPage() {
                 )}
 
                 {/* Test Email */}
-                <div className="flex gap-2 pt-2 border-t border-[var(--border)]">
+                <div className="flex flex-col sm:flex-row gap-2 pt-3 border-t border-[var(--border)]">
                   <div className="relative flex-1">
                     <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--brand-gray)]" />
                     <input
@@ -1015,7 +1015,7 @@ export default function AdminPage() {
                   <button
                     onClick={handleSendTest}
                     disabled={sendingTest || !newsletterSubject || !testEmail}
-                    className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-[var(--border)] hover:bg-[var(--background-secondary)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+                    className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-[var(--border)] hover:bg-[var(--background-secondary)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm shrink-0"
                   >
                     {sendingTest ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
                     Enviar prueba
@@ -1027,29 +1027,31 @@ export default function AdminPage() {
             {/* Subscribers Section - Send individually */}
             <div className="bg-[var(--card-bg)] border border-[var(--border)] rounded-2xl overflow-hidden">
               {/* Header */}
-              <div className="px-6 py-4 border-b border-[var(--border)] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                <div className="flex items-center gap-3">
-                  <Send className="w-5 h-5 text-[var(--brand-cyan)]" />
-                  <h3 className="font-semibold">Enviar a suscriptores</h3>
+              <div className="px-4 sm:px-6 py-3 sm:py-4 border-b border-[var(--border)] flex flex-col gap-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <Send className="w-5 h-5 text-[var(--brand-cyan)]" />
+                    <h3 className="font-semibold text-sm sm:text-base">Enviar a suscriptores</h3>
+                  </div>
                 </div>
-                <div className="flex gap-3 text-sm">
-                  <div className="px-3 py-1.5 rounded-lg bg-[var(--background-secondary)] border border-[var(--border)]">
+                <div className="flex flex-wrap gap-2 text-xs sm:text-sm">
+                  <div className="px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg bg-[var(--background-secondary)] border border-[var(--border)]">
                     <span className="text-[var(--brand-gray)]">Activos:</span>
-                    <span className="ml-1.5 font-bold text-[var(--success)]">{activeSubscribers.length}</span>
+                    <span className="ml-1 font-bold text-[var(--success)]">{activeSubscribers.length}</span>
                   </div>
-                  <div className="px-3 py-1.5 rounded-lg bg-[var(--background-secondary)] border border-[var(--border)]">
+                  <div className="px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg bg-[var(--background-secondary)] border border-[var(--border)]">
                     <span className="text-[var(--brand-gray)]">Enviados:</span>
-                    <span className="ml-1.5 font-bold text-[var(--brand-cyan)]">{sentTo.size}</span>
+                    <span className="ml-1 font-bold text-[var(--brand-cyan)]">{sentTo.size}</span>
                   </div>
-                  <div className="px-3 py-1.5 rounded-lg bg-[var(--background-secondary)] border border-[var(--border)]">
+                  <div className="px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg bg-[var(--background-secondary)] border border-[var(--border)]">
                     <span className="text-[var(--brand-gray)]">Total:</span>
-                    <span className="ml-1.5 font-bold">{subscribers.length}</span>
+                    <span className="ml-1 font-bold">{subscribers.length}</span>
                   </div>
                 </div>
               </div>
 
               {!hasContent && (
-                <div className="px-6 py-8 text-center text-[var(--brand-gray)]">
+                <div className="px-4 sm:px-6 py-8 text-center text-[var(--brand-gray)]">
                   <Newspaper className="w-8 h-8 mx-auto mb-3 opacity-40" />
                   <p className="text-sm">Escribe el asunto y contenido de la newsletter y guarda el borrador para poder enviar</p>
                 </div>
@@ -1058,7 +1060,7 @@ export default function AdminPage() {
               {hasContent && (
                 <div>
                   {/* Search */}
-                  <div className="px-6 py-3 border-b border-[var(--border)]">
+                  <div className="px-4 sm:px-6 py-3 border-b border-[var(--border)]">
                     <div className="relative">
                       <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--brand-gray)]" />
                       <input
@@ -1080,7 +1082,7 @@ export default function AdminPage() {
                       return (
                         <div
                           key={subscriber.id}
-                          className="flex items-center justify-between px-6 py-3 hover:bg-[var(--background-secondary)]/50 transition-colors"
+                          className="flex flex-col sm:flex-row sm:items-center justify-between px-4 sm:px-6 py-3 gap-2 hover:bg-[var(--background-secondary)]/50 transition-colors"
                         >
                           <div className="flex-1 min-w-0">
                             <p className="font-medium text-sm truncate">{subscriber.email}</p>
@@ -1088,8 +1090,8 @@ export default function AdminPage() {
                               <p className="text-xs text-[var(--brand-gray)] truncate">{subscriber.name}</p>
                             )}
                           </div>
-                          <div className="flex items-center gap-2 ml-4 shrink-0">
-                            <span className="text-xs text-[var(--brand-gray)] px-2 py-0.5 rounded bg-[var(--background-secondary)]">
+                          <div className="flex items-center gap-2 shrink-0">
+                            <span className="text-xs text-[var(--brand-gray)] px-2 py-0.5 rounded bg-[var(--background-secondary)] hidden sm:inline">
                               {subscriber.source}
                             </span>
                             {isSent ? (
