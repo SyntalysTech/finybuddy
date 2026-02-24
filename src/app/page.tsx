@@ -1397,7 +1397,7 @@ export default function HomePage() {
               Finy AI en acción
             </div>
             <h2 className="text-2xl sm:text-3xl md:text-5xl font-bold mb-3 sm:mb-4">
-              De caos bancario a <span className="gradient-brand-text">claridad total</span>
+              De caos financiero a <span className="gradient-brand-text">claridad total</span>
             </h2>
             <p className="text-[var(--brand-gray)] max-w-2xl mx-auto text-sm sm:text-lg">
               Tus movimientos transformados en decisiones financieras inteligentes. En milisegundos.
