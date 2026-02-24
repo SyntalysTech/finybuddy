@@ -471,7 +471,7 @@ export default function DashboardPage() {
           <div className="flex items-center gap-2.5 sm:gap-3 relative">
             <div className="animate-float-slow flex-shrink-0">
               <Image
-                src="/assets/finybuddy-mascot.png"
+                src="/assets/finy-mascota-minimalista.png"
                 alt="FinyBuddy"
                 width={40}
                 height={40}
@@ -714,7 +714,7 @@ export default function DashboardPage() {
             <div className="flex items-center gap-2.5 sm:gap-3 mb-3 sm:mb-4 relative">
               <div className="animate-bounce-subtle flex-shrink-0">
                 <Image
-                  src="/assets/finybuddy-mascot.png"
+                  src="/assets/finy-mascota-minimalista.png"
                   alt="Finy"
                   width={40}
                   height={40}

@@ -56,7 +56,7 @@ export default function ResetPasswordPage() {
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <Image
-            src="/assets/finybuddy-mascot.png"
+            src="/assets/finy-mascota-minimalista.png"
             alt="FinyBuddy"
             width={64}
             height={64}

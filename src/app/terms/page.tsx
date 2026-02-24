@@ -10,7 +10,7 @@ export default function TermsPage() {
         <div className="max-w-4xl mx-auto px-6 h-16 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2">
             <Image
-              src="/assets/finybuddy-mascot.png"
+              src="/assets/finy-mascota-minimalista.png"
               alt="FinyBuddy"
               width={36}
               height={36}

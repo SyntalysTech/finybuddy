@@ -103,7 +103,7 @@ export default function RegisterPage() {
           <div className="text-center mb-8">
             <Link href="/" className="inline-flex items-center gap-3">
               <Image
-                src="/assets/finybuddy-mascot.png"
+                src="/assets/finy-mascota-minimalista.png"
                 alt="FinyBuddy"
                 width={48}
                 height={48}

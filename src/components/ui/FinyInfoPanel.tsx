@@ -71,7 +71,7 @@ export default function FinyInfoPanel({
       >
         <div className="w-9 h-9 sm:w-10 sm:h-10 relative shrink-0">
           <Image
-            src="/assets/finybuddy-mascot.png"
+            src="/assets/finy-mascota-minimalista.png"
             alt="Finy"
             fill
             className="object-contain group-hover:scale-105 transition-transform duration-200"

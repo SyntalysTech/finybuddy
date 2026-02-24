@@ -507,7 +507,7 @@ function ChatPageContent() {
 
             <div className="w-8 h-8 sm:w-10 sm:h-10 relative shrink-0">
               <Image
-                src="/assets/finybuddy-mascot.png"
+                src="/assets/finy-mascota-minimalista.png"
                 alt="FinyBot"
                 fill
                 className="object-contain"
@@ -542,7 +542,7 @@ function ChatPageContent() {
           <div className="h-full flex flex-col items-center justify-center px-4 sm:px-6 py-8 sm:py-12">
             <div className="w-16 h-16 sm:w-20 sm:h-20 relative mb-4 sm:mb-5">
               <Image
-                src="/assets/finybuddy-mascot.png"
+                src="/assets/finy-mascota-minimalista.png"
                 alt="FinyBot"
                 fill
                 className="object-contain"
@@ -601,7 +601,7 @@ function ChatPageContent() {
                 ) : (
                   <div className="w-7 h-7 sm:w-8 sm:h-8 relative shrink-0">
                     <Image
-                      src="/assets/finybuddy-mascot.png"
+                      src="/assets/finy-mascota-minimalista.png"
                       alt="FinyBot"
                       fill
                       className="object-contain"
@@ -633,7 +633,7 @@ function ChatPageContent() {
               <div className="flex gap-2 sm:gap-3 max-w-4xl">
                 <div className="w-7 h-7 sm:w-8 sm:h-8 relative shrink-0">
                   <Image
-                    src="/assets/finybuddy-mascot.png"
+                    src="/assets/finy-mascota-minimalista.png"
                     alt="FinyBot"
                     fill
                     className="object-contain"
