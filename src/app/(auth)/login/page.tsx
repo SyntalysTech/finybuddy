@@ -78,18 +78,12 @@ export default function LoginPage() {
         <div className="w-full max-w-md">
           {/* Logo */}
           <div className="text-center mb-8">
-            <Link href="/" className="inline-flex items-center gap-3">
-              <Image
-                src="/assets/finybuddy-mascot.png"
-                alt="FinyBuddy"
-                width={48}
-                height={48}
-              />
+            <Link href="/" className="inline-block">
               <Image
                 src="/assets/logo-finybuddy-wordmark.png"
                 alt="FinyBuddy"
-                width={160}
-                height={40}
+                width={180}
+                height={45}
                 className="object-contain"
               />
             </Link>
@@ -270,18 +264,20 @@ export default function LoginPage() {
 
       {/* Right Panel - Illustration */}
       <div className="hidden lg:flex flex-1 gradient-brand items-center justify-center p-8">
-        <div className="text-center text-white">
-          <Image
-            src="/assets/finybuddy-mascot.png"
-            alt="FinyBuddy Mascot"
-            width={300}
-            height={300}
-            className="mx-auto mb-8"
-          />
+        <div className="text-center text-white max-w-md">
+          <div className="mb-8">
+            <Image
+              src="/assets/logo-finybuddy-wordmark.png"
+              alt="FinyBuddy"
+              width={240}
+              height={60}
+              className="mx-auto brightness-0 invert"
+            />
+          </div>
           <h2 className="text-3xl font-bold mb-4">
             Toma el control de tus finanzas
           </h2>
-          <p className="text-lg opacity-90 max-w-md">
+          <p className="text-lg opacity-90">
             Gestiona tus ingresos, gastos, ahorros y deudas en un solo lugar.
             Tu compañero financiero personal.
           </p>

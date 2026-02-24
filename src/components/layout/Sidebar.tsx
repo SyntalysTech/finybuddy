@@ -112,8 +112,8 @@ export default function Sidebar() {
   const NavContent = () => (
     <>
       {/* Logo */}
-      <div className="h-16 px-4 border-b border-[var(--sidebar-border)] flex items-center justify-between">
-        <Link href="/dashboard" className="flex items-center overflow-hidden" onClick={handleNavClick}>
+      <div className="h-16 px-4 border-b border-[var(--sidebar-border)] flex items-center justify-center relative">
+        <Link href="/dashboard" className="flex items-center justify-center overflow-hidden" onClick={handleNavClick}>
           <div
             className={`transition-all duration-300 ease-in-out ${
               collapsed && !isMobile ? "w-0 opacity-0" : "w-[140px] opacity-100"
@@ -132,7 +132,7 @@ export default function Sidebar() {
         {isMobile && (
           <button
             onClick={() => setMobileOpen(false)}
-            className="p-2 rounded-lg hover:bg-[var(--sidebar-hover)] transition-colors lg:hidden"
+            className="absolute right-3 p-2 rounded-lg hover:bg-[var(--sidebar-hover)] transition-colors lg:hidden"
           >
             <X className="w-5 h-5" />
           </button>
@@ -142,7 +142,7 @@ export default function Sidebar() {
       {/* Navigation */}
       <nav className="flex-1 overflow-y-auto py-4">
         {/* Main Navigation */}
-        <div className="px-3 mb-6">
+        <div className="px-3 mb-2">
           <div
             className={`px-3 mb-2 overflow-hidden transition-all duration-300 ease-in-out ${
               collapsed && !isMobile ? "h-0 opacity-0" : "h-5 opacity-60"
@@ -204,6 +204,11 @@ export default function Sidebar() {
               );
             })}
           </ul>
+        </div>
+
+        {/* Divider */}
+        <div className="px-5 mb-4">
+          <div className="h-px bg-[var(--sidebar-border)]" />
         </div>
 
         {/* Settings Navigation */}
@@ -273,7 +278,11 @@ export default function Sidebar() {
 
         {/* Admin Navigation */}
         {isAdmin && (
-          <div className="px-3 mt-6">
+          <>
+          <div className="px-5 mt-4 mb-4">
+            <div className="h-px bg-[var(--sidebar-border)]" />
+          </div>
+          <div className="px-3">
             <div
               className={`px-3 mb-2 overflow-hidden transition-all duration-300 ease-in-out ${
                 collapsed && !isMobile ? "h-0 opacity-0" : "h-5 opacity-60"
@@ -325,6 +334,7 @@ export default function Sidebar() {
               </li>
             </ul>
           </div>
+          </>
         )}
       </nav>
 
@@ -424,7 +434,7 @@ export default function Sidebar() {
 
       {/* Sidebar móvil (drawer) */}
       <aside
-        className={`lg:hidden fixed left-0 top-0 h-screen w-[280px] bg-[var(--sidebar-bg)] text-[var(--sidebar-text)] flex flex-col z-50 transition-transform duration-300 ease-in-out ${
+        className={`lg:hidden fixed left-0 top-0 h-screen w-[280px] bg-[var(--sidebar-bg)] text-[var(--sidebar-text)] flex flex-col z-50 transition-transform duration-300 ease-in-out border-r border-[var(--sidebar-border)] shadow-xl ${
           mobileOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
@@ -433,7 +443,7 @@ export default function Sidebar() {
 
       {/* Sidebar desktop */}
       <aside
-        className={`hidden lg:flex fixed left-0 top-0 h-screen bg-[var(--sidebar-bg)] text-[var(--sidebar-text)] flex-col z-40 transition-[width] duration-300 ease-in-out ${
+        className={`hidden lg:flex fixed left-0 top-0 h-screen bg-[var(--sidebar-bg)] text-[var(--sidebar-text)] flex-col z-40 transition-[width] duration-300 ease-in-out border-r border-[var(--sidebar-border)] ${
           collapsed ? "w-20" : "w-[280px]"
         }`}
       >
