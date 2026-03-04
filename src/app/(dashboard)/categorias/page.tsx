@@ -97,6 +97,7 @@ export default function CategoriasPage() {
   const [deletingCategory, setDeletingCategory] = useState<Category | null>(null);
   const [filter, setFilter] = useState<"all" | "expense" | "income" | "savings">("all");
   const [showInactive, setShowInactive] = useState(false);
+  const [segmentFilter, setSegmentFilter] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [viewMode, setViewMode] = useState<"cards" | "list" | "table">("cards");
   const [financialRule, setFinancialRule] = useState<FinancialRule>({ needs: 50, wants: 30, savings: 20 });
@@ -219,6 +220,8 @@ export default function CategoriasPage() {
   const filteredCategories = categories.filter((cat) => {
     // Type filter
     if (filter !== "all" && cat.type !== filter) return false;
+    // Segment filter (only applies to expenses)
+    if (segmentFilter !== "all" && cat.type === "expense" && cat.segment !== segmentFilter) return false;
     // Active filter
     if (!showInactive && !cat.is_active) return false;
     // Search filter
@@ -645,10 +648,10 @@ export default function CategoriasPage() {
             ))}
           </div>
 
-          {/* Search, View Toggle & Inactive Toggle */}
-          <div className="flex items-center gap-2 sm:gap-3">
+          {/* Search, Segment Toggle, View Toggle & Inactive Toggle */}
+          <div className="flex flex-wrap items-center gap-2 sm:gap-3">
             {/* Search */}
-            <div className="relative flex-1 sm:flex-initial">
+            <div className="relative flex-1 sm:flex-initial min-w-[150px]">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--brand-gray)]" />
               <input
                 type="text"
@@ -658,6 +661,19 @@ export default function CategoriasPage() {
                 className="w-full sm:w-40 pl-9 pr-4 py-1.5 sm:py-2 bg-[var(--background-secondary)] border border-[var(--border)] rounded-lg text-xs sm:text-sm focus:outline-none focus:border-[var(--brand-cyan)]"
               />
             </div>
+
+            {/* Segment Filter (only shown when 'Gastos' or 'Todas' is selected) */}
+            {(filter === "all" || filter === "expense") && (
+              <select
+                value={segmentFilter}
+                onChange={(e) => setSegmentFilter(e.target.value)}
+                className="px-3 py-1.5 sm:py-2 bg-[var(--background-secondary)] border border-[var(--border)] rounded-lg text-xs sm:text-sm focus:outline-none focus:border-[var(--brand-cyan)] cursor-pointer"
+              >
+                <option value="all">Todos los segmentos</option>
+                <option value="needs">Necesidades</option>
+                <option value="wants">Deseos</option>
+              </select>
+            )}
 
             {/* View mode toggle */}
             <div className="flex items-center bg-[var(--background-secondary)] border border-[var(--border)] rounded-lg overflow-hidden">
