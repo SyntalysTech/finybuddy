@@ -25,6 +25,8 @@ import {
   X,
   GripVertical,
   Settings,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 import { format, subMonths, addMonths } from "date-fns";
 import { es } from "date-fns/locale";
@@ -64,9 +66,36 @@ function PrevisionPageContent() {
   const [saving, setSaving] = useState(false);
   const [showAddCategory, setShowAddCategory] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
-  const [hasBudget, setHasBudget] = useState(false);
+  const [hasBudget, setHasBudget] = useState(false);  // Collapsible sections state
+  const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
+    income: true,
+    needs: true,
+    wants: true,
+    savings: true,
+  });
 
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem("finybuddy_prevision_expanded");
+      if (saved) {
+        setExpandedSections(JSON.parse(saved));
+      }
+    } catch (e) {
+      console.error("Error reading expanded sections from localStorage");
+    }
+  }, []);
 
+  const toggleSection = (section: string) => {
+    setExpandedSections(prev => {
+      const newState = { ...prev, [section]: !prev[section] };
+      try {
+        localStorage.setItem("finybuddy_prevision_expanded", JSON.stringify(newState));
+      } catch (e) {
+        console.error("Error saving expanded sections to localStorage");
+      }
+      return newState;
+    });
+  };
 
   // Delete confirmation modal
   const [showDeleteBudgetModal, setShowDeleteBudgetModal] = useState(false);
@@ -1115,96 +1144,144 @@ function PrevisionPageContent() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Income budgets */}
             <div className="card overflow-hidden">
-              <div className="px-6 py-4 border-b border-[var(--border)] bg-[var(--success)]/5">
+              <div
+                className="px-6 py-4 border-b border-[var(--border)] bg-[var(--success)]/5 cursor-pointer hover:bg-[var(--success)]/10 transition-colors"
+                onClick={() => toggleSection('income')}
+              >
                 <div className="flex items-center justify-between">
                   <h3 className="font-semibold flex items-center gap-2">
                     <TrendingUp className="w-5 h-5 text-[var(--success)]" />
                     Ingresos previstos
                   </h3>
-                  <span className="text-lg font-bold text-[var(--success)]">
-                    {formatCurrency(totalIncome)}
-                  </span>
+                  <div className="flex items-center gap-3">
+                    <span className="text-lg font-bold text-[var(--success)]">
+                      {formatCurrency(totalIncome)}
+                    </span>
+                    {expandedSections.income ? (
+                      <ChevronUp className="w-5 h-5 text-[var(--brand-gray)]" />
+                    ) : (
+                      <ChevronDown className="w-5 h-5 text-[var(--brand-gray)]" />
+                    )}
+                  </div>
                 </div>
               </div>
-              <div className="divide-y divide-[var(--border)]">
-                {incomeBudgets.length > 0 ? (
-                  incomeBudgets.map(b => renderBudgetRow(b, "income"))
-                ) : (
-                  <div className="p-6 text-center text-[var(--brand-gray)]">
-                    No hay categorías de ingresos
-                  </div>
-                )}
-              </div>
+              {expandedSections.income && (
+                <div className="divide-y divide-[var(--border)]">
+                  {incomeBudgets.length > 0 ? (
+                    incomeBudgets.map(b => renderBudgetRow(b, "income"))
+                  ) : (
+                    <div className="p-6 text-center text-[var(--brand-gray)]">
+                      No hay categorías de ingresos
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Expense budgets by segment */}
             <div className="space-y-6">
               {/* Needs */}
               <div className="card overflow-hidden">
-                <div className="px-6 py-4 border-b border-[var(--border)] bg-[var(--success)]/5">
+                <div
+                  className="px-6 py-4 border-b border-[var(--border)] bg-[var(--success)]/5 cursor-pointer hover:bg-[var(--success)]/10 transition-colors"
+                  onClick={() => toggleSection('needs')}
+                >
                   <div className="flex items-center justify-between">
                     <h3 className="font-semibold">Necesidades previstas</h3>
-                    <div className="text-right">
-                      <span className="text-lg font-bold">{formatCurrency(needsTotal)}</span>
+                    <div className="flex items-center gap-3">
+                      <div className="text-right">
+                        <span className="text-lg font-bold">{formatCurrency(needsTotal)}</span>
+                      </div>
+                      {expandedSections.needs ? (
+                        <ChevronUp className="w-5 h-5 text-[var(--brand-gray)]" />
+                      ) : (
+                        <ChevronDown className="w-5 h-5 text-[var(--brand-gray)]" />
+                      )}
                     </div>
                   </div>
                 </div>
-                <div className="divide-y divide-[var(--border)]">
-                  {needsBudgets.length > 0 ? (
-                    needsBudgets.map(b => renderBudgetRow(b, "needs"))
-                  ) : (
-                    <div className="p-4 text-center text-sm text-[var(--brand-gray)]">
-                      Sin categorías de necesidades
-                    </div>
-                  )}
-                </div>
+                {expandedSections.needs && (
+                  <div className="divide-y divide-[var(--border)]">
+                    {needsBudgets.length > 0 ? (
+                      needsBudgets.map(b => renderBudgetRow(b, "needs"))
+                    ) : (
+                      <div className="p-4 text-center text-sm text-[var(--brand-gray)]">
+                        Sin categorías de necesidades
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
 
               {/* Wants */}
               <div className="card overflow-hidden">
-                <div className="px-6 py-4 border-b border-[var(--border)] bg-[var(--warning)]/5">
+                <div
+                  className="px-6 py-4 border-b border-[var(--border)] bg-[var(--warning)]/5 cursor-pointer hover:bg-[var(--warning)]/10 transition-colors"
+                  onClick={() => toggleSection('wants')}
+                >
                   <div className="flex items-center justify-between">
                     <h3 className="font-semibold">Deseos previstos</h3>
-                    <div className="text-right">
-                      <span className="text-lg font-bold">{formatCurrency(wantsTotal)}</span>
+                    <div className="flex items-center gap-3">
+                      <div className="text-right">
+                        <span className="text-lg font-bold">{formatCurrency(wantsTotal)}</span>
+                      </div>
+                      {expandedSections.wants ? (
+                        <ChevronUp className="w-5 h-5 text-[var(--brand-gray)]" />
+                      ) : (
+                        <ChevronDown className="w-5 h-5 text-[var(--brand-gray)]" />
+                      )}
                     </div>
                   </div>
                 </div>
-                <div className="divide-y divide-[var(--border)]">
-                  {wantsBudgets.length > 0 ? (
-                    wantsBudgets.map(b => renderBudgetRow(b, "wants"))
-                  ) : (
-                    <div className="p-4 text-center text-sm text-[var(--brand-gray)]">
-                      Sin categorías de deseos
-                    </div>
-                  )}
-                </div>
+                {expandedSections.wants && (
+                  <div className="divide-y divide-[var(--border)]">
+                    {wantsBudgets.length > 0 ? (
+                      wantsBudgets.map(b => renderBudgetRow(b, "wants"))
+                    ) : (
+                      <div className="p-4 text-center text-sm text-[var(--brand-gray)]">
+                        Sin categorías de deseos
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
 
               {/* Savings */}
               <div className="card overflow-hidden">
-                <div className="px-6 py-4 border-b border-[var(--border)] bg-[var(--brand-cyan)]/5">
+                <div
+                  className="px-6 py-4 border-b border-[var(--border)] bg-[var(--brand-cyan)]/5 cursor-pointer hover:bg-[var(--brand-cyan)]/10 transition-colors"
+                  onClick={() => toggleSection('savings')}
+                >
                   <div className="flex items-center justify-between">
                     <h3 className="font-semibold flex items-center gap-2">
                       <PiggyBank className="w-5 h-5 text-[var(--brand-cyan)]" />
                       Ahorro previsto
                     </h3>
-                    <div className="text-right">
-                      <span className="text-lg font-bold text-[var(--brand-cyan)]">
-                        {formatCurrency(savingsTotal)}
-                      </span>
+                    <div className="flex items-center gap-3">
+                      <div className="text-right">
+                        <span className="text-lg font-bold text-[var(--brand-cyan)]">
+                          {formatCurrency(savingsTotal)}
+                        </span>
+                      </div>
+                      {expandedSections.savings ? (
+                        <ChevronUp className="w-5 h-5 text-[var(--brand-cyan)]" />
+                      ) : (
+                        <ChevronDown className="w-5 h-5 text-[var(--brand-cyan)]" />
+                      )}
                     </div>
                   </div>
                 </div>
-                <div className="divide-y divide-[var(--border)]">
-                  {savingsBudgets.length > 0 ? (
-                    savingsBudgets.map(b => renderBudgetRow(b, "savings"))
-                  ) : (
-                    <div className="p-4 text-center text-sm text-[var(--brand-gray)]">
-                      Sin categorías de ahorro
-                    </div>
-                  )}
-                </div>
+                {expandedSections.savings && (
+                  <div className="divide-y divide-[var(--border)]">
+                    {savingsBudgets.length > 0 ? (
+                      savingsBudgets.map(b => renderBudgetRow(b, "savings"))
+                    ) : (
+                      <div className="p-4 text-center text-sm text-[var(--brand-gray)]">
+                        Sin categorías de ahorro
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
           </div>
