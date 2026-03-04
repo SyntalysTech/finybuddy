@@ -468,20 +468,18 @@ export default function AjustesPage() {
               <button
                 onClick={() => handlePreferenceChange("show_decimals", !showDecimals)}
                 disabled={savingPreferences}
-                className={`w-full px-4 py-3 rounded-xl border flex items-center justify-between transition-colors disabled:opacity-50 ${
-                  showDecimals
+                className={`w-full px-4 py-3 rounded-xl border flex items-center justify-between transition-colors disabled:opacity-50 ${showDecimals
                     ? "border-[var(--brand-cyan)] bg-[var(--brand-cyan)]/10"
                     : "border-[var(--border)] bg-[var(--background-secondary)]"
-                }`}
+                  }`}
               >
                 <div className="flex items-center gap-2">
                   <Calculator className="w-5 h-5 text-[var(--brand-gray)]" />
                   <span>{showDecimals ? "1.234,56 €" : "1.235 €"}</span>
                 </div>
                 <div
-                  className={`w-10 h-6 rounded-full transition-colors ${
-                    showDecimals ? "bg-[var(--brand-cyan)]" : "bg-[var(--border)]"
-                  }`}
+                  className={`w-10 h-6 rounded-full transition-colors ${showDecimals ? "bg-[var(--brand-cyan)]" : "bg-[var(--border)]"
+                    }`}
                 >
                   <div
                     className="w-5 h-5 rounded-full bg-white shadow transition-transform mt-0.5"
@@ -503,11 +501,10 @@ export default function AjustesPage() {
                       key={option.value}
                       type="button"
                       onClick={() => setTheme(option.value as "light" | "dark" | "system")}
-                      className={`flex-1 flex flex-col items-center gap-1 p-3 rounded-xl border-2 transition-all ${
-                        isSelected
+                      className={`flex-1 flex flex-col items-center gap-1 p-3 rounded-xl border-2 transition-all ${isSelected
                           ? "border-[var(--brand-purple)] bg-[var(--brand-purple)]/10"
                           : "border-[var(--border)] hover:border-[var(--brand-gray)] bg-[var(--background-secondary)]"
-                      }`}
+                        }`}
                     >
                       <Icon className={`w-5 h-5 ${isSelected ? "text-[var(--brand-purple)]" : "text-[var(--brand-gray)]"}`} />
                       <span className={`text-xs font-medium ${isSelected ? "text-[var(--brand-purple)]" : ""}`}>
@@ -541,14 +538,12 @@ export default function AjustesPage() {
                 </div>
                 <button
                   onClick={() => handleNotificationChange("email_reminder_alerts")}
-                  className={`relative w-11 h-6 rounded-full transition-colors ${
-                    notifications.email_reminder_alerts ? "bg-[var(--brand-cyan)]" : "bg-[var(--border)]"
-                  }`}
+                  className={`relative w-11 h-6 rounded-full transition-colors ${notifications.email_reminder_alerts ? "bg-[var(--brand-cyan)]" : "bg-[var(--border)]"
+                    }`}
                 >
                   <div
-                    className={`absolute top-1 w-4 h-4 rounded-full bg-white shadow-sm transition-all ${
-                      notifications.email_reminder_alerts ? "left-6" : "left-1"
-                    }`}
+                    className={`absolute top-1 w-4 h-4 rounded-full bg-white shadow-sm transition-all ${notifications.email_reminder_alerts ? "left-6" : "left-1"
+                      }`}
                   />
                 </button>
               </div>
@@ -702,8 +697,8 @@ export default function AjustesPage() {
                   <div>
                     <p className="font-medium text-sm text-[var(--warning)] mb-1">Se borrarán todos tus datos financieros</p>
                     <p className="text-xs text-[var(--brand-gray)]">
-                      Esto incluye: operaciones, presupuestos, recordatorios, notificaciones, metas de ahorro y deudas.
-                      Tus datos de configuración (mis categorías, mi regla financiera, perfil y ajustes) se mantendrán intactos.
+                      Esto incluye: operaciones, recordatorios, notificaciones, metas de ahorro, deudas y previsión.
+                      Tus datos de configuración (mis categorías, perfil y ajustes) se mantendrán intactos.
                     </p>
                   </div>
                 </div>
