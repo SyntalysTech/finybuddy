@@ -66,6 +66,29 @@ export default function NotificationsDropdown() {
       .limit(10);
 
     if (!error && data) {
+      // Fallback: si no existe notificación de bienvenida, crearla
+      const hasWelcome = data.some((n) => n.type === "welcome");
+      if (!hasWelcome) {
+        const { data: newNotif } = await supabase
+          .from("notifications")
+          .insert({
+            user_id: user.id,
+            title: "¡Bienvenido a FinyBuddy!",
+            message: "Empieza configurando tus categorías y luego creando tu previsión mensual.",
+            type: "welcome",
+            icon: "sparkles",
+          })
+          .select()
+          .single();
+
+        if (newNotif) {
+          setNotifications([newNotif, ...data]);
+          setUnreadCount(data.filter((n) => !n.is_read).length + 1);
+          setLoading(false);
+          return;
+        }
+      }
+
       setNotifications(data);
       setUnreadCount(data.filter((n) => !n.is_read).length);
     }
