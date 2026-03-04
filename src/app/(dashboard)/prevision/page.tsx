@@ -1080,7 +1080,7 @@ function PrevisionPageContent() {
                 </p>
 
                 {/* Progress Bar Confirmada */}
-                <div className="h-3 rounded-full overflow-hidden flex mb-4">
+                <div className="h-4 rounded-full overflow-hidden flex mb-6">
                   <div
                     className="transition-all"
                     style={{ width: `${needsPercent}%`, background: "linear-gradient(to right, #2EEB8F, #1EEA8A)" }}
@@ -1098,18 +1098,38 @@ function PrevisionPageContent() {
                   />
                 </div>
 
-                <div className="flex justify-between text-xs text-[var(--brand-gray)]">
-                  <div className="flex flex-col">
-                    <span className="font-semibold text-[var(--foreground)]" style={{ color: "#2EEB8F" }}>{needsPercent}% Necesidades</span>
-                    <span>Gastos esenciales</span>
+                <div className="grid grid-cols-3 gap-2 sm:gap-4">
+                  {/* Needs Card */}
+                  <div className="rounded-xl overflow-hidden flex flex-col h-full bg-[#EAFBF3]">
+                    <div className="px-3 py-2 sm:px-4 sm:py-3 flex justify-between items-center text-white" style={{ background: "linear-gradient(to right, #2EEB8F, #1EEA8A)" }}>
+                      <span className="font-bold text-xs sm:text-base">Necesidades</span>
+                      <span className="font-bold text-xs sm:text-base">{needsPercent}%</span>
+                    </div>
+                    <div className="px-3 py-3 sm:px-4 sm:py-4 flex-1">
+                      <span className="text-xs sm:text-sm text-[var(--brand-gray)] block">Gastos esenciales</span>
+                    </div>
                   </div>
-                  <div className="flex flex-col text-center">
-                    <span className="font-semibold text-[var(--foreground)]" style={{ color: "#8B4DFF" }}>{wantsPercent}% Deseos</span>
-                    <span>Gastos opcionales</span>
+
+                  {/* Wants Card */}
+                  <div className="rounded-xl overflow-hidden flex flex-col h-full bg-[#F4ECFF]">
+                    <div className="px-3 py-2 sm:px-4 sm:py-3 flex justify-between items-center text-white" style={{ background: "linear-gradient(to right, #8B4DFF, #8E3DFF)" }}>
+                      <span className="font-bold text-xs sm:text-base">Deseos</span>
+                      <span className="font-bold text-xs sm:text-base">{wantsPercent}%</span>
+                    </div>
+                    <div className="px-3 py-3 sm:px-4 sm:py-4 flex-1">
+                      <span className="text-xs sm:text-sm text-[var(--brand-gray)] block">Gastos opcionales</span>
+                    </div>
                   </div>
-                  <div className="flex flex-col text-right">
-                    <span className="font-semibold text-[var(--foreground)]" style={{ color: "#00E5FF" }}>{savingsPercent}% Ahorro</span>
-                    <span>Ahorro e inversión</span>
+
+                  {/* Savings Card */}
+                  <div className="rounded-xl overflow-hidden flex flex-col h-full bg-[#E5FAFD]">
+                    <div className="px-3 py-2 sm:px-4 sm:py-3 flex justify-between items-center text-white" style={{ background: "linear-gradient(to right, #00E5FF, #00DDF0)" }}>
+                      <span className="font-bold text-xs sm:text-base">Ahorro</span>
+                      <span className="font-bold text-xs sm:text-base">{savingsPercent}%</span>
+                    </div>
+                    <div className="px-3 py-3 sm:px-4 sm:py-4 flex-1">
+                      <span className="text-xs sm:text-sm text-[var(--brand-gray)] block">Ahorro e inversión</span>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -1121,7 +1141,7 @@ function PrevisionPageContent() {
                 </p>
 
                 {/* Progress Bar Pendiente */}
-                <div className="h-3 rounded-full overflow-hidden flex mb-4 bg-[var(--background-secondary)]">
+                <div className="h-4 rounded-full overflow-hidden flex mb-6 bg-[var(--background-secondary)]">
                   <div
                     className="transition-all opacity-50"
                     style={{ width: `${needsPercent}%`, background: "linear-gradient(to right, #2EEB8F, #1EEA8A)" }}
@@ -1136,18 +1156,38 @@ function PrevisionPageContent() {
                   />
                 </div>
 
-                <div className="flex justify-between text-xs text-[var(--brand-gray)] opacity-70">
-                  <div className="flex flex-col">
-                    <span className="font-semibold text-[var(--foreground)]" style={{ color: "#2EEB8F" }}>{needsPercent}% Necesidades</span>
-                    <span>Gastos esenciales</span>
+                <div className="grid grid-cols-3 gap-2 sm:gap-4 opacity-70">
+                  {/* Needs Card */}
+                  <div className="rounded-xl overflow-hidden flex flex-col h-full bg-[#EAFBF3]">
+                    <div className="px-3 py-2 sm:px-4 sm:py-3 flex justify-between items-center text-white" style={{ background: "linear-gradient(to right, #2EEB8F, #1EEA8A)" }}>
+                      <span className="font-bold text-xs sm:text-base">Necesidades</span>
+                      <span className="font-bold text-xs sm:text-base">{needsPercent}%</span>
+                    </div>
+                    <div className="px-3 py-3 sm:px-4 sm:py-4 flex-1">
+                      <span className="text-xs sm:text-sm text-[var(--brand-gray)] block">Gastos esenciales</span>
+                    </div>
                   </div>
-                  <div className="flex flex-col text-center">
-                    <span className="font-semibold text-[var(--foreground)]" style={{ color: "#8B4DFF" }}>{wantsPercent}% Deseos</span>
-                    <span>Gastos opcionales</span>
+
+                  {/* Wants Card */}
+                  <div className="rounded-xl overflow-hidden flex flex-col h-full bg-[#F4ECFF]">
+                    <div className="px-3 py-2 sm:px-4 sm:py-3 flex justify-between items-center text-white" style={{ background: "linear-gradient(to right, #8B4DFF, #8E3DFF)" }}>
+                      <span className="font-bold text-xs sm:text-base">Deseos</span>
+                      <span className="font-bold text-xs sm:text-base">{wantsPercent}%</span>
+                    </div>
+                    <div className="px-3 py-3 sm:px-4 sm:py-4 flex-1">
+                      <span className="text-xs sm:text-sm text-[var(--brand-gray)] block">Gastos opcionales</span>
+                    </div>
                   </div>
-                  <div className="flex flex-col text-right">
-                    <span className="font-semibold text-[var(--foreground)]" style={{ color: "#00E5FF" }}>{savingsPercent}% Ahorro</span>
-                    <span>Ahorro e inversión</span>
+
+                  {/* Savings Card */}
+                  <div className="rounded-xl overflow-hidden flex flex-col h-full bg-[#E5FAFD]">
+                    <div className="px-3 py-2 sm:px-4 sm:py-3 flex justify-between items-center text-white" style={{ background: "linear-gradient(to right, #00E5FF, #00DDF0)" }}>
+                      <span className="font-bold text-xs sm:text-base">Ahorro</span>
+                      <span className="font-bold text-xs sm:text-base">{savingsPercent}%</span>
+                    </div>
+                    <div className="px-3 py-3 sm:px-4 sm:py-4 flex-1">
+                      <span className="text-xs sm:text-sm text-[var(--brand-gray)] block">Ahorro e inversión</span>
+                    </div>
                   </div>
                 </div>
               </div>
