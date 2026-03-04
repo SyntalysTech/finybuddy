@@ -215,7 +215,7 @@ export default function CategoriasPage() {
     return SEGMENTS.find((s) => s.value === segment);
   };
 
-  // Filter categories
+  // Filter and sort categories
   const filteredCategories = categories.filter((cat) => {
     // Type filter
     if (filter !== "all" && cat.type !== filter) return false;
@@ -224,6 +224,16 @@ export default function CategoriasPage() {
     // Search filter
     if (searchQuery && !cat.name.toLowerCase().includes(searchQuery.toLowerCase())) return false;
     return true;
+  }).sort((a, b) => {
+    // Ordenar gastos por segmento (necesidades -> deseos)
+    if (a.type === "expense" && b.type === "expense") {
+      const segmentOrder = { needs: 1, wants: 2, savings: 3, null: 4 } as const;
+      const orderA = segmentOrder[(a.segment as keyof typeof segmentOrder) || "null"];
+      const orderB = segmentOrder[(b.segment as keyof typeof segmentOrder) || "null"];
+      if (orderA !== orderB) return orderA - orderB;
+    }
+    // Mantener orden alfabético original para el resto
+    return a.name.localeCompare(b.name);
   });
 
   // Group by type
@@ -248,8 +258,8 @@ export default function CategoriasPage() {
       <div
         key={category.id}
         className={`p-2.5 sm:p-4 rounded-lg sm:rounded-xl border-l-4 border transition-all ${category.is_active
-            ? "bg-[var(--background)] border-[var(--border)] hover:border-[var(--brand-gray)]"
-            : "bg-[var(--background-secondary)]/50 border-[var(--border)] opacity-60"
+          ? "bg-[var(--background)] border-[var(--border)] hover:border-[var(--brand-gray)]"
+          : "bg-[var(--background-secondary)]/50 border-[var(--border)] opacity-60"
           }`}
         style={{ borderLeftColor: category.color }}
       >
@@ -302,8 +312,8 @@ export default function CategoriasPage() {
             <button
               onClick={() => handleToggleActive(category)}
               className={`p-1.5 sm:p-2 rounded-lg transition-colors ${category.is_active
-                  ? "hover:bg-[var(--warning)]/10"
-                  : "hover:bg-[var(--success)]/10"
+                ? "hover:bg-[var(--warning)]/10"
+                : "hover:bg-[var(--success)]/10"
                 }`}
               title={category.is_active ? "Desactivar" : "Activar"}
             >
@@ -626,8 +636,8 @@ export default function CategoriasPage() {
                 key={tab.value}
                 onClick={() => setFilter(tab.value as typeof filter)}
                 className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors whitespace-nowrap ${filter === tab.value
-                    ? "bg-[var(--brand-purple)] text-white"
-                    : "bg-[var(--background-secondary)] hover:bg-[var(--border)]"
+                  ? "bg-[var(--brand-purple)] text-white"
+                  : "bg-[var(--background-secondary)] hover:bg-[var(--border)]"
                   }`}
               >
                 {tab.label}
@@ -660,8 +670,8 @@ export default function CategoriasPage() {
                   key={mode}
                   onClick={() => setViewMode(mode)}
                   className={`p-1.5 sm:p-2 transition-colors ${viewMode === mode
-                      ? "bg-[var(--brand-purple)] text-white"
-                      : "text-[var(--brand-gray)] hover:text-[var(--foreground)]"
+                    ? "bg-[var(--brand-purple)] text-white"
+                    : "text-[var(--brand-gray)] hover:text-[var(--foreground)]"
                     }`}
                   title={title}
                 >
@@ -907,8 +917,8 @@ function CategoryModal({
                     }}
                     disabled={category?.is_default}
                     className={`flex flex-col items-center gap-1 p-3 rounded-xl border-2 transition-all ${isSelected
-                        ? "border-[var(--brand-purple)] bg-[var(--brand-purple)]/10"
-                        : "border-[var(--border)] hover:border-[var(--brand-gray)]"
+                      ? "border-[var(--brand-purple)] bg-[var(--brand-purple)]/10"
+                      : "border-[var(--border)] hover:border-[var(--brand-gray)]"
                       } ${category?.is_default ? "opacity-50 cursor-not-allowed" : ""}`}
                   >
                     <Icon className={`w-5 h-5 ${isSelected ? t.color : "text-[var(--brand-gray)]"}`} />
@@ -943,8 +953,8 @@ function CategoryModal({
                   type="button"
                   onClick={() => setIcon(i)}
                   className={`w-10 h-10 rounded-lg flex items-center justify-center text-xl border-2 transition-all ${icon === i
-                      ? "border-[var(--brand-purple)] bg-[var(--brand-purple)]/10"
-                      : "border-transparent hover:border-[var(--border)]"
+                    ? "border-[var(--brand-purple)] bg-[var(--brand-purple)]/10"
+                    : "border-transparent hover:border-[var(--border)]"
                     }`}
                 >
                   {i}
@@ -987,8 +997,8 @@ function CategoryModal({
                     type="button"
                     onClick={() => setSegment(s.value as typeof segment)}
                     className={`w-full p-3 rounded-xl border-2 text-left transition-all ${segment === s.value
-                        ? "border-current"
-                        : "border-[var(--border)] hover:border-[var(--brand-gray)]"
+                      ? "border-current"
+                      : "border-[var(--border)] hover:border-[var(--brand-gray)]"
                       }`}
                     style={{
                       borderColor: segment === s.value ? s.color : undefined,
