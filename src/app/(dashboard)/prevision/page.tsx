@@ -168,7 +168,7 @@ function PrevisionPageContent() {
 
     setHasPreviousMonthBudget(
       Boolean((prevBudgetsData && prevBudgetsData.length > 0) ||
-      (prevPlannedSavingsData && prevPlannedSavingsData.length > 0))
+        (prevPlannedSavingsData && prevPlannedSavingsData.length > 0))
     );
 
     // Check if next month has budget
@@ -194,7 +194,7 @@ function PrevisionPageContent() {
 
     setHasNextMonthBudget(
       Boolean((nextBudgetsData && nextBudgetsData.length > 0) ||
-      (nextPlannedSavingsData && nextPlannedSavingsData.length > 0))
+        (nextPlannedSavingsData && nextPlannedSavingsData.length > 0))
     );
 
     setLoading(false);
@@ -1055,123 +1055,7 @@ function PrevisionPageContent() {
           </div>
         </div>
 
-        {/* Rule comparison card - moved here after cards */}
-        {hasBudget && totalIncome > 0 && (
-          <div className="card p-6">
-            <div className="flex items-start justify-between gap-3 mb-4">
-              <div className="flex items-start gap-3">
-                <div className="p-2 rounded-lg bg-[var(--brand-purple)]/10">
-                  <Sparkles className="w-5 h-5 text-[var(--brand-purple)]" />
-                </div>
-                <div>
-                  <h3 className="font-semibold">Comparativa con tu regla {ruleNeeds}/{ruleWants}/{ruleSavings}</h3>
-                  <p className="text-sm text-[var(--brand-gray)]">
-                    Según tus ingresos previstos de {formatCurrency(totalIncome)}, deberías destinar:
-                  </p>
-                </div>
-              </div>
-              <Link
-                href="/regla-financiera"
-                className="flex items-center gap-1.5 text-sm text-[var(--brand-purple)] hover:underline whitespace-nowrap"
-              >
-                <Settings className="w-4 h-4" />
-                Configurar Mi Regla
-              </Link>
-            </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {/* Needs comparison */}
-              <div className={`p-4 rounded-lg ${needsPercent <= ruleNeeds ? "bg-[var(--success)]/10" : "bg-[var(--danger)]/10"}`}>
-                <div className="flex items-center justify-between mb-2">
-                  <span className="font-medium">Necesidades</span>
-                  {needsPercent <= ruleNeeds ? (
-                    <CheckCircle className="w-4 h-4 text-[var(--success)]" />
-                  ) : (
-                    <AlertCircle className="w-4 h-4 text-[var(--danger)]" />
-                  )}
-                </div>
-                <p className="text-sm text-[var(--brand-gray)]">
-                  Objetivo: {formatCurrency(needsTarget)} ({ruleNeeds}%)
-                </p>
-                <p className="text-sm">
-                  Previsto: <span className="font-semibold">{formatCurrency(needsTotal)}</span> ({needsPercent}%)
-                </p>
-                <p className={`text-sm font-semibold mt-2 ${needsPercent <= ruleNeeds ? "text-[var(--success)]" : "text-[var(--danger)]"}`}>
-                  {needsDeviation === 0 ? (
-                    "En el objetivo"
-                  ) : needsDeviation < 0 ? (
-                    <>-{Math.abs(needsPercent - ruleNeeds)}% / {formatCurrency(Math.abs(needsDeviation))}</>
-                  ) : (
-                    <>+{needsPercent - ruleNeeds}% / +{formatCurrency(needsDeviation)}</>
-                  )}
-                </p>
-                <p className="text-xs text-[var(--brand-gray)] mt-1">
-                  {needsPercent <= ruleNeeds ? "Por debajo del objetivo" : "Por encima del objetivo"}
-                </p>
-              </div>
-
-              {/* Wants comparison */}
-              <div className={`p-4 rounded-lg ${wantsPercent <= ruleWants ? "bg-[var(--success)]/10" : "bg-[var(--danger)]/10"}`}>
-                <div className="flex items-center justify-between mb-2">
-                  <span className="font-medium">Deseos</span>
-                  {wantsPercent <= ruleWants ? (
-                    <CheckCircle className="w-4 h-4 text-[var(--success)]" />
-                  ) : (
-                    <AlertCircle className="w-4 h-4 text-[var(--danger)]" />
-                  )}
-                </div>
-                <p className="text-sm text-[var(--brand-gray)]">
-                  Objetivo: {formatCurrency(wantsTarget)} ({ruleWants}%)
-                </p>
-                <p className="text-sm">
-                  Previsto: <span className="font-semibold">{formatCurrency(wantsTotal)}</span> ({wantsPercent}%)
-                </p>
-                <p className={`text-sm font-semibold mt-2 ${wantsPercent <= ruleWants ? "text-[var(--success)]" : "text-[var(--danger)]"}`}>
-                  {wantsDeviation === 0 ? (
-                    "En el objetivo"
-                  ) : wantsDeviation < 0 ? (
-                    <>-{Math.abs(wantsPercent - ruleWants)}% / {formatCurrency(Math.abs(wantsDeviation))}</>
-                  ) : (
-                    <>+{wantsPercent - ruleWants}% / +{formatCurrency(wantsDeviation)}</>
-                  )}
-                </p>
-                <p className="text-xs text-[var(--brand-gray)] mt-1">
-                  {wantsPercent <= ruleWants ? "Por debajo del objetivo" : "Por encima del objetivo"}
-                </p>
-              </div>
-
-              {/* Savings comparison */}
-              <div className={`p-4 rounded-lg ${savingsPercent >= ruleSavings ? "bg-[var(--success)]/10" : "bg-[var(--warning)]/10"}`}>
-                <div className="flex items-center justify-between mb-2">
-                  <span className="font-medium">Ahorro</span>
-                  {savingsPercent >= ruleSavings ? (
-                    <CheckCircle className="w-4 h-4 text-[var(--success)]" />
-                  ) : (
-                    <AlertCircle className="w-4 h-4 text-[var(--warning)]" />
-                  )}
-                </div>
-                <p className="text-sm text-[var(--brand-gray)]">
-                  Objetivo: {formatCurrency(savingsTarget)} ({ruleSavings}%)
-                </p>
-                <p className="text-sm">
-                  Previsto: <span className="font-semibold">{formatCurrency(plannedSavings)}</span> ({savingsPercent}%)
-                </p>
-                <p className={`text-sm font-semibold mt-2 ${savingsPercent >= ruleSavings ? "text-[var(--success)]" : "text-[var(--warning)]"}`}>
-                  {savingsDeviation === 0 ? (
-                    "En el objetivo"
-                  ) : savingsDeviation > 0 ? (
-                    <>+{savingsPercent - ruleSavings}% / +{formatCurrency(savingsDeviation)}</>
-                  ) : (
-                    <>-{Math.abs(savingsPercent - ruleSavings)}% / {formatCurrency(Math.abs(savingsDeviation))}</>
-                  )}
-                </p>
-                <p className="text-xs text-[var(--brand-gray)] mt-1">
-                  {savingsPercent >= ruleSavings ? "Por encima del objetivo" : "Por debajo del objetivo"}
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
 
         {/* Balance warning if negative */}
         {hasBudget && availableBalance < 0 && (
@@ -1430,8 +1314,8 @@ function PrevisionPageContent() {
                         <span className="ml-auto text-xs text-[var(--brand-gray)]">
                           {cat.type === "income" ? "Ingreso" :
                             cat.segment === "needs" ? "Necesidades" :
-                            cat.segment === "wants" ? "Deseos" :
-                            cat.segment === "savings" ? "Ahorro" : "Gasto"}
+                              cat.segment === "wants" ? "Deseos" :
+                                cat.segment === "savings" ? "Ahorro" : "Gasto"}
                         </span>
                       </button>
                     ))}
@@ -1442,7 +1326,7 @@ function PrevisionPageContent() {
           </div>
         )}
 
-{/* Delete budget button */}
+        {/* Delete budget button */}
         {hasBudget && !hasChanges && (
           <div className="flex justify-center">
             <button
