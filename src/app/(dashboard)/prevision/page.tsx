@@ -1274,7 +1274,7 @@ function PrevisionPageContent() {
               <div className="card overflow-hidden">
                 <div className="px-6 py-4 border-b border-[var(--border)] bg-[var(--success)]/5">
                   <div className="flex items-center justify-between">
-                    <h3 className="font-semibold">Necesidades ({ruleNeeds}%)</h3>
+                    <h3 className="font-semibold">Necesidades previstas ({ruleNeeds}%)</h3>
                     <div className="text-right">
                       <span className="text-lg font-bold">{formatCurrency(needsTotal)}</span>
                       <span className={`text-sm ml-2 ${needsPercent <= ruleNeeds ? "text-[var(--success)]" : "text-[var(--danger)]"}`}>
@@ -1298,7 +1298,7 @@ function PrevisionPageContent() {
               <div className="card overflow-hidden">
                 <div className="px-6 py-4 border-b border-[var(--border)] bg-[var(--warning)]/5">
                   <div className="flex items-center justify-between">
-                    <h3 className="font-semibold">Deseos ({ruleWants}%)</h3>
+                    <h3 className="font-semibold">Deseos previstos ({ruleWants}%)</h3>
                     <div className="text-right">
                       <span className="text-lg font-bold">{formatCurrency(wantsTotal)}</span>
                       <span className={`text-sm ml-2 ${wantsPercent <= ruleWants ? "text-[var(--success)]" : "text-[var(--danger)]"}`}>
