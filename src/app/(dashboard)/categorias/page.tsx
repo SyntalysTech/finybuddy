@@ -247,11 +247,10 @@ export default function CategoriasPage() {
     return (
       <div
         key={category.id}
-        className={`p-2.5 sm:p-4 rounded-lg sm:rounded-xl border-l-4 border transition-all ${
-          category.is_active
+        className={`p-2.5 sm:p-4 rounded-lg sm:rounded-xl border-l-4 border transition-all ${category.is_active
             ? "bg-[var(--background)] border-[var(--border)] hover:border-[var(--brand-gray)]"
             : "bg-[var(--background-secondary)]/50 border-[var(--border)] opacity-60"
-        }`}
+          }`}
         style={{ borderLeftColor: category.color }}
       >
         <div className="flex items-center gap-2 sm:gap-3">
@@ -302,11 +301,10 @@ export default function CategoriasPage() {
           <div className="flex items-center shrink-0">
             <button
               onClick={() => handleToggleActive(category)}
-              className={`p-1.5 sm:p-2 rounded-lg transition-colors ${
-                category.is_active
+              className={`p-1.5 sm:p-2 rounded-lg transition-colors ${category.is_active
                   ? "hover:bg-[var(--warning)]/10"
                   : "hover:bg-[var(--success)]/10"
-              }`}
+                }`}
               title={category.is_active ? "Desactivar" : "Activar"}
             >
               {category.is_active ? (
@@ -351,9 +349,8 @@ export default function CategoriasPage() {
     return (
       <div
         key={category.id}
-        className={`flex items-center gap-2 sm:gap-3 px-2.5 sm:px-4 py-1.5 sm:py-2.5 border-b border-[var(--border)] last:border-b-0 transition-colors hover:bg-[var(--background-secondary)]/50 ${
-          !category.is_active ? "opacity-60" : ""
-        }`}
+        className={`flex items-center gap-2 sm:gap-3 px-2.5 sm:px-4 py-1.5 sm:py-2.5 border-b border-[var(--border)] last:border-b-0 transition-colors hover:bg-[var(--background-secondary)]/50 ${!category.is_active ? "opacity-60" : ""
+          }`}
       >
         <div
           className="w-7 h-7 sm:w-9 sm:h-9 rounded-lg flex items-center justify-center text-sm sm:text-lg shrink-0"
@@ -613,89 +610,7 @@ export default function CategoriasPage() {
           </div>
         </div>
 
-        {/* Financial Rule Info */}
-        <div className="card p-3 sm:p-5">
-          <div className="flex items-center justify-between mb-3 sm:mb-4">
-            <h3 className="font-semibold flex items-center gap-2 text-sm sm:text-base">
-              <Info className="w-4 h-4 sm:w-5 sm:h-5 text-[var(--brand-purple)]" />
-              <span className="hidden sm:inline">Tu regla financiera</span>
-              <span className="sm:hidden">Regla</span>
-            </h3>
-            <Link
-              href="/regla-financiera"
-              className="flex items-center gap-1 sm:gap-1.5 text-xs sm:text-sm text-[var(--brand-cyan)] hover:underline"
-            >
-              <Settings className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-              <span className="hidden sm:inline">Configurar</span>
-            </Link>
-          </div>
 
-          <p className="text-xs sm:text-sm text-[var(--brand-gray)] mb-3 sm:mb-4 hidden sm:block">
-            Asigna un segmento a tus categorías de gasto para distribuir tu presupuesto según tu regla financiera.
-          </p>
-
-          {/* Visual bar */}
-          <div className="h-2 sm:h-3 rounded-full overflow-hidden flex mb-3 sm:mb-4">
-            <div
-              className="transition-all"
-              style={{ width: `${financialRule.needs}%`, backgroundColor: "#02EAFF" }}
-            />
-            <div
-              className="transition-all"
-              style={{ width: `${financialRule.wants}%`, backgroundColor: "#9945FF" }}
-            />
-            <div
-              className="transition-all"
-              style={{ width: `${financialRule.savings}%`, backgroundColor: "#14F195" }}
-            />
-          </div>
-
-          <div className="grid grid-cols-3 gap-2 sm:gap-4">
-            <div
-              className="p-2 sm:p-4 rounded-lg sm:rounded-xl text-center sm:text-left"
-              style={{ backgroundColor: "#02EAFF10" }}
-            >
-              <div className="flex flex-col sm:flex-row items-center sm:justify-between mb-0.5 sm:mb-1">
-                <span className="text-xs sm:text-lg font-bold" style={{ color: "#02EAFF" }}>
-                  <span className="hidden sm:inline">Necesidades</span>
-                  <span className="sm:hidden">Neces.</span>
-                </span>
-                <span className="text-sm sm:text-lg font-bold" style={{ color: "#02EAFF" }}>
-                  {financialRule.needs}%
-                </span>
-              </div>
-              <p className="text-[10px] sm:text-sm text-[var(--brand-gray)] hidden sm:block">Gastos esenciales</p>
-            </div>
-            <div
-              className="p-2 sm:p-4 rounded-lg sm:rounded-xl text-center sm:text-left"
-              style={{ backgroundColor: "#9945FF10" }}
-            >
-              <div className="flex flex-col sm:flex-row items-center sm:justify-between mb-0.5 sm:mb-1">
-                <span className="text-xs sm:text-lg font-bold" style={{ color: "#9945FF" }}>
-                  Deseos
-                </span>
-                <span className="text-sm sm:text-lg font-bold" style={{ color: "#9945FF" }}>
-                  {financialRule.wants}%
-                </span>
-              </div>
-              <p className="text-[10px] sm:text-sm text-[var(--brand-gray)] hidden sm:block">Gastos opcionales</p>
-            </div>
-            <div
-              className="p-2 sm:p-4 rounded-lg sm:rounded-xl text-center sm:text-left"
-              style={{ backgroundColor: "#14F19510" }}
-            >
-              <div className="flex flex-col sm:flex-row items-center sm:justify-between mb-0.5 sm:mb-1">
-                <span className="text-xs sm:text-lg font-bold" style={{ color: "#14F195" }}>
-                  Ahorro
-                </span>
-                <span className="text-sm sm:text-lg font-bold" style={{ color: "#14F195" }}>
-                  {financialRule.savings}%
-                </span>
-              </div>
-              <p className="text-[10px] sm:text-sm text-[var(--brand-gray)] hidden sm:block">Ahorro e inversión</p>
-            </div>
-          </div>
-        </div>
 
         {/* Filters */}
         <div className="flex flex-col gap-3 sm:gap-4">
@@ -710,11 +625,10 @@ export default function CategoriasPage() {
               <button
                 key={tab.value}
                 onClick={() => setFilter(tab.value as typeof filter)}
-                className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors whitespace-nowrap ${
-                  filter === tab.value
+                className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors whitespace-nowrap ${filter === tab.value
                     ? "bg-[var(--brand-purple)] text-white"
                     : "bg-[var(--background-secondary)] hover:bg-[var(--border)]"
-                }`}
+                  }`}
               >
                 {tab.label}
               </button>
@@ -745,11 +659,10 @@ export default function CategoriasPage() {
                 <button
                   key={mode}
                   onClick={() => setViewMode(mode)}
-                  className={`p-1.5 sm:p-2 transition-colors ${
-                    viewMode === mode
+                  className={`p-1.5 sm:p-2 transition-colors ${viewMode === mode
                       ? "bg-[var(--brand-purple)] text-white"
                       : "text-[var(--brand-gray)] hover:text-[var(--foreground)]"
-                  }`}
+                    }`}
                   title={title}
                 >
                   <Icon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
@@ -993,11 +906,10 @@ function CategoryModal({
                       if (t.value !== "expense") setSegment(null);
                     }}
                     disabled={category?.is_default}
-                    className={`flex flex-col items-center gap-1 p-3 rounded-xl border-2 transition-all ${
-                      isSelected
+                    className={`flex flex-col items-center gap-1 p-3 rounded-xl border-2 transition-all ${isSelected
                         ? "border-[var(--brand-purple)] bg-[var(--brand-purple)]/10"
                         : "border-[var(--border)] hover:border-[var(--brand-gray)]"
-                    } ${category?.is_default ? "opacity-50 cursor-not-allowed" : ""}`}
+                      } ${category?.is_default ? "opacity-50 cursor-not-allowed" : ""}`}
                   >
                     <Icon className={`w-5 h-5 ${isSelected ? t.color : "text-[var(--brand-gray)]"}`} />
                     <span className={`text-xs font-medium ${isSelected ? "text-[var(--brand-purple)]" : ""}`}>
@@ -1030,11 +942,10 @@ function CategoryModal({
                   key={i}
                   type="button"
                   onClick={() => setIcon(i)}
-                  className={`w-10 h-10 rounded-lg flex items-center justify-center text-xl border-2 transition-all ${
-                    icon === i
+                  className={`w-10 h-10 rounded-lg flex items-center justify-center text-xl border-2 transition-all ${icon === i
                       ? "border-[var(--brand-purple)] bg-[var(--brand-purple)]/10"
                       : "border-transparent hover:border-[var(--border)]"
-                  }`}
+                    }`}
                 >
                   {i}
                 </button>
@@ -1051,9 +962,8 @@ function CategoryModal({
                   key={c}
                   type="button"
                   onClick={() => setColor(c)}
-                  className={`w-10 h-10 rounded-lg border-2 transition-all relative ${
-                    color === c ? "border-white scale-110 ring-2 ring-offset-2 ring-offset-[var(--background)] ring-white" : "border-transparent hover:scale-105"
-                  }`}
+                  className={`w-10 h-10 rounded-lg border-2 transition-all relative ${color === c ? "border-white scale-110 ring-2 ring-offset-2 ring-offset-[var(--background)] ring-white" : "border-transparent hover:scale-105"
+                    }`}
                   style={{ backgroundColor: c }}
                 >
                   {color === c && (
@@ -1076,11 +986,10 @@ function CategoryModal({
                     key={s.value}
                     type="button"
                     onClick={() => setSegment(s.value as typeof segment)}
-                    className={`w-full p-3 rounded-xl border-2 text-left transition-all ${
-                      segment === s.value
+                    className={`w-full p-3 rounded-xl border-2 text-left transition-all ${segment === s.value
                         ? "border-current"
                         : "border-[var(--border)] hover:border-[var(--brand-gray)]"
-                    }`}
+                      }`}
                     style={{
                       borderColor: segment === s.value ? s.color : undefined,
                       backgroundColor: segment === s.value ? `${s.color}10` : undefined,
