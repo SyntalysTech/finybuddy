@@ -1055,6 +1055,106 @@ function PrevisionPageContent() {
           </div>
         </div>
 
+        {/* Custom Financial Rule Panel */}
+        {hasBudget && totalIncome > 0 && (
+          <div className="card p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="p-2 rounded-lg bg-[var(--brand-purple)]/10">
+                <Sparkles className="w-5 h-5 text-[var(--brand-purple)]" />
+              </div>
+              <h3 className="font-semibold text-lg">Tu nueva regla financiera</h3>
+            </div>
+
+            {Math.abs(availableBalance) < 0.01 ? (
+              // Estado CONFIRMADA
+              <div>
+                <p className="text-sm text-[var(--foreground)] mb-1">
+                  Genial, has creado tu propia regla financiera. La regla más común es la 50/30/20, pero esta es la tuya según tu presupuesto.
+                </p>
+                <p className="text-sm font-medium text-[var(--brand-purple)] mb-4">
+                  {savingsPercent > 50
+                    ? "Estupendo porcentaje de ahorro, sigue así."
+                    : savingsPercent >= 20
+                      ? "Es un muy buen porcentaje de ahorro."
+                      : "Vamos a intentar mejorar ese ahorro. Quizá puedas ajustar algunos gastos."}
+                </p>
+
+                {/* Progress Bar Confirmada */}
+                <div className="h-3 rounded-full overflow-hidden flex mb-4">
+                  <div
+                    className="transition-all"
+                    style={{ width: `${needsPercent}%`, background: "linear-gradient(to right, #2EEB8F, #1EEA8A)" }}
+                    title={`Necesidades: ${needsPercent}%`}
+                  />
+                  <div
+                    className="transition-all"
+                    style={{ width: `${wantsPercent}%`, background: "linear-gradient(to right, #8B4DFF, #8E3DFF)" }}
+                    title={`Deseos: ${wantsPercent}%`}
+                  />
+                  <div
+                    className="transition-all"
+                    style={{ width: `${savingsPercent}%`, background: "linear-gradient(to right, #00E5FF, #00DDF0)" }}
+                    title={`Ahorro: ${savingsPercent}%`}
+                  />
+                </div>
+
+                <div className="flex justify-between text-xs text-[var(--brand-gray)]">
+                  <div className="flex flex-col">
+                    <span className="font-semibold text-[var(--foreground)]" style={{ color: "#2EEB8F" }}>{needsPercent}% Necesidades</span>
+                    <span>Gastos esenciales</span>
+                  </div>
+                  <div className="flex flex-col text-center">
+                    <span className="font-semibold text-[var(--foreground)]" style={{ color: "#8B4DFF" }}>{wantsPercent}% Deseos</span>
+                    <span>Gastos opcionales</span>
+                  </div>
+                  <div className="flex flex-col text-right">
+                    <span className="font-semibold text-[var(--foreground)]" style={{ color: "#00E5FF" }}>{savingsPercent}% Ahorro</span>
+                    <span>Ahorro e inversión</span>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              // Estado PENDIENTE (descuadrado)
+              <div className="opacity-60">
+                <p className="text-sm font-medium text-[var(--brand-purple)] mb-4">
+                  Presupuesto pendiente de cuadrar
+                </p>
+
+                {/* Progress Bar Pendiente */}
+                <div className="h-3 rounded-full overflow-hidden flex mb-4 bg-[var(--background-secondary)]">
+                  <div
+                    className="transition-all opacity-50"
+                    style={{ width: `${needsPercent}%`, background: "linear-gradient(to right, #2EEB8F, #1EEA8A)" }}
+                  />
+                  <div
+                    className="transition-all opacity-50"
+                    style={{ width: `${wantsPercent}%`, background: "linear-gradient(to right, #8B4DFF, #8E3DFF)" }}
+                  />
+                  <div
+                    className="transition-all opacity-50"
+                    style={{ width: `${savingsPercent}%`, background: "linear-gradient(to right, #00E5FF, #00DDF0)" }}
+                  />
+                </div>
+
+                <div className="flex justify-between text-xs text-[var(--brand-gray)] opacity-70">
+                  <div className="flex flex-col">
+                    <span className="font-semibold text-[var(--foreground)]" style={{ color: "#2EEB8F" }}>{needsPercent}% Necesidades</span>
+                    <span>Gastos esenciales</span>
+                  </div>
+                  <div className="flex flex-col text-center">
+                    <span className="font-semibold text-[var(--foreground)]" style={{ color: "#8B4DFF" }}>{wantsPercent}% Deseos</span>
+                    <span>Gastos opcionales</span>
+                  </div>
+                  <div className="flex flex-col text-right">
+                    <span className="font-semibold text-[var(--foreground)]" style={{ color: "#00E5FF" }}>{savingsPercent}% Ahorro</span>
+                    <span>Ahorro e inversión</span>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
 
 
         {/* Balance warning if negative */}
