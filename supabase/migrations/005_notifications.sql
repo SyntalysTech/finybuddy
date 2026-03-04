@@ -53,7 +53,7 @@ BEGIN
     VALUES (
         NEW.id,
         '¡Bienvenido a FinyBuddy!',
-        'Estamos encantados de tenerte aquí. Empieza configurando tus categorías y registrando tu primera operación para tomar el control de tus finanzas.',
+        'Empieza configurando tus categorías y luego creando tu previsión mensual.',
         'welcome',
         'sparkles'
     );
