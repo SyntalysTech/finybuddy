@@ -66,10 +66,7 @@ function PrevisionPageContent() {
   const [hasChanges, setHasChanges] = useState(false);
   const [hasBudget, setHasBudget] = useState(false);
 
-  // Planned savings state
-  const [plannedSavings, setPlannedSavings] = useState<number>(0);
-  const [editingPlannedSavings, setEditingPlannedSavings] = useState(false);
-  const [plannedSavingsValue, setPlannedSavingsValue] = useState<string>("");
+
 
   // Delete confirmation modal
   const [showDeleteBudgetModal, setShowDeleteBudgetModal] = useState(false);
@@ -97,13 +94,13 @@ function PrevisionPageContent() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
-    // Fetch active categories (income and expense)
+    // Fetch active categories (income, expense, and savings)
     const { data: categoriesData } = await supabase
       .from("categories")
       .select("*")
       .eq("user_id", user.id)
       .eq("is_active", true)
-      .in("type", ["income", "expense"])
+      .in("type", ["income", "expense", "savings"])
       .order("type")
       .order("name");
 
@@ -122,20 +119,7 @@ function PrevisionPageContent() {
       .eq("year", selectedYear)
       .eq("month", selectedMonth);
 
-    // Fetch planned savings for selected month
-    const { data: plannedSavingsData } = await supabase
-      .from("planned_savings")
-      .select("amount")
-      .eq("user_id", user.id)
-      .eq("year", selectedYear)
-      .eq("month", selectedMonth)
-      .single();
 
-    if (plannedSavingsData) {
-      setPlannedSavings(plannedSavingsData.amount);
-    } else {
-      setPlannedSavings(0);
-    }
 
     if (budgetsData && budgetsData.length > 0) {
       setBudgets(budgetsData as BudgetWithCategory[]);
@@ -225,27 +209,27 @@ function PrevisionPageContent() {
   // Calculate totals
   const incomeBudgets = budgets.filter(b => b.category?.type === "income");
   const expenseBudgets = budgets.filter(b => b.category?.type === "expense");
+  const savingsBudgets = budgets.filter(b => b.category?.type === "savings");
 
   const totalIncome = incomeBudgets.reduce((sum, b) => sum + b.amount, 0);
   const totalExpenses = expenseBudgets.reduce((sum, b) => sum + b.amount, 0);
-  // Use plannedSavings configured by user instead of calculating from difference
-  const totalSavings = plannedSavings;
-  // Calculate available balance (what's left after expenses and planned savings)
-  const availableBalance = totalIncome - totalExpenses - plannedSavings;
+  const totalSavings = savingsBudgets.reduce((sum, b) => sum + b.amount, 0);
 
-  // Calculate by segment
+  // Calculate available balance (what's left after expenses and savings)
+  const availableBalance = totalIncome - totalExpenses - totalSavings;
+
+  // Calculate by segment (expenses only)
   const needsBudgets = expenseBudgets.filter(b => b.category?.segment === "needs");
   const wantsBudgets = expenseBudgets.filter(b => b.category?.segment === "wants");
-  const savingsBudgets = expenseBudgets.filter(b => b.category?.segment === "savings");
 
   const needsTotal = needsBudgets.reduce((sum, b) => sum + b.amount, 0);
   const wantsTotal = wantsBudgets.reduce((sum, b) => sum + b.amount, 0);
-  const savingsTotal = savingsBudgets.reduce((sum, b) => sum + b.amount, 0);
+  const savingsTotal = totalSavings; // Using the type 'savings' instead of segment
 
   // Calculate percentages vs rule
   const needsPercent = totalIncome > 0 ? Math.round((needsTotal / totalIncome) * 100) : 0;
   const wantsPercent = totalIncome > 0 ? Math.round((wantsTotal / totalIncome) * 100) : 0;
-  const savingsPercent = totalIncome > 0 ? Math.round((plannedSavings / totalIncome) * 100) : 0;
+  const savingsPercent = totalIncome > 0 ? Math.round((totalSavings / totalIncome) * 100) : 0;
 
   // Calculate deviation in euros
   const ruleNeeds = profile?.rule_needs_percent ?? 50;
@@ -258,7 +242,7 @@ function PrevisionPageContent() {
 
   const needsDeviation = needsTotal - needsTarget;
   const wantsDeviation = wantsTotal - wantsTarget;
-  const savingsDeviation = plannedSavings - savingsTarget;
+  const savingsDeviation = totalSavings - savingsTarget;
 
   // Finy intelligent message - Dynamic messages based on budget data
   const getFinyDynamicMessages = (): string[] => {
@@ -274,11 +258,11 @@ function PrevisionPageContent() {
     }
 
     // Check savings
-    if (savingsPercent < ruleSavings && plannedSavings > 0) {
+    if (savingsPercent < ruleSavings && totalSavings > 0) {
       messages.push(`El ahorro está al ${savingsPercent}%. Tu objetivo es ${ruleSavings}%.`);
-    } else if (savingsPercent >= ruleSavings && plannedSavings > 0) {
+    } else if (savingsPercent >= ruleSavings && totalSavings > 0) {
       messages.push(`Ahorro previsto al ${savingsPercent}%. Buen plan.`);
-    } else if (plannedSavings === 0 && totalIncome > 0) {
+    } else if (totalSavings === 0 && totalIncome > 0) {
       messages.push(`No tienes ahorro previsto. Cualquier cantidad ayuda.`);
     }
 
@@ -304,49 +288,7 @@ function PrevisionPageContent() {
 
   const finyDynamicMessages = getFinyDynamicMessages();
 
-  // Start editing planned savings
-  const startEditingPlannedSavings = () => {
-    setPlannedSavingsValue(plannedSavings.toString());
-    setEditingPlannedSavings(true);
-  };
 
-  // Save planned savings edit - immediate save to database
-  const savePlannedSavingsEdit = async () => {
-    const newAmount = parseFloat(plannedSavingsValue) || 0;
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-
-    try {
-      // Delete existing planned savings for this month
-      await supabase
-        .from("planned_savings")
-        .delete()
-        .eq("user_id", user.id)
-        .eq("year", selectedYear)
-        .eq("month", selectedMonth);
-
-      // Insert new planned savings if amount > 0
-      if (newAmount > 0) {
-        const { error } = await supabase
-          .from("planned_savings")
-          .insert({
-            user_id: user.id,
-            amount: newAmount,
-            month: selectedMonth,
-            year: selectedYear,
-          });
-
-        if (error) throw error;
-      }
-
-      setPlannedSavings(newAmount);
-    } catch (error) {
-      console.error("Error saving planned savings:", error);
-      alert("Error al guardar el ahorro previsto");
-    }
-
-    setEditingPlannedSavings(false);
-  };
 
   // Delete entire budget
   const deleteEntireBudget = async () => {
@@ -361,23 +303,14 @@ function PrevisionPageContent() {
       .eq("year", selectedYear)
       .eq("month", selectedMonth);
 
-    // Delete planned savings for this month
-    await supabase
-      .from("planned_savings")
-      .delete()
-      .eq("user_id", user.id)
-      .eq("year", selectedYear)
-      .eq("month", selectedMonth);
-
     setShowDeleteBudgetModal(false);
     setBudgets([]);
-    setPlannedSavings(0);
     setHasBudget(false);
     setHasChanges(false);
   };
 
   // Check if budget is effectively empty
-  const isBudgetEmpty = budgets.length === 0 && plannedSavings === 0;
+  const isBudgetEmpty = budgets.length === 0;
 
   // Copy from previous month (with auto-save)
   const copyFromPreviousMonth = async () => {
@@ -395,16 +328,7 @@ function PrevisionPageContent() {
       .eq("year", prevYear)
       .eq("month", prevMonth);
 
-    // Also copy planned savings
-    const { data: prevPlannedSavings } = await supabase
-      .from("planned_savings")
-      .select("amount")
-      .eq("user_id", user.id)
-      .eq("year", prevYear)
-      .eq("month", prevMonth)
-      .single();
-
-    if ((prevBudgets && prevBudgets.length > 0) || prevPlannedSavings) {
+    if (prevBudgets && prevBudgets.length > 0) {
       // Insert budgets directly to database
       if (prevBudgets && prevBudgets.length > 0) {
         const budgetsToInsert = prevBudgets.map(b => ({
@@ -435,19 +359,6 @@ function PrevisionPageContent() {
         setBudgets(newBudgets as BudgetWithCategory[]);
       }
 
-      // Insert planned savings
-      if (prevPlannedSavings) {
-        await supabase
-          .from("planned_savings")
-          .insert({
-            user_id: user.id,
-            amount: prevPlannedSavings.amount,
-            month: selectedMonth,
-            year: selectedYear,
-          });
-        setPlannedSavings(prevPlannedSavings.amount);
-      }
-
       setHasBudget(true);
     } else {
       alert("No hay presupuesto del mes anterior para copiar");
@@ -470,16 +381,7 @@ function PrevisionPageContent() {
       .eq("year", nextYear)
       .eq("month", nextMonth);
 
-    // Also copy planned savings
-    const { data: nextPlannedSavings } = await supabase
-      .from("planned_savings")
-      .select("amount")
-      .eq("user_id", user.id)
-      .eq("year", nextYear)
-      .eq("month", nextMonth)
-      .single();
-
-    if ((nextBudgets && nextBudgets.length > 0) || nextPlannedSavings) {
+    if (nextBudgets && nextBudgets.length > 0) {
       if (nextBudgets && nextBudgets.length > 0) {
         const newBudgets = nextBudgets.map(b => ({
           ...b,
@@ -488,9 +390,6 @@ function PrevisionPageContent() {
           month: selectedMonth,
         }));
         setBudgets(newBudgets as BudgetWithCategory[]);
-      }
-      if (nextPlannedSavings) {
-        setPlannedSavings(nextPlannedSavings.amount);
       }
       setHasChanges(true);
       setHasBudget(true);
@@ -610,7 +509,7 @@ function PrevisionPageContent() {
     setBudgets(newBudgets);
 
     // Check if budget is now empty
-    if (newBudgets.length === 0 && plannedSavings === 0) {
+    if (newBudgets.length === 0) {
       setHasBudget(false);
     }
 
@@ -700,14 +599,6 @@ function PrevisionPageContent() {
       .eq("year", selectedYear)
       .eq("month", selectedMonth);
 
-    // Delete existing planned savings for this month
-    await supabase
-      .from("planned_savings")
-      .delete()
-      .eq("user_id", user.id)
-      .eq("year", selectedYear)
-      .eq("month", selectedMonth);
-
     // Insert new budgets (only those with amount > 0 or explicitly set)
     const budgetsToInsert = budgets.map(b => ({
       user_id: user.id,
@@ -730,22 +621,6 @@ function PrevisionPageContent() {
       }
     }
 
-    // Insert planned savings
-    if (plannedSavings > 0) {
-      const { error } = await supabase
-        .from("planned_savings")
-        .insert({
-          user_id: user.id,
-          amount: plannedSavings,
-          month: selectedMonth,
-          year: selectedYear,
-        });
-
-      if (error) {
-        console.error("Error saving planned savings:", error);
-        hasError = true;
-      }
-    }
 
     if (hasError) {
       alert("Error al guardar el presupuesto");
@@ -825,6 +700,8 @@ function PrevisionPageContent() {
     let segmentBudgets: BudgetWithCategory[];
     if (segment === "income") {
       segmentBudgets = budgets.filter(b => b.category?.type === "income");
+    } else if (segment === "savings") {
+      segmentBudgets = budgets.filter(b => b.category?.type === "savings");
     } else {
       segmentBudgets = budgets.filter(b => b.category?.type === "expense" && b.category?.segment === segment);
     }
@@ -839,23 +716,15 @@ function PrevisionPageContent() {
       newSegmentBudgets.splice(targetIndex, 0, draggedItem);
 
       // Rebuild full budgets array preserving order
-      const otherBudgets = budgets.filter(b => {
-        if (segment === "income") {
-          return b.category?.type !== "income";
-        } else {
-          return !(b.category?.type === "expense" && b.category?.segment === segment);
-        }
-      });
-
-      // Put segment budgets in their place
       let newBudgets: BudgetWithCategory[];
       if (segment === "income") {
+        const otherBudgets = budgets.filter(b => b.category?.type !== "income");
         newBudgets = [...newSegmentBudgets, ...otherBudgets];
       } else {
         const incomeBudgets = budgets.filter(b => b.category?.type === "income");
         const needsBudgets = segment === "needs" ? newSegmentBudgets : budgets.filter(b => b.category?.segment === "needs");
         const wantsBudgets = segment === "wants" ? newSegmentBudgets : budgets.filter(b => b.category?.segment === "wants");
-        const savingsBudgets = segment === "savings" ? newSegmentBudgets : budgets.filter(b => b.category?.segment === "savings");
+        const savingsBudgets = segment === "savings" ? newSegmentBudgets : budgets.filter(b => b.category?.type === "savings");
         newBudgets = [...incomeBudgets, ...needsBudgets, ...wantsBudgets, ...savingsBudgets];
       }
 
@@ -1044,8 +913,8 @@ function PrevisionPageContent() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-[var(--brand-gray)]">Ahorro previsto</p>
-                <p className={`text-xl font-bold ${plannedSavings >= 0 ? "text-[var(--brand-cyan)]" : "text-[var(--danger)]"}`}>
-                  {formatCurrency(plannedSavings)}
+                <p className={`text-xl font-bold ${totalSavings >= 0 ? "text-[var(--brand-cyan)]" : "text-[var(--danger)]"}`}>
+                  {formatCurrency(totalSavings)}
                 </p>
               </div>
               <div className="p-2 rounded-lg bg-[var(--brand-cyan)]/10">
@@ -1204,7 +1073,7 @@ function PrevisionPageContent() {
             <div>
               <p className="font-medium text-[var(--danger)]">Tu presupuesto no cuadra</p>
               <p className="text-sm text-[var(--foreground)]">
-                Tus gastos previstos ({formatCurrency(totalExpenses)}) + ahorro previsto ({formatCurrency(plannedSavings)}) superan tus ingresos previstos ({formatCurrency(totalIncome)}) en <strong>{formatCurrency(Math.abs(availableBalance))}</strong>.
+                Tus gastos previstos ({formatCurrency(totalExpenses)}) + ahorro previsto ({formatCurrency(totalSavings)}) superan tus ingresos previstos ({formatCurrency(totalIncome)}) en <strong>{formatCurrency(Math.abs(availableBalance))}</strong>.
               </p>
             </div>
           </div>
@@ -1312,7 +1181,7 @@ function PrevisionPageContent() {
                 </div>
               </div>
 
-              {/* Planned Savings Panel - User defined savings */}
+              {/* Savings */}
               <div className="card overflow-hidden">
                 <div className="px-6 py-4 border-b border-[var(--border)] bg-[var(--brand-cyan)]/5">
                   <div className="flex items-center justify-between">
@@ -1322,89 +1191,21 @@ function PrevisionPageContent() {
                     </h3>
                     <div className="text-right">
                       <span className="text-lg font-bold text-[var(--brand-cyan)]">
-                        {formatCurrency(plannedSavings)}
+                        {formatCurrency(savingsTotal)}
                       </span>
                     </div>
                   </div>
                 </div>
-                <div className="p-4">
-                  {editingPlannedSavings ? (
-                    <div className="flex items-center gap-3">
-                      <div className="flex-1">
-                        <label className="block text-sm text-[var(--brand-gray)] mb-2">
-                          Importe de ahorro mensual previsto
-                        </label>
-                        <input
-                          type="number"
-                          value={plannedSavingsValue}
-                          onChange={(e) => setPlannedSavingsValue(e.target.value)}
-                          onWheel={(e) => e.currentTarget.blur()}
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter") savePlannedSavingsEdit();
-                            if (e.key === "Escape") setEditingPlannedSavings(false);
-                          }}
-                          className="w-full px-4 py-3 bg-[var(--background-secondary)] border border-[var(--brand-cyan)] rounded-lg text-lg font-semibold focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                          autoFocus
-                          step="0.01"
-                          min="0"
-                        />
-                      </div>
-                      <button
-                        onClick={savePlannedSavingsEdit}
-                        className="p-3 rounded-lg bg-[var(--success)]/10 text-[var(--success)] hover:bg-[var(--success)]/20 transition-colors"
-                      >
-                        <CheckCircle className="w-5 h-5" />
-                      </button>
-                      <button
-                        onClick={() => setEditingPlannedSavings(false)}
-                        className="p-3 rounded-lg bg-[var(--danger)]/10 text-[var(--danger)] hover:bg-[var(--danger)]/20 transition-colors"
-                      >
-                        <X className="w-5 h-5" />
-                      </button>
-                    </div>
+                <div className="divide-y divide-[var(--border)]">
+                  {savingsBudgets.length > 0 ? (
+                    savingsBudgets.map(b => renderBudgetRow(b, "savings"))
                   ) : (
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-sm text-[var(--brand-gray)]">
-                          Define cuánto quieres ahorrar este mes
-                        </p>
-                        {totalIncome > 0 && (
-                          <p className="text-xs text-[var(--brand-gray)] mt-1">
-                            Objetivo según tu regla: {formatCurrency(savingsTarget)} ({ruleSavings}% de {formatCurrency(totalIncome)})
-                          </p>
-                        )}
-                      </div>
-                      <button
-                        onClick={startEditingPlannedSavings}
-                        className="flex items-center gap-2 px-4 py-2 rounded-lg bg-[var(--brand-cyan)]/10 text-[var(--brand-cyan)] hover:bg-[var(--brand-cyan)]/20 transition-colors"
-                      >
-                        <Edit2 className="w-4 h-4" />
-                        Editar
-                      </button>
+                    <div className="p-4 text-center text-sm text-[var(--brand-gray)]">
+                      Sin categorías de ahorro
                     </div>
                   )}
                 </div>
               </div>
-
-              {/* Savings segment (if any expense categories are marked as savings) */}
-              {savingsBudgets.length > 0 && (
-                <div className="card overflow-hidden">
-                  <div className="px-6 py-4 border-b border-[var(--border)] bg-[var(--brand-cyan)]/5">
-                    <div className="flex items-center justify-between">
-                      <h3 className="font-semibold">Gastos de ahorro</h3>
-                      <span className="text-lg font-bold text-[var(--brand-cyan)]">
-                        {formatCurrency(savingsTotal)}
-                      </span>
-                    </div>
-                    <p className="text-xs text-[var(--brand-gray)] mt-1">
-                      Categorías de gasto etiquetadas como ahorro
-                    </p>
-                  </div>
-                  <div className="divide-y divide-[var(--border)]">
-                    {savingsBudgets.map(b => renderBudgetRow(b, "savings"))}
-                  </div>
-                </div>
-              )}
             </div>
           </div>
         )}
@@ -1442,9 +1243,9 @@ function PrevisionPageContent() {
                         <span>{cat.name}</span>
                         <span className="ml-auto text-xs text-[var(--brand-gray)]">
                           {cat.type === "income" ? "Ingreso" :
-                            cat.segment === "needs" ? "Necesidades" :
-                              cat.segment === "wants" ? "Deseos" :
-                                cat.segment === "savings" ? "Ahorro" : "Gasto"}
+                            cat.type === "savings" ? "Ahorro" :
+                              cat.segment === "needs" ? "Necesidades" :
+                                cat.segment === "wants" ? "Deseos" : "Gasto"}
                         </span>
                       </button>
                     ))}
