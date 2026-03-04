@@ -1274,12 +1274,9 @@ function PrevisionPageContent() {
               <div className="card overflow-hidden">
                 <div className="px-6 py-4 border-b border-[var(--border)] bg-[var(--success)]/5">
                   <div className="flex items-center justify-between">
-                    <h3 className="font-semibold">Necesidades previstas ({ruleNeeds}%)</h3>
+                    <h3 className="font-semibold">Necesidades previstas</h3>
                     <div className="text-right">
                       <span className="text-lg font-bold">{formatCurrency(needsTotal)}</span>
-                      <span className={`text-sm ml-2 ${needsPercent <= ruleNeeds ? "text-[var(--success)]" : "text-[var(--danger)]"}`}>
-                        ({needsPercent}%)
-                      </span>
                     </div>
                   </div>
                 </div>
@@ -1298,12 +1295,9 @@ function PrevisionPageContent() {
               <div className="card overflow-hidden">
                 <div className="px-6 py-4 border-b border-[var(--border)] bg-[var(--warning)]/5">
                   <div className="flex items-center justify-between">
-                    <h3 className="font-semibold">Deseos previstos ({ruleWants}%)</h3>
+                    <h3 className="font-semibold">Deseos previstos</h3>
                     <div className="text-right">
                       <span className="text-lg font-bold">{formatCurrency(wantsTotal)}</span>
-                      <span className={`text-sm ml-2 ${wantsPercent <= ruleWants ? "text-[var(--success)]" : "text-[var(--danger)]"}`}>
-                        ({wantsPercent}%)
-                      </span>
                     </div>
                   </div>
                 </div>
@@ -1324,17 +1318,12 @@ function PrevisionPageContent() {
                   <div className="flex items-center justify-between">
                     <h3 className="font-semibold flex items-center gap-2">
                       <PiggyBank className="w-5 h-5 text-[var(--brand-cyan)]" />
-                      Ahorro previsto ({ruleSavings}%)
+                      Ahorro previsto
                     </h3>
                     <div className="text-right">
                       <span className="text-lg font-bold text-[var(--brand-cyan)]">
                         {formatCurrency(plannedSavings)}
                       </span>
-                      {totalIncome > 0 && (
-                        <span className={`text-sm ml-2 ${savingsPercent >= ruleSavings ? "text-[var(--success)]" : "text-[var(--warning)]"}`}>
-                          ({savingsPercent}%)
-                        </span>
-                      )}
                     </div>
                   </div>
                 </div>
