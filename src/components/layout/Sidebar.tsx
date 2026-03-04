@@ -24,6 +24,7 @@ import {
   X,
   Crown,
   Globe,
+  Briefcase,
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
@@ -45,7 +46,7 @@ interface NavItem {
 const mainNavItems: NavItem[] = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard, color: "text-[#02EAFF]", gradient: "from-[#02EAFF]/20 to-transparent" },
   { name: "Previsión vs Realidad", href: "/prevision-vs-realidad", icon: ArrowLeftRight, color: "text-[#7739FE]", gradient: "from-[#7739FE]/20 to-transparent" },
-  { name: "Operaciones", href: "/operaciones", icon: Receipt, color: "text-[#10B981]", gradient: "from-[#10B981]/20 to-transparent" },
+  { name: "Operaciones", href: "/operaciones", icon: Briefcase, color: "text-[#10B981]", gradient: "from-[#10B981]/20 to-transparent" },
   { name: "Previsión", href: "/prevision", icon: Calculator, color: "text-[#F59E0B]", gradient: "from-[#F59E0B]/20 to-transparent" },
   { name: "Calendario", href: "/calendario", icon: Calendar, color: "text-[#EC4899]", gradient: "from-[#EC4899]/20 to-transparent" },
   { name: "Ahorro", href: "/ahorro", icon: PiggyBank, color: "text-[#22C55E]", gradient: "from-[#22C55E]/20 to-transparent" },
@@ -159,8 +160,8 @@ export default function Sidebar() {
                     href={item.href}
                     onClick={handleNavClick}
                     className={`relative flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-300 group overflow-hidden ${active
-                        ? `bg-gradient-to-r ${item.gradient} border border-white/10`
-                        : "hover:bg-[var(--sidebar-hover)] hover:scale-[1.02]"
+                      ? `bg-gradient-to-r ${item.gradient} border border-white/10`
+                      : "hover:bg-[var(--sidebar-hover)] hover:scale-[1.02]"
                       }`}
                     title={collapsed && !isMobile ? item.name : undefined}
                   >
@@ -171,8 +172,8 @@ export default function Sidebar() {
                       }`}>
                       <Icon
                         className={`w-5 h-5 flex-shrink-0 transition-all duration-300 ${active
-                            ? item.color
-                            : `text-[var(--sidebar-text)] group-hover:${item.color}`
+                          ? item.color
+                          : `text-[var(--sidebar-text)] group-hover:${item.color}`
                           } ${active ? "scale-110" : "group-hover:scale-110"}`}
                       />
                     </div>
@@ -223,8 +224,8 @@ export default function Sidebar() {
                     href={item.href}
                     onClick={handleNavClick}
                     className={`relative flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-300 group overflow-hidden ${active
-                        ? `bg-gradient-to-r ${item.gradient} border border-white/10`
-                        : "hover:bg-[var(--sidebar-hover)] hover:scale-[1.02]"
+                      ? `bg-gradient-to-r ${item.gradient} border border-white/10`
+                      : "hover:bg-[var(--sidebar-hover)] hover:scale-[1.02]"
                       }`}
                     title={collapsed && !isMobile ? item.name : undefined}
                   >
@@ -235,8 +236,8 @@ export default function Sidebar() {
                       }`}>
                       <Icon
                         className={`w-5 h-5 flex-shrink-0 transition-all duration-300 ${active
-                            ? item.color
-                            : `text-[var(--sidebar-text)] group-hover:${item.color}`
+                          ? item.color
+                          : `text-[var(--sidebar-text)] group-hover:${item.color}`
                           } ${active ? "scale-110" : "group-hover:scale-110"}`}
                       />
                     </div>
@@ -283,8 +284,8 @@ export default function Sidebar() {
                     href="/admin"
                     onClick={handleNavClick}
                     className={`relative flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-300 group overflow-hidden ${isActive("/admin")
-                        ? "bg-gradient-to-r from-[#F59E0B]/20 to-transparent border border-white/10"
-                        : "hover:bg-[var(--sidebar-hover)] hover:scale-[1.02]"
+                      ? "bg-gradient-to-r from-[#F59E0B]/20 to-transparent border border-white/10"
+                      : "hover:bg-[var(--sidebar-hover)] hover:scale-[1.02]"
                       }`}
                     title={collapsed && !isMobile ? "Admin" : undefined}
                   >
