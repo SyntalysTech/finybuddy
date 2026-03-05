@@ -372,11 +372,19 @@ export default function DashboardPage() {
         const cat = Array.isArray(op.category) ? op.category[0] : op.category;
 
         if (op.type === "savings") {
-          const savingsId = "savings-total";
-          if (!merged[savingsId]) {
-            merged[savingsId] = { id: savingsId, name: "Ahorro", color: "#02EAFF", amount: 0, segment: "savings" };
+          // Si tiene categoría, usamos su nombre real (Ej: Fondo Libertad, Coche...)
+          if (cat) {
+            if (!merged[cat.id]) {
+              merged[cat.id] = { id: cat.id, name: cat.name, color: "#02EAFF", amount: 0, segment: "savings" };
+            }
+            merged[cat.id].amount += op.amount;
+          } else {
+            const savingsId = "savings-total";
+            if (!merged[savingsId]) {
+              merged[savingsId] = { id: savingsId, name: "Ahorro", color: "#02EAFF", amount: 0, segment: "savings" };
+            }
+            merged[savingsId].amount += op.amount;
           }
-          merged[savingsId].amount += op.amount;
         }
         else if (op.type === "expense") {
           if (!cat) return;
