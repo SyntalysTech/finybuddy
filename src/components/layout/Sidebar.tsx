@@ -25,7 +25,6 @@ import {
   Crown,
   Globe,
   Briefcase,
-  Skull,
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
@@ -59,7 +58,6 @@ const settingsNavItems: NavItem[] = [
   { name: "Mis Categorías", href: "/categorias", icon: FolderOpen, color: "text-[#8B5CF6]", gradient: "from-[#8B5CF6]/20 to-transparent" },
   { name: "Perfil", href: "/perfil", icon: User, color: "text-[#F97316]", gradient: "from-[#F97316]/20 to-transparent" },
   { name: "Ajustes", href: "/ajustes", icon: Settings, color: "text-[#6B7280]", gradient: "from-[#6B7280]/20 to-transparent" },
-  { name: "Zona Prohibida", href: "/joke", icon: Skull, color: "text-[#EF4444]", gradient: "from-[#EF4444]/20 to-transparent" },
 ];
 
 export default function Sidebar() {
