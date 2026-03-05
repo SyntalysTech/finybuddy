@@ -901,7 +901,6 @@ function PrevisionPageContent() {
           messages={[
             "Planifica cuánto esperas ingresar, gastar y ahorrar este mes. No es un tope rígido, sino una guía para tomar mejores decisiones.",
           ]}
-          dynamicMessages={finyDynamicMessages}
           tip="Cuanto más ajustada esté tu previsión, más útil será la comparativa en 'Previsión vs Realidad'."
           finybotMessage="Pregúntame cómo configurar tu previsión mensual."
           storageKey="prevision"

@@ -432,7 +432,6 @@ function PrevisionVsRealidadPageContent() {
           messages={[
             "Compara lo que planificaste con lo que realmente ha pasado. Mira tu margen en cada partida.",
           ]}
-          dynamicMessages={finyDynamicMessages}
           tip="Las desviaciones son normales. Úsalas para planificar mejor el mes siguiente."
           finybotMessage="Pregúntame cómo interpretar las desviaciones de tu presupuesto."
           storageKey="prevision-vs-realidad"
