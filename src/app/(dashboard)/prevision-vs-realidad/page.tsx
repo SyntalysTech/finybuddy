@@ -105,16 +105,12 @@ function PrevisionVsRealidadPageContent() {
       .eq("year", selectedYear)
       .eq("month", selectedMonth);
 
-    // Get planned savings for the month
-    const { data: plannedSavingsData } = await supabase
-      .from("planned_savings")
-      .select("amount")
-      .eq("user_id", user.id)
-      .eq("year", selectedYear)
-      .eq("month", selectedMonth)
-      .single();
+    // Calular el ahorro previsto sumando las categorías tipo "savings" del presupuesto
+    const totalBudgetedSavings = budgetsData
+      ?.filter(b => (b.category as Category)?.type === "savings")
+      .reduce((sum, b) => sum + b.amount, 0) || 0;
 
-    setPlannedSavings(plannedSavingsData?.amount || 0);
+    setPlannedSavings(totalBudgetedSavings);
 
     // Get actual operations for the month
     const startDate = `${selectedYear}-${String(selectedMonth).padStart(2, "0")}-01`;
