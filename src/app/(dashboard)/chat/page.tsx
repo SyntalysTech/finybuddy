@@ -74,6 +74,18 @@ function ChatPageContent() {
   const recognitionRef = useRef<any>(null);
   const synthRef = useRef<SpeechSynthesis | null>(null);
 
+  // Refs to avoid stale closures in voice handlers
+  const isCallModeRef = useRef(false);
+  const callStatusRef = useRef<"idle" | "listening" | "thinking" | "speaking">("idle");
+
+  useEffect(() => {
+    isCallModeRef.current = isCallMode;
+  }, [isCallMode]);
+
+  useEffect(() => {
+    callStatusRef.current = callStatus;
+  }, [callStatus]);
+
   const supabase = createClient();
 
   // Load conversations list
@@ -365,29 +377,31 @@ function ChatPageContent() {
     if (typeof window === "undefined") return;
 
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-    if (!SpeechRecognition) return;
+    if (!SpeechRecognition) {
+      console.error("Speech Recognition not supported in this browser");
+      return;
+    }
 
     if (recognitionRef.current) {
-      try { recognitionRef.current.stop(); } catch (e) { /* ignore */ }
+      try { recognitionRef.current.onend = null; recognitionRef.current.stop(); } catch (e) { }
     }
 
     const recognition = new SpeechRecognition();
     recognition.lang = "es-ES";
-    recognition.continuous = true; // Changed to true for better "always listening" feel, but handled with timer
+    recognition.continuous = false; // Simpler and more reliable for sentence-by-sentence
     recognition.interimResults = true;
 
-    // Reset ref and state
     transcriptRef.current = "";
     setInterimTranscript("");
 
-    const commitSpeech = () => {
-      const finalText = transcriptRef.current.trim();
-      if (isCallMode && finalText && callStatus === "listening") {
-        console.log("Committing speech:", finalText);
+    const commitSpeech = (text: string) => {
+      const finalText = text.trim();
+      if (isCallModeRef.current && finalText && callStatusRef.current === "listening") {
+        console.log("FinyBot: Committing speech ->", finalText);
         if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
 
-        // Stop recognition before sending to avoid double input
-        try { recognition.stop(); } catch (e) { }
+        // Stop recognition completely before sending
+        try { recognition.onend = null; recognition.stop(); } catch (e) { }
 
         setCallStatus("thinking");
         sendMessage(finalText);
@@ -397,43 +411,38 @@ function ChatPageContent() {
     };
 
     recognition.onstart = () => {
+      console.log("FinyBot: Voice recognition started");
       setCallStatus("listening");
     };
 
     recognition.onresult = (event: any) => {
       let currentResult = "";
-      let isFinal = false;
-
-      for (let i = event.resultIndex; i < event.results.length; ++i) {
+      for (let i = 0; i < event.results.length; ++i) {
         currentResult += event.results[i][0].transcript;
-        if (event.results[i].isFinal) isFinal = true;
       }
 
-      const fullTranscript = currentResult;
-      transcriptRef.current = fullTranscript;
-      setInterimTranscript(fullTranscript);
+      transcriptRef.current = currentResult;
+      setInterimTranscript(currentResult);
 
-      // Reset silence timer on every result
       if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
 
-      if (fullTranscript.trim()) {
-        // Trigger commit after 1.5s of silence
+      // If the browser marks the result as final, commit immediately
+      if (event.results[event.results.length - 1].isFinal) {
+        commitSpeech(currentResult);
+      } else {
+        // Fallback: commit after 1.5s of silence
         silenceTimerRef.current = setTimeout(() => {
-          commitSpeech();
+          commitSpeech(transcriptRef.current);
         }, 1500);
-
-        // Or immediately if browser says it's final
-        if (isFinal) {
-          commitSpeech();
-        }
       }
     };
 
     recognition.onend = () => {
-      // If we are still in call mode and haven't transitioned to thinking/speaking, restart
-      if (isCallMode && callStatus === "listening") {
+      console.log("FinyBot: Voice recognition ended. Current status:", callStatusRef.current);
+      // If we are still in listening status and no message was sent, restart
+      if (isCallModeRef.current && callStatusRef.current === "listening") {
         if (transcriptRef.current.trim()) {
-          commitSpeech();
+          commitSpeech(transcriptRef.current);
         } else {
           try { recognition.start(); } catch (e) { }
         }
@@ -441,15 +450,19 @@ function ChatPageContent() {
     };
 
     recognition.onerror = (event: any) => {
-      console.error("Voice recognition error", event.error);
-      if (event.error === "no-speech" && isCallMode) {
-        try { recognition.stop(); } catch (e) { }
-        // restart is handled by onend
+      console.error("FinyBot: Voice recognition error ->", event.error);
+      if (isCallModeRef.current && callStatusRef.current === "listening") {
+        if (event.error === "no-speech") {
+          // Restart on silence
+          try { recognition.start(); } catch (e) { }
+        }
       }
     };
 
     recognitionRef.current = recognition;
-    try { recognition.start(); } catch (e) { }
+    try { recognition.start(); } catch (e) {
+      console.error("FinyBot: Failed to start recognition", e);
+    }
   };
 
   const toggleCallMode = () => {
