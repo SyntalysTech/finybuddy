@@ -390,15 +390,13 @@ export default function DashboardPage() {
           }
 
           if (!merged[cat.id]) {
-            // Asignar el color base según el segmento para garantizar coherencia
-            const segmentColor = segment === "needs" ? "#2EEB8F" : (segment === "wants" ? "#8B4DFF" : "#02EAFF");
+            // Forzamos el color del segmento para asegurar coherencia visual absoluta según requerimiento (Verde=Necesidades, Morado=Deseos)
+            const finalColor = segment === "needs" ? "#2EEB8F" : (segment === "wants" ? "#8B4DFF" : (cat.color || "#02EAFF"));
 
             merged[cat.id] = {
               id: cat.id,
               name: cat.name,
-              // Forzamos el color del segmento si no hay uno muy específico, 
-              // para evitar el error del "morado" en necesidades.
-              color: cat.color || segmentColor,
+              color: finalColor,
               amount: 0,
               segment: segment as "needs" | "wants" | "savings"
             };
@@ -823,7 +821,9 @@ export default function DashboardPage() {
                             </p>
                             <div className="flex items-center justify-center">
                               <span className="px-2 py-0.5 rounded-full text-[10px] sm:text-[11px] font-black bg-white/5 border border-white/10" style={{ color: displayData[activeIndex].color }}>
-                                {currentTotal > 0 ? Math.round((displayData[activeIndex].value / currentTotal) * 100) : 0}%
+                                {monthlySummary && monthlySummary.total_income > 0
+                                  ? Math.round((displayData[activeIndex].value / monthlySummary.total_income) * 100)
+                                  : 0}%
                               </span>
                             </div>
                           </div>
@@ -912,7 +912,14 @@ export default function DashboardPage() {
                       className={`flex items-center gap-1.5 cursor-pointer hover:opacity-80 transition-opacity ${selectedSegment && selectedSegment !== macro.segment ? "opacity-30" : ""}`}
                     >
                       <div className="w-3 h-3 rounded-full" style={{ backgroundColor: macro.color }}></div>
-                      <span className="text-xs text-[var(--foreground)] font-medium">{macro.name}: {formatCurrency(macro.value)}</span>
+                      <span className="text-xs text-[var(--foreground)] font-medium">
+                        {macro.name}: {formatCurrency(macro.value)}
+                        {monthlySummary && monthlySummary.total_income > 0 && (
+                          <span className="ml-1 opacity-60 text-[10px]">
+                            ({Math.round((macro.value / monthlySummary.total_income) * 100)}%)
+                          </span>
+                        )}
+                      </span>
                     </div>
                   ))}
                 </div>
@@ -946,7 +953,11 @@ export default function DashboardPage() {
                               <div className="w-2 h-8 rounded-full opacity-60 group-hover:opacity-100 transition-all" style={{ backgroundColor: c.color }}></div>
                               <div className="flex flex-col">
                                 <span className="text-xs font-bold text-[var(--foreground)] line-clamp-1">{c.name}</span>
-                                <span className="text-[10px] font-medium text-[var(--brand-gray)]">{Math.round((c.amount / currentTotal) * 100)}% del total</span>
+                                <span className="text-[10px] font-medium text-[var(--brand-gray)]">
+                                  {monthlySummary && monthlySummary.total_income > 0
+                                    ? Math.round((c.amount / monthlySummary.total_income) * 100)
+                                    : 0}% de tus ingresos
+                                </span>
                               </div>
                             </div>
                             <span className="font-black text-sm tabular-nums" style={{ color: c.color }}>{formatCurrency(c.amount)}</span>
