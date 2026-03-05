@@ -416,12 +416,12 @@ export default function AjustesPage() {
                 <p className="text-xs text-[var(--brand-gray)]">
                   {isTrialing && (
                     <span className="flex items-center gap-1">
-                      <Clock className="w-3 h-3" />
-                      {trialDaysLeft} dias restantes de prueba
+                      <Clock className="w-3 h-3 inline mr-1" />
+                      {trialDaysLeft} días restantes de prueba
                     </span>
                   )}
                   {trialExpired && "Tu prueba ha terminado"}
-                  {status === "active" && !willCancel && "Suscripcion activa"}
+                  {status === "active" && !willCancel && "Suscripción activa"}
                   {status === "active" && willCancel && periodEnd && `Se cancela el ${new Date(periodEnd).toLocaleDateString("es-ES")}`}
                 </p>
               </div>
@@ -469,8 +469,8 @@ export default function AjustesPage() {
                 onClick={() => handlePreferenceChange("show_decimals", !showDecimals)}
                 disabled={savingPreferences}
                 className={`w-full px-4 py-3 rounded-xl border flex items-center justify-between transition-colors disabled:opacity-50 ${showDecimals
-                    ? "border-[var(--brand-cyan)] bg-[var(--brand-cyan)]/10"
-                    : "border-[var(--border)] bg-[var(--background-secondary)]"
+                  ? "border-[var(--brand-cyan)] bg-[var(--brand-cyan)]/10"
+                  : "border-[var(--border)] bg-[var(--background-secondary)]"
                   }`}
               >
                 <div className="flex items-center gap-2">
@@ -502,8 +502,8 @@ export default function AjustesPage() {
                       type="button"
                       onClick={() => setTheme(option.value as "light" | "dark" | "system")}
                       className={`flex-1 flex flex-col items-center gap-1 p-3 rounded-xl border-2 transition-all ${isSelected
-                          ? "border-[var(--brand-purple)] bg-[var(--brand-purple)]/10"
-                          : "border-[var(--border)] hover:border-[var(--brand-gray)] bg-[var(--background-secondary)]"
+                        ? "border-[var(--brand-purple)] bg-[var(--brand-purple)]/10"
+                        : "border-[var(--border)] hover:border-[var(--brand-gray)] bg-[var(--background-secondary)]"
                         }`}
                     >
                       <Icon className={`w-5 h-5 ${isSelected ? "text-[var(--brand-purple)]" : "text-[var(--brand-gray)]"}`} />

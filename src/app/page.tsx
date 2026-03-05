@@ -280,10 +280,9 @@ function FinyAIDemo() {
                   return (
                     <div
                       key={i}
-                      className={`relative flex items-center justify-between px-2.5 sm:px-3 py-2 sm:py-2.5 rounded-lg transition-all duration-300 ${
-                        isActive ? "bg-[var(--brand-cyan)]/10 shadow-[0_0_20px_rgba(2,234,255,0.15)]" :
+                      className={`relative flex items-center justify-between px-2.5 sm:px-3 py-2 sm:py-2.5 rounded-lg transition-all duration-300 ${isActive ? "bg-[var(--brand-cyan)]/10 shadow-[0_0_20px_rgba(2,234,255,0.15)]" :
                         isScanned ? "bg-[var(--brand-cyan)]/5" : "bg-transparent"
-                      }`}
+                        }`}
                     >
                       {/* Scan line glow */}
                       {isActive && (
@@ -326,9 +325,8 @@ function FinyAIDemo() {
                           style={{ boxShadow: `inset 0 0 20px ${t.color}15, 0 0 15px ${t.color}10` }} />
                       )}
                       <div
-                        className={`relative flex items-center justify-between px-2.5 sm:px-3 py-2 sm:py-2.5 rounded-lg transition-all duration-500 ${
-                          isVisible ? "opacity-100 translate-x-0 scale-100" : "opacity-0 translate-x-8 scale-95"
-                        }`}
+                        className={`relative flex items-center justify-between px-2.5 sm:px-3 py-2 sm:py-2.5 rounded-lg transition-all duration-500 ${isVisible ? "opacity-100 translate-x-0 scale-100" : "opacity-0 translate-x-8 scale-95"
+                          }`}
                         style={isVisible ? { borderLeft: `3px solid ${t.color}` } : {}}
                       >
                         <div className="flex items-center gap-2 sm:gap-3 min-w-0">
@@ -450,9 +448,8 @@ function FinyAIDemo() {
                   return (
                     <div
                       key={i}
-                      className={`flex items-start gap-3 p-3 rounded-xl transition-all duration-600 ${
-                        isVisible ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-4"
-                      }`}
+                      className={`flex items-start gap-3 p-3 rounded-xl transition-all duration-600 ${isVisible ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-4"
+                        }`}
                       style={isVisible ? { backgroundColor: `color-mix(in srgb, ${c.bg} 8%, transparent)`, border: `1px solid color-mix(in srgb, ${c.bg} 15%, transparent)` } : {}}
                     >
                       <div className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 text-[9px] font-bold text-white"
@@ -465,9 +462,8 @@ function FinyAIDemo() {
                 })}
 
                 {/* Savings opportunity highlight */}
-                <div className={`mt-2 p-3 sm:p-4 rounded-xl transition-all duration-700 ${
-                  phase === "done" ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
-                }`}
+                <div className={`mt-2 p-3 sm:p-4 rounded-xl transition-all duration-700 ${phase === "done" ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
+                  }`}
                   style={{ background: "linear-gradient(135deg, rgba(2,234,255,0.08) 0%, rgba(119,57,254,0.08) 100%)", border: "1px solid rgba(2,234,255,0.2)" }}>
                   <div className="flex items-center justify-between flex-wrap gap-2">
                     <div className="flex items-center gap-2">
@@ -623,25 +619,25 @@ function GlowOrb({ color, size, top, left, delay = 0 }: { color: string; size: n
 
 // Pricing section with monthly/annual toggle
 const BASIC_FEATURES = [
-  "Dashboard con KPIs y graficos",
+  "Dashboard con KPIs y gráficos",
   "Registro de ingresos y gastos",
   "Calendario financiero",
-  "Prevision (presupuestos)",
-  "Categorias predefinidas",
+  "Previsión (presupuestos)",
+  "Categorías predefinidas",
   "Regla 50/30/20",
   "Tema claro/oscuro",
 ];
 
 const PRO_FEATURES = [
   "Todo lo del plan Basic",
-  "Prevision vs Realidad",
+  "Previsión vs Realidad",
   "Metas de ahorro",
-  "Gestion de deudas",
+  "Gestión de deudas",
   "FinyBot - Chat IA + voz",
-  "Categorias personalizadas",
+  "Categorías personalizadas",
   "Regla financiera personalizable",
   "Recordatorios y notificaciones",
-  "Exportacion CSV/JSON",
+  "Exportación CSV/JSON",
   "Insights de Finy",
 ];
 
@@ -682,13 +678,11 @@ function PricingToggle({ isLoggedIn, hasUsedTrial }: { isLoggedIn: boolean; hasU
         </span>
         <button
           onClick={() => setAnnual(!annual)}
-          className={`relative w-14 h-7 rounded-full transition-colors ${
-            annual ? "bg-gradient-to-r from-[var(--brand-purple)] to-[var(--brand-cyan)]" : "bg-[var(--border)]"
-          }`}
+          className={`relative w-14 h-7 rounded-full transition-colors ${annual ? "bg-gradient-to-r from-[var(--brand-purple)] to-[var(--brand-cyan)]" : "bg-[var(--border)]"
+            }`}
         >
-          <div className={`absolute top-0.5 w-6 h-6 rounded-full bg-white shadow-md transition-transform ${
-            annual ? "translate-x-7" : "translate-x-0.5"
-          }`} />
+          <div className={`absolute top-0.5 w-6 h-6 rounded-full bg-white shadow-md transition-transform ${annual ? "translate-x-7" : "translate-x-0.5"
+            }`} />
         </button>
         <span className={`text-sm font-medium ${annual ? "text-[var(--foreground)]" : "text-[var(--brand-gray)]"}`}>
           Anual
@@ -1021,7 +1015,7 @@ export default function HomePage() {
               </h1>
 
               <p className="text-lg md:text-xl text-[var(--brand-gray)] mb-8 max-w-lg leading-relaxed">
-                Gestiona tus finanzas de forma inteligente. Controla ingresos,
+                Gestióna tus finanzas de forma inteligente. Controla ingresos,
                 gastos, ahorros y deudas en un solo lugar con{" "}
                 <span className="font-semibold text-[var(--foreground)]">IA integrada</span>.
               </p>

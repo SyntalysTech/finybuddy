@@ -40,12 +40,12 @@ export default function ProGate({
       </div>
       <h2 className="text-xl font-bold">
         {featureName
-          ? `${featureName} es una funcion Pro`
-          : "Funcion exclusiva Pro"}
+          ? `${featureName} es una función Pro`
+          : "Función exclusiva Pro"}
       </h2>
       <p className="text-[var(--brand-gray)] max-w-md">
         Actualiza a FinyBuddy Pro para desbloquear esta funcionalidad y muchas
-        mas. Prueba gratis durante 15 dias.
+        más. Prueba gratis durante 15 días.
       </p>
       <Link
         href="/planes"

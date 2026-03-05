@@ -38,22 +38,22 @@ interface Feature {
 }
 
 const features: Feature[] = [
-  { name: "Dashboard con KPIs y graficos", icon: LayoutDashboard, basic: true, pro: true },
+  { name: "Dashboard con KPIs y gráficos", icon: LayoutDashboard, basic: true, pro: true },
   { name: "Registro de operaciones", icon: Receipt, basic: true, pro: true },
   { name: "Calendario financiero", icon: Calendar, basic: true, pro: true },
-  { name: "Prevision (presupuestos)", icon: TrendingUp, basic: true, pro: true },
-  { name: "Categorias predefinidas", icon: FolderOpen, basic: true, pro: true },
-  { name: "Regla 50/30/20 (vista basica)", icon: Scale, basic: true, pro: true },
+  { name: "Previsión (presupuestos)", icon: TrendingUp, basic: true, pro: true },
+  { name: "Categorías predefinidas", icon: FolderOpen, basic: true, pro: true },
+  { name: "Regla 50/30/20 (vista básica)", icon: Scale, basic: true, pro: true },
   { name: "Tema claro/oscuro", icon: Settings, basic: true, pro: true },
-  { name: "Prevision vs Realidad", icon: TrendingUp, basic: false, pro: true },
+  { name: "Previsión vs Realidad", icon: TrendingUp, basic: false, pro: true },
   { name: "Metas de ahorro", icon: PiggyBank, basic: false, pro: true },
-  { name: "Gestion de deudas", icon: CreditCard, basic: false, pro: true },
+  { name: "Gestión de deudas", icon: CreditCard, basic: false, pro: true },
   { name: "FinyBot - Chat IA + voz", icon: Bot, basic: false, pro: true },
-  { name: "Categorias personalizadas", icon: FolderOpen, basic: false, pro: true },
+  { name: "Categorías personalizadas", icon: FolderOpen, basic: false, pro: true },
   { name: "Regla financiera personalizable", icon: Scale, basic: false, pro: true },
   { name: "Recordatorios financieros", icon: Bell, basic: false, pro: true },
-  { name: "Notificaciones y emails automaticos", icon: Bell, basic: false, pro: true },
-  { name: "Exportacion de datos (CSV/JSON)", icon: Download, basic: false, pro: true },
+  { name: "Notificaciones y emails automáticos", icon: Bell, basic: false, pro: true },
+  { name: "Exportación de datos (CSV/JSON)", icon: Download, basic: false, pro: true },
   { name: "Insights de Finy", icon: Sparkles, basic: false, pro: true },
 ];
 
@@ -146,7 +146,7 @@ export default function PlanesPage() {
 
       <div className="p-6 space-y-6">
         {/* Toast notifications */}
-        {showSuccess && <Toast type="success" message="Suscripcion activada correctamente. Bienvenido a FinyBuddy Pro!" onClose={() => setShowSuccess(false)} />}
+        {showSuccess && <Toast type="success" message="Suscripción activada correctamente. Bienvenido a FinyBuddy Pro!" onClose={() => setShowSuccess(false)} />}
         {showCanceled && <Toast type="error" message="Proceso de pago cancelado. Puedes intentarlo de nuevo cuando quieras." onClose={() => setShowCanceled(false)} />}
 
         {/* Current Plan Status Banner */}
@@ -180,17 +180,17 @@ export default function PlanesPage() {
                   {isTrialing && (
                     <>
                       <Clock className="w-3 h-3 inline mr-1" />
-                      {trialDaysLeft} dias restantes de prueba
+                      {trialDaysLeft} días restantes de prueba
                     </>
                   )}
                   {trialExpired && "Tu prueba ha terminado"}
-                  {status === "active" && !willCancel && "Suscripcion activa"}
+                  {status === "active" && !willCancel && "Suscripción activa"}
                   {status === "active" &&
                     willCancel &&
                     periodEnd &&
                     `Se cancela el ${new Date(periodEnd).toLocaleDateString("es-ES")}`}
                   {status === "past_due" && "Pago pendiente"}
-                  {status === "canceled" && "Suscripcion cancelada"}
+                  {status === "canceled" && "Suscripción cancelada"}
                   {!isTrialing && !trialExpired && status !== "active" && status !== "past_due" && status !== "canceled" && "Plan gratuito"}
                 </p>
               </div>
@@ -203,7 +203,7 @@ export default function PlanesPage() {
                 className="text-sm px-4 py-2 rounded-xl border border-[var(--border)] hover:bg-[var(--background-secondary)] transition-colors flex items-center gap-2 disabled:opacity-50"
               >
                 <ExternalLink className="w-4 h-4" />
-                {portalLoading ? "Abriendo..." : "Gestionar suscripcion"}
+                {portalLoading ? "Abriendo..." : "Gestiónar suscripción"}
               </button>
             )}
           </div>
@@ -304,14 +304,14 @@ export default function PlanesPage() {
               </div>
               <p className="text-xs text-[var(--brand-gray)] mt-1">
                 {isAnnual
-                  ? "al ano (~3,33 EUR/mes)"
+                  ? "al año (~3,33 EUR/mes)"
                   : "al mes"}
               </p>
             </div>
             <ul className="space-y-3 mb-6 flex-1">
               <li className="text-sm font-medium text-[#7739FE] flex items-center gap-2">
                 <Sparkles className="w-4 h-4 shrink-0" />
-                Todo lo de Basic, mas:
+                Todo lo de Basic, más:
               </li>
               {features
                 .filter((f) => f.pro && !f.basic)
@@ -329,7 +329,7 @@ export default function PlanesPage() {
                 className="w-full px-4 py-3 rounded-xl border border-[#7739FE] text-[#7739FE] font-semibold hover:bg-[#7739FE]/10 transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
               >
                 <ExternalLink className="w-4 h-4" />
-                {portalLoading ? "Abriendo..." : "Gestionar suscripcion"}
+                {portalLoading ? "Abriendo..." : "Gestiónar suscripción"}
               </button>
             ) : (
               <button
@@ -346,7 +346,7 @@ export default function PlanesPage() {
                     ? "Suscribirse ahora"
                     : trialExpired
                       ? "Suscribirse a Pro"
-                      : "Empezar prueba gratuita de 15 dias"}
+                      : "Empezar prueba gratuita de 15 días"}
               </button>
             )}
           </div>

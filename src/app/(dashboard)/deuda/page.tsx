@@ -467,11 +467,10 @@ function DeudaPageContent() {
             <button
               key={tab.value}
               onClick={() => setFilter(tab.value as typeof filter)}
-              className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors whitespace-nowrap ${
-                filter === tab.value
+              className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors whitespace-nowrap ${filter === tab.value
                   ? "bg-[var(--brand-purple)] text-white"
                   : "bg-[var(--background-secondary)] hover:bg-[var(--border)]"
-              }`}
+                }`}
             >
               {tab.label}
             </button>
@@ -1003,7 +1002,7 @@ function DebtModal({
 
   const handleConfirmReset = (e: React.MouseEvent) => {
     e.preventDefault();
-    handleSubmit({ preventDefault: () => {} } as React.FormEvent, true);
+    handleSubmit({ preventDefault: () => { } } as React.FormEvent, true);
   };
 
   if (!isOpen) return null;
@@ -1036,11 +1035,10 @@ function DebtModal({
                     key={type.value}
                     type="button"
                     onClick={() => setDebtType(type.value as Debt["debt_type"])}
-                    className={`flex flex-col items-center gap-1 p-3 rounded-xl border-2 transition-all ${
-                      isSelected
+                    className={`flex flex-col items-center gap-1 p-3 rounded-xl border-2 transition-all ${isSelected
                         ? "border-[var(--brand-purple)] bg-[var(--brand-purple)]/10"
                         : "border-[var(--border)] hover:border-[var(--brand-gray)]"
-                    }`}
+                      }`}
                   >
                     <Icon className={`w-5 h-5 ${isSelected ? "text-[var(--brand-purple)]" : "text-[var(--brand-gray)]"}`} />
                     <span className={`text-xs font-medium ${isSelected ? "text-[var(--brand-purple)]" : ""}`}>
@@ -1075,11 +1073,10 @@ function DebtModal({
                     key={p.value}
                     type="button"
                     onClick={() => setPriority(p.value as Debt["priority"])}
-                    className={`p-3 rounded-xl border-2 transition-all ${
-                      isSelected
+                    className={`p-3 rounded-xl border-2 transition-all ${isSelected
                         ? "border-current"
                         : "border-[var(--border)] hover:border-[var(--brand-gray)]"
-                    }`}
+                      }`}
                     style={{
                       borderColor: isSelected ? p.color : undefined,
                       backgroundColor: isSelected ? `${p.color}15` : undefined,
@@ -1580,7 +1577,7 @@ function PaymentModal({
 
 export default function DeudaPage() {
   return (
-    <ProGate featureName="Gestion de deudas">
+    <ProGate featureName="Gestión de deudas">
       <DeudaPageContent />
     </ProGate>
   );
