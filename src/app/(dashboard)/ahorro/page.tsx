@@ -82,7 +82,7 @@ function AhorroPageContent() {
   const supabase = createClient();
 
   const fetchGoals = useCallback(async () => {
-    setLoading(true);
+    // setLoading(true); // Removido para evitar parpadeo y pérdida de scroll
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;

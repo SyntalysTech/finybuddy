@@ -90,7 +90,7 @@ function PrevisionVsRealidadPageContent() {
 
   // Fetch budget vs actual data
   const fetchData = useCallback(async () => {
-    setLoading(true);
+    // setLoading(true); // Removido para evitar parpadeo y pérdida de scroll
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 

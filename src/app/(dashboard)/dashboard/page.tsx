@@ -201,7 +201,7 @@ export default function DashboardPage() {
   const selectedMonth = selectedDate.getMonth() + 1;
 
   const fetchDashboardData = useCallback(async () => {
-    setLoading(true);
+    // setLoading(true); // Removido para evitar parpadeo y pérdida de scroll
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
