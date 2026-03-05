@@ -146,64 +146,90 @@ const getGreeting = () => {
   return "Buenas noches"; // 20:00 - 05:59
 };
 
-// Frase contextual dinámica basada en los datos del mes
-const getContextualPhrase = (
+// Auditoría Finy IA dinámica basada en los datos del mes
+const generateFinyInsights = (
   summary: MonthlySummary | null,
   savingsSummary: SavingsSummary | null,
   debtsSummary: DebtsSummary | null,
+  monthlyEvolution: MonthlyEvolution[],
+  categoryDistribution: CategoryDistribution[],
   formatCurrency: (amount: number) => string
-): string => {
-  if (!summary) return "Sincronizando tus finanzas en tiempo real...";
+): string[] => {
+  if (!summary) return ["Analizando tus movimientos financieros..."];
 
-  const { total_income, total_expenses, total_savings, balance } = summary;
-
-  // Cálculo de ahorro real basado exclusivamente en operaciones de ahorro
-  const actualSavingsRate = total_income > 0 ? (total_savings / total_income) * 100 : 0;
-  const isExcellent = actualSavingsRate >= 30;
-  const isGood = actualSavingsRate >= 20;
-  const isOk = actualSavingsRate >= 10;
+  const insights: string[] = [];
+  const { total_income, total_expenses } = summary;
 
   if (total_income === 0 && total_expenses === 0) {
-    return "Tu panel está listo. Empieza a registrar ingresos y gastos para ver tu análisis.";
+    return ["Tu panel está listo. Empieza a registrar ingresos y gastos para ver tu análisis."];
   }
 
-  // 1. Prioridad: Alertas Críticas (Basadas en balance/disponibilidad)
-  if (balance < 0) {
-    return `¡Ojo! Este mes tienes un descubierto de ${formatCurrency(Math.abs(balance))}. Toca revisar prioridades y controlar los gastos.`;
-  }
+  // 1. Análisis de Evolución Mensual (Últimos 6 meses)
+  if (monthlyEvolution.length >= 2) {
+    const currentMonth = monthlyEvolution[monthlyEvolution.length - 1];
+    const previousMonth = monthlyEvolution[monthlyEvolution.length - 2];
 
-  // 2. Prioridad: Insights de Ahorro basados en operaciones reales
-  if (total_income > 0 && total_savings > 0) {
-    const pctStr = Math.round(actualSavingsRate);
-    if (isExcellent) {
-      return `¡Espectacular! Estás ahorrando el ${pctStr}% de lo que ganas (${formatCurrency(total_savings)}). Gestión de nivel experto.`;
+    if (currentMonth.total_savings > previousMonth.total_savings) {
+      insights.push(`¡Gran progreso en tu evolución mensual! Has ahorrado ${formatCurrency(currentMonth.total_savings - previousMonth.total_savings)} más que el mes pasado. Esta es la constancia que construye riqueza a largo plazo.`);
+    } else if (currentMonth.total_expenses < previousMonth.total_expenses) {
+      insights.push(`Vas por excelente camino. Lograste reducir tus gastos en ${formatCurrency(previousMonth.total_expenses - currentMonth.total_expenses)} respecto al mes anterior. ¡Sigue así!`);
+    } else {
+      insights.push(`Revisando los últimos meses, tus gastos han subido respecto al promedio reciente. Identifica esa fuga de capital esta semana para volver rápidamente a tu ritmo de ahorro ideal.`);
     }
-    if (isGood) {
-      return `Buen trabajo: has destinado un ${pctStr}% a ahorro (${formatCurrency(total_savings)}) este mes. ¡Sigue así!`;
+  } else {
+    insights.push(`¡Empieza fuerte! Sigo estudiando tus primeros meses para detectar tu tendencia mensual de crecimiento.`);
+  }
+
+  // 2. Patrones de Gasto y Malas Prácticas (Distribución de Deseos / Gastos Hormiga)
+  const wantsCategories = categoryDistribution.filter(c => c.segment === "wants");
+  if (wantsCategories.length > 0) {
+    wantsCategories.sort((a, b) => b.amount - a.amount);
+    const topWant = wantsCategories[0];
+
+    if (topWant.amount > 0) {
+      const suggestedGoal = savingsSummary && savingsSummary.active_goals > 0 ? "una de tus metas de ahorro" : "crear un fondo de emergencia";
+      insights.push(`Detecto un patrón potencial de fuga: has destinado ${formatCurrency(topWant.amount)} a "${topWant.name}". Si limitas este gasto y rediriges solo un 30% a ${suggestedGoal}, avanzarías muchísimo más rápido.`);
     }
-    if (isOk) {
-      return `Vas por buen camino: tu ahorro trackeado es del ${pctStr}% de tus ingresos (${formatCurrency(total_savings)}).`;
+  }
+
+  // 3. Insight de Distribución Estratégica
+  const totalCategorized = summary.needs_total + summary.wants_total + summary.total_savings;
+  if (totalCategorized > 0) {
+    const needsPct = Math.round((summary.needs_total / totalCategorized) * 100);
+    const wantsPct = Math.round((summary.wants_total / totalCategorized) * 100);
+    if (needsPct > 60) {
+      insights.push(`Revisando tu gráfico de distribución, tus "Necesidades" consumen el ${needsPct}% de tus salidas. Estás algo por encima del 50% ideal. Cuidado con la inflación de estilo de vida fijo.`);
+    } else if (wantsPct > 40) {
+      insights.push(`Tus "Deseos" representan ahora mismo el ${wantsPct}% de la distribución del mes. Intenta ajustar este porcentaje hacia el 30% para blindar tu planificación mensual.`);
+    } else if (wantsPct > 0 || needsPct > 0) {
+      insights.push(`¡Excelente equilibrio! Tienes una distribución muy sana entre tus necesidades (${needsPct}%) y deseos (${wantsPct}%). Estás demostrando un perfil ahorrador ejemplar.`);
     }
   }
 
-  // 3. Situación ajustada o sin ahorro trackeado
-  if (total_income > 0 && total_savings === 0) {
-    if (balance > 100) {
-      return `Tienes ${formatCurrency(balance)} disponibles. Sería un buen momento para mover algo a ahorro y empezar a trackearlo.`;
+  // 4. Progreso de Metas de Ahorro
+  if (savingsSummary && savingsSummary.total_goals > 0) {
+    if (savingsSummary.overall_progress >= 100) {
+      insights.push(`¡Felicidades absolutas! Has completado al 100% tus metas de ahorro. Es el momento perfecto para fijar horizontes aún más ambiciosos.`);
+    } else {
+      insights.push(`Sobre tu plan futuro: el progreso general de tus metas de ahorro va por el ${Math.round(savingsSummary.overall_progress)}%. Fíjate como objetivo aportar lo antes posible para alcanzar los ${formatCurrency(savingsSummary.total_target)}.`);
     }
-    return "Aún no he detectado operaciones de ahorro este mes. ¡Recuerda pagarte a ti mismo primero!";
   }
 
-  // 4. Metas y Deudas
-  if (savingsSummary && savingsSummary.overall_progress >= 90 && savingsSummary.overall_progress < 100) {
-    return "¡Casi lo tienes! Tu meta de ahorro principal está al 90%. Falta el último empujón.";
+  // 5. Progreso de Deudas
+  if (debtsSummary && debtsSummary.total_debts > 0) {
+    if (debtsSummary.active_debts === 0) {
+      insights.push(`¡Estás oficialmente libre de deudas! Tienes todo bajo control, no permitas adquirir nueva deuda mala.`);
+    } else {
+      insights.push(`Tu estrategia contra la deuda funciona: llevas saldado un ${Math.round(debtsSummary.overall_progress)}% de tus pasivos. Estás acortando el camino hacia la verdadera tranquilidad financiera.`);
+    }
   }
 
-  if (debtsSummary && debtsSummary.overall_progress >= 90 && debtsSummary.active_debts > 0) {
-    return "Liquidación inminente: estás a punto de saldar tus deudas. ¡Libertad financiera a la vista!";
+  // Fallback if not much data yet
+  if (insights.length < 2) {
+    insights.push(`Sigue trackeando fielmente tus operaciones para que pueda hilar cada vez más fino en mis análisis.`);
   }
 
-  return "Sigue trackeando tus operaciones para que pueda darte mejores consejos financieros.";
+  return insights;
 };
 
 export default function DashboardPage() {
@@ -423,7 +449,7 @@ export default function DashboardPage() {
   const greeting = getGreeting();
   const firstName = getFirstName();
   const dailyQuote = getDailyQuote();
-  const contextualPhrase = getContextualPhrase(monthlySummary, savingsSummary, debtsSummary, formatCurrency);
+  const finyInsights = generateFinyInsights(monthlySummary, savingsSummary, debtsSummary, monthlyEvolution, categoryDistribution, formatCurrency);
 
   // Finy interpretation based on financial data - Tono cercano y educativo
   const getFinyMessage = () => {
@@ -647,26 +673,64 @@ export default function DashboardPage() {
       />
 
       <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
-        {/* Frase contextual dinámica con mascota */}
-        <div className="glass-brand p-3 sm:p-4 rounded-xl sm:rounded-2xl animate-slide-in-down relative overflow-hidden">
-          <div className="absolute top-0 left-0 w-24 h-24 bg-gradient-to-br from-[var(--brand-cyan)]/8 to-transparent rounded-br-full pointer-events-none" />
-          <div className="flex items-center gap-2.5 sm:gap-3 relative">
-            <div className="animate-float-slow flex-shrink-0">
-              <Image
-                src="/assets/finy-mascota-minimalista.png"
-                alt="FinyBuddy"
-                width={40}
-                height={40}
-                className="rounded-xl w-9 h-9 sm:w-11 sm:h-11 object-contain"
-              />
+        {/* AI Audit Panel */}
+        <div className="glass-brand p-5 sm:p-6 mb-6 rounded-xl sm:rounded-2xl animate-slide-in-down relative overflow-hidden">
+          {/* Subtle gradient glow in background */}
+          <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-bl from-[var(--brand-cyan)]/10 to-transparent rounded-full blur-3xl pointer-events-none" />
+
+          <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 relative">
+            {/* Mascot Element */}
+            <div className="flex-shrink-0 flex sm:flex-col items-center gap-4 sm:gap-2">
+              <div className="relative animate-float-slow">
+                <div className="absolute inset-0 bg-[var(--brand-cyan)]/20 blur-xl rounded-full" />
+                <Image
+                  src="/assets/finy-mascota-minimalista.png"
+                  alt="FinyBuddy AI"
+                  width={56}
+                  height={56}
+                  className="rounded-xl w-14 h-14 sm:w-16 sm:h-16 object-contain relative z-10 drop-shadow-xl"
+                />
+              </div>
+              <div className="hidden sm:flex flex-col items-center">
+                <span className="text-[10px] font-bold tracking-widest text-[var(--brand-cyan)] uppercase">Auditoría</span>
+                <span className="text-xs text-[var(--brand-gray)]">Finy IA</span>
+              </div>
             </div>
+
+            {/* Content Element */}
             <div className="flex-1 min-w-0">
-              <p className="text-sm sm:text-base font-bold text-white mb-0.5 leading-normal">
-                {loading ? "Analizando tus datos..." : contextualPhrase}
-              </p>
-              <p className="text-[10px] sm:text-xs text-[var(--brand-gray)] italic line-clamp-2 leading-relaxed opacity-90">
-                &ldquo;{dailyQuote}&rdquo;
-              </p>
+              <div className="flex items-center gap-2 mb-3">
+                <Sparkles className="w-5 h-5 text-[var(--brand-cyan)]" />
+                <h3 className="text-lg sm:text-xl font-bold text-white">
+                  Análisis de tu Mes
+                </h3>
+              </div>
+
+              {loading ? (
+                <div className="flex items-center gap-3 py-4">
+                  <div className="w-4 h-4 rounded-full border-2 border-[var(--brand-cyan)] border-t-transparent animate-spin" />
+                  <p className="text-sm text-white/80">Procesando millones de datos en milisegundos...</p>
+                </div>
+              ) : (
+                <div className="space-y-3 mt-4">
+                  {finyInsights.map((insight, idx) => (
+                    <div key={idx} className="flex gap-3 items-start group">
+                      <div className="w-1.5 h-1.5 rounded-full bg-[var(--brand-cyan)] mt-2 flex-shrink-0 group-hover:scale-150 transition-transform shadow-[0_0_8px_rgba(2,234,255,0.8)]" />
+                      <p className="text-sm sm:text-[15px] text-white/90 leading-relaxed font-medium">
+                        {insight}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Pro-tip motivational footer */}
+              <div className="mt-5 pt-4 border-t border-white/10 flex items-start gap-3">
+                <Target className="w-4 h-4 text-[var(--brand-gray)] mt-0.5 flex-shrink-0" />
+                <p className="text-xs sm:text-sm text-[var(--brand-gray)] italic leading-relaxed">
+                  &ldquo;{dailyQuote}&rdquo;
+                </p>
+              </div>
             </div>
           </div>
         </div>
