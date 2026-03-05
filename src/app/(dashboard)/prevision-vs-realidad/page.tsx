@@ -394,13 +394,7 @@ function PrevisionVsRealidadPageContent() {
           </span>
         </div>
 
-        {/* Percentage */}
-        <div className="w-16 text-right">
-          <span className={`text-sm font-semibold ${item.percentage > 100 && isExpense ? "text-[var(--danger)]" : ""
-            }`}>
-            {Math.round(item.percentage)}%
-          </span>
-        </div>
+
       </div>
     );
   };
@@ -560,9 +554,6 @@ function PrevisionVsRealidadPageContent() {
                     <div className="text-right text-sm">
                       <span className="font-bold text-[var(--success)]">{formatCurrency(totalActualIncome)}</span>
                       <span className="text-[var(--brand-gray)]"> / {formatCurrency(totalBudgetedIncome)}</span>
-                      <span className="ml-2 font-medium">
-                        ({totalBudgetedIncome > 0 ? Math.min(Math.round((totalActualIncome / totalBudgetedIncome) * 100), 999) : totalActualIncome > 0 ? 100 : 0}%)
-                      </span>
                     </div>
                   </div>
                   <div className="h-2 bg-[var(--border)] rounded-full overflow-hidden">
@@ -599,9 +590,6 @@ function PrevisionVsRealidadPageContent() {
                     <div className="text-right text-sm">
                       <span className="font-bold">{formatCurrency(needsActual)}</span>
                       <span className="text-[var(--brand-gray)]"> / {formatCurrency(needsBudgeted)}</span>
-                      <span className="ml-2 font-medium">
-                        ({needsBudgeted > 0 ? Math.min(Math.round((needsActual / needsBudgeted) * 100), 999) : needsActual > 0 ? 100 : 0}%)
-                      </span>
                     </div>
                   </div>
                   <div className="h-2 bg-[var(--border)] rounded-full overflow-hidden">
@@ -637,9 +625,6 @@ function PrevisionVsRealidadPageContent() {
                     <div className="text-right text-sm">
                       <span className="font-bold">{formatCurrency(wantsActual)}</span>
                       <span className="text-[var(--brand-gray)]"> / {formatCurrency(wantsBudgeted)}</span>
-                      <span className="ml-2 font-medium">
-                        ({wantsBudgeted > 0 ? Math.min(Math.round((wantsActual / wantsBudgeted) * 100), 999) : wantsActual > 0 ? 100 : 0}%)
-                      </span>
                     </div>
                   </div>
                   <div className="h-2 bg-[var(--border)] rounded-full overflow-hidden">
@@ -677,9 +662,6 @@ function PrevisionVsRealidadPageContent() {
                     <div className="text-right text-sm">
                       <span className="font-bold text-[var(--brand-cyan)]">{formatCurrency(actualSavings)}</span>
                       <span className="text-[var(--brand-gray)]"> / {formatCurrency(budgetedSavings)}</span>
-                      <span className="ml-2 font-medium">
-                        ({budgetedSavings > 0 ? Math.min(Math.round((actualSavings / budgetedSavings) * 100), 999) : actualSavings > 0 ? 100 : 0}%)
-                      </span>
                     </div>
                   </div>
                   <div className="h-2 bg-[var(--border)] rounded-full overflow-hidden">
