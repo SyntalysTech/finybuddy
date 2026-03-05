@@ -554,7 +554,7 @@ function PrevisionVsRealidadPageContent() {
                   </div>
                   <div className="progress-bar h-2">
                     <div
-                      className={`h-full rounded-full transition-all ${totalActualIncome >= totalBudgetedIncome ? "bg-[var(--success)]" : "bg-[var(--warning)]"}`}
+                      className={`h-full rounded-full transition-all bg-[var(--success)]`}
                       style={{ width: `${totalBudgetedIncome > 0 ? Math.min((totalActualIncome / totalBudgetedIncome) * 100, 100) : totalActualIncome > 0 ? 100 : 0}%` }}
                     />
                   </div>
@@ -576,7 +576,7 @@ function PrevisionVsRealidadPageContent() {
                 >
                   <div className="flex items-center justify-between mb-2">
                     <h3 className="font-semibold flex items-center gap-2">
-                      <span className="w-2 h-2 rounded-full bg-[var(--success)]"></span>
+                      <TrendingDown className="w-5 h-5 text-[var(--danger)]" />
                       Necesidades
                       {expandedPanels.needs ? (
                         <ChevronUp className="w-4 h-4 text-[var(--brand-gray)]" />
@@ -585,13 +585,13 @@ function PrevisionVsRealidadPageContent() {
                       )}
                     </h3>
                     <div className="text-right text-sm">
-                      <span className="font-bold text-[var(--success)]">{formatCurrency(needsActual)}</span>
+                      <span className="font-bold text-[var(--danger)]">{formatCurrency(needsActual)}</span>
                       <span className="text-[var(--brand-gray)]"> / {formatCurrency(needsBudgeted)}</span>
                     </div>
                   </div>
                   <div className="progress-bar h-2">
                     <div
-                      className={`h-full rounded-full transition-all ${needsActual <= needsBudgeted ? "bg-[var(--success)]" : "bg-[var(--danger)]"}`}
+                      className={`h-full rounded-full transition-all bg-[var(--danger)]`}
                       style={{ width: `${needsBudgeted > 0 ? Math.min((needsActual / needsBudgeted) * 100, 100) : needsActual > 0 ? 100 : 0}%` }}
                     />
                   </div>
@@ -612,7 +612,7 @@ function PrevisionVsRealidadPageContent() {
                 >
                   <div className="flex items-center justify-between mb-2">
                     <h3 className="font-semibold flex items-center gap-2">
-                      <span className="w-2 h-2 rounded-full bg-[#3B82F6]"></span>
+                      <TrendingDown className="w-5 h-5 text-[var(--danger)]" />
                       Deseos
                       {expandedPanels.wants ? (
                         <ChevronUp className="w-4 h-4 text-[var(--brand-gray)]" />
@@ -621,13 +621,13 @@ function PrevisionVsRealidadPageContent() {
                       )}
                     </h3>
                     <div className="text-right text-sm">
-                      <span className="font-bold text-[#3B82F6]">{formatCurrency(wantsActual)}</span>
+                      <span className="font-bold text-[var(--danger)]">{formatCurrency(wantsActual)}</span>
                       <span className="text-[var(--brand-gray)]"> / {formatCurrency(wantsBudgeted)}</span>
                     </div>
                   </div>
                   <div className="progress-bar h-2">
                     <div
-                      className={`h-full rounded-full transition-all ${wantsActual <= wantsBudgeted ? "bg-[var(--success)]" : "bg-[var(--danger)]"}`}
+                      className={`h-full rounded-full transition-all bg-[var(--danger)]`}
                       style={{ width: `${wantsBudgeted > 0 ? Math.min((wantsActual / wantsBudgeted) * 100, 100) : wantsActual > 0 ? 100 : 0}%` }}
                     />
                   </div>
@@ -664,7 +664,7 @@ function PrevisionVsRealidadPageContent() {
                   </div>
                   <div className="progress-bar h-2">
                     <div
-                      className={`h-full rounded-full transition-all ${actualSavings >= budgetedSavings ? "bg-[var(--success)]" : "bg-[var(--warning)]"}`}
+                      className={`h-full rounded-full transition-all bg-[var(--brand-cyan)]`}
                       style={{ width: `${budgetedSavings > 0 ? Math.min((actualSavings / budgetedSavings) * 100, 100) : actualSavings > 0 ? 100 : 0}%` }}
                     />
                   </div>
