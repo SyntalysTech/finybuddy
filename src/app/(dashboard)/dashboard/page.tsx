@@ -150,54 +150,57 @@ const getGreeting = () => {
 const getContextualPhrase = (
   summary: MonthlySummary | null,
   savingsSummary: SavingsSummary | null,
-  debtsSummary: DebtsSummary | null
+  debtsSummary: DebtsSummary | null,
+  formatCurrency: (amount: number) => string
 ): string => {
-  if (!summary) return "Cargando tus datos financieros...";
+  if (!summary) return "Sincronizando tus finanzas en tiempo real...";
 
   const { total_income, total_expenses, total_savings, balance } = summary;
 
-  // Si no hay datos
-  if (total_income === 0 && total_expenses === 0 && total_savings === 0) {
-    return "Empieza a registrar tus operaciones para ver tu progreso financiero";
+  // Cálculo de ahorro real (Ahorro directo + Excedente de balance)
+  const actualSavingsRate = total_income > 0 ? (balance / total_income) * 100 : 0;
+  const isExcellent = actualSavingsRate >= 30;
+  const isGood = actualSavingsRate >= 20;
+  const isOk = actualSavingsRate >= 10;
+
+  if (total_income === 0 && total_expenses === 0) {
+    return "Tu panel está listo. Empieza a registrar ingresos y gastos para ver tu análisis.";
   }
 
-  // Balance positivo alto
-  if (balance > 0 && balance >= total_income * 0.3) {
-    return "Excelente mes: estás ahorrando más del 30% de tus ingresos";
-  }
-
-  // Balance positivo moderado
-  if (balance > 0 && balance >= total_income * 0.2) {
-    return "Buen ritmo: tu balance es positivo y vas por buen camino";
-  }
-
-  // Balance positivo pero bajo
-  if (balance > 0 && balance < total_income * 0.1) {
-    return "Cuidado: tu margen de ahorro este mes es muy ajustado";
-  }
-
-  // Balance negativo
+  // 1. Prioridad: Alertas Críticas
   if (balance < 0) {
-    return "Atención: tus gastos superan tus ingresos este mes";
+    return `¡Ojo! Este mes tus gastos superan tus ingresos por ${formatCurrency(Math.abs(balance))}. Toca revisar prioridades.`;
   }
 
-  // Ahorro destacado
-  if (total_savings > 0 && total_savings >= total_income * 0.2) {
-    return "Gran trabajo ahorrando: superas el 20% de tus ingresos";
+  // 2. Prioridad: Insights de Ahorro basados en operaciones
+  if (total_income > 0) {
+    const pctStr = Math.round(actualSavingsRate);
+    if (isExcellent) {
+      return `¡Espectacular! Estás ahorrando el ${pctStr}% de lo que ganas (${formatCurrency(balance)}). Gestión de nivel experto.`;
+    }
+    if (isGood) {
+      return `Buen trabajo: llevas un ${pctStr}% de ahorro este mes. Estás por encima de la media recomendada.`;
+    }
+    if (isOk) {
+      return `Vas por buen camino: tu capacidad de ahorro este mes es del ${pctStr}%. Sigue así para consolidar tu colchón.`;
+    }
   }
 
-  // Meta de ahorro cerca
+  // 3. Situación ajustada
+  if (balance > 0 && actualSavingsRate < 10) {
+    return `Margen ajustado: te queda un ${Math.round(actualSavingsRate)}% de ahorro libre. Cuidado con los gastos de última hora.`;
+  }
+
+  // 4. Metas y Deudas
   if (savingsSummary && savingsSummary.overall_progress >= 90 && savingsSummary.overall_progress < 100) {
-    return "Casi alcanzas tu meta de ahorro, sigue así";
+    return "¡Casi lo tienes! Tu meta de ahorro principal está al 90%. Falta el último empujón.";
   }
 
-  // Deudas casi pagadas
   if (debtsSummary && debtsSummary.overall_progress >= 90 && debtsSummary.active_debts > 0) {
-    return "Estás muy cerca de saldar tus deudas, último esfuerzo";
+    return "Liquidación inminente: estás a punto de saldar tus deudas. ¡Libertad financiera a la vista!";
   }
 
-  // Default
-  return "Sigue controlando tus finanzas para alcanzar tus metas";
+  return "Sigue trackeando tus operaciones para que pueda darte mejores consejos financieros.";
 };
 
 export default function DashboardPage() {
@@ -409,7 +412,7 @@ export default function DashboardPage() {
   const greeting = getGreeting();
   const firstName = getFirstName();
   const dailyQuote = getDailyQuote();
-  const contextualPhrase = getContextualPhrase(monthlySummary, savingsSummary, debtsSummary);
+  const contextualPhrase = getContextualPhrase(monthlySummary, savingsSummary, debtsSummary, formatCurrency);
 
   // Finy interpretation based on financial data - Tono cercano y educativo
   const getFinyMessage = () => {

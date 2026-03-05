@@ -578,9 +578,7 @@ function PrevisionVsRealidadPageContent() {
                     <h3 className="font-semibold flex items-center gap-2">
                       <span className="w-2 h-2 rounded-full bg-[var(--success)]"></span>
                       Necesidades
-                      <span className="text-[10px] bg-[var(--success)]/10 text-[var(--success)] px-2 py-0.5 rounded-full font-bold">
-                        {totalActualIncome > 0 ? Math.round((needsActual / totalActualIncome) * 100) : 0}% de ingresos
-                      </span>
+                      Necesidades
                       {expandedPanels.needs ? (
                         <ChevronUp className="w-4 h-4 text-[var(--brand-gray)]" />
                       ) : (
@@ -617,9 +615,7 @@ function PrevisionVsRealidadPageContent() {
                     <h3 className="font-semibold flex items-center gap-2">
                       <span className="w-2 h-2 rounded-full bg-[#3B82F6]"></span>
                       Deseos
-                      <span className="text-[10px] bg-[#3B82F6]/10 text-[#3B82F6] px-2 py-0.5 rounded-full font-bold">
-                        {totalActualIncome > 0 ? Math.round((wantsActual / totalActualIncome) * 100) : 0}% de ingresos
-                      </span>
+                      Deseos
                       {expandedPanels.wants ? (
                         <ChevronUp className="w-4 h-4 text-[var(--brand-gray)]" />
                       ) : (
@@ -657,9 +653,7 @@ function PrevisionVsRealidadPageContent() {
                     <h3 className="font-semibold flex items-center gap-2">
                       <PiggyBank className="w-5 h-5 text-[var(--brand-cyan)]" />
                       Ahorro
-                      <span className="text-[10px] bg-[var(--brand-cyan)]/10 text-[var(--brand-cyan)] px-2 py-0.5 rounded-full font-bold">
-                        {totalActualIncome > 0 ? Math.round((actualSavings / totalActualIncome) * 100) : 0}% de ingresos
-                      </span>
+                      Ahorro
                       {expandedPanels.savingsTotal ? (
                         <ChevronUp className="w-4 h-4 text-[var(--brand-gray)]" />
                       ) : (
