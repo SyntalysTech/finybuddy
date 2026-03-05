@@ -26,6 +26,7 @@ import {
 } from "lucide-react";
 import ProGate from "@/components/subscription/ProGate";
 import { useProfile } from "@/hooks/useProfile";
+import NotificationsDropdown from "@/components/layout/NotificationsDropdown";
 
 interface Message {
   role: "user" | "assistant";
@@ -706,7 +707,7 @@ function ChatPageContent() {
       {/* Contenido principal del chat */}
       <div className="flex-1 flex flex-col h-full min-w-0">
         {/* Header integrado */}
-        <div className="shrink-0 border-b border-[var(--border)] bg-white/50 dark:bg-[var(--background)]/50 backdrop-blur-md sticky top-0 z-20">
+        <div className="shrink-0 border-b border-[var(--border)] bg-[var(--background)] sticky top-0 z-20">
           <div className="px-4 sm:px-8 py-4 flex items-center justify-between">
             <div className="flex items-center gap-4">
               {/* Botón toggle historial */}
@@ -726,9 +727,8 @@ function ChatPageContent() {
               </button>
 
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 sm:w-12 sm:h-12 relative shrink-0 group">
-                  <div className="absolute inset-0 bg-gradient-to-tr from-[var(--brand-purple)] to-[var(--brand-cyan)] rounded-2xl rotate-6 opacity-20 group-hover:rotate-12 transition-transform" />
-                  <div className="relative w-full h-full bg-[var(--background-secondary)] rounded-2xl border border-[var(--border)] flex items-center justify-center p-2 group-hover:-translate-y-1 transition-transform">
+                <div className="w-10 h-10 sm:w-12 sm:h-12 relative shrink-0">
+                  <div className="relative w-full h-full bg-[var(--background-secondary)] rounded-2xl border border-[var(--border)] flex items-center justify-center p-2">
                     <Image
                       src="/assets/finy-mascota-minimalista.png"
                       alt="FinyBot"
@@ -768,6 +768,7 @@ function ChatPageContent() {
               >
                 <Plus className="w-5 h-5" />
               </button>
+              <NotificationsDropdown />
             </div>
           </div>
         </div>
