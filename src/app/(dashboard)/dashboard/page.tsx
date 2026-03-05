@@ -33,6 +33,7 @@ import {
   PieChart,
   Pie,
   Cell,
+  Sector,
 } from "recharts";
 
 // Frases motivacionales financieras
@@ -206,6 +207,10 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [categoryDistribution, setCategoryDistribution] = useState<CategoryDistribution[]>([]);
   const [selectedSegment, setSelectedSegment] = useState<"needs" | "wants" | "savings" | null>(null);
+
+  // States para el gráfico increíble
+  const [activeInnerIndex, setActiveInnerIndex] = useState<number | null>(null);
+  const [activeOuterIndex, setActiveOuterIndex] = useState<number | null>(null);
 
   const supabase = createClient();
 
@@ -466,6 +471,68 @@ export default function DashboardPage() {
     Ahorro: item.total_savings || 0,
   }));
 
+  // Helper variables para el super gráfico
+  const innerData = [
+    { name: "Necesidades", value: monthlySummary?.needs_total || 0, color: "#2EEB8F", segment: "needs" },
+    { name: "Deseos", value: monthlySummary?.wants_total || 0, color: "#8B4DFF", segment: "wants" },
+    { name: "Ahorro", value: monthlySummary?.total_savings || 0, color: "#00E5FF", segment: "savings" },
+  ].filter(item => item.value > 0);
+
+  const totalDistAmount = innerData.reduce((acc, curr) => acc + curr.value, 0);
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const PieWithProps = Pie as React.ElementType<any>;
+
+  // Renderizadores de forma activa para el gráfico ultra-premium
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const renderInnerSector = (props: any) => {
+    const { cx, cy, innerRadius, outerRadius, startAngle, endAngle, fill } = props;
+    return (
+      <g>
+        <Sector
+          cx={cx}
+          cy={cy}
+          innerRadius={innerRadius}
+          outerRadius={outerRadius + 6}
+          startAngle={startAngle}
+          endAngle={endAngle}
+          fill={fill}
+          className="transition-all duration-300 ease-out"
+        />
+        {/* Anillo de resplandor sutil (glow) */}
+        <Sector
+          cx={cx}
+          cy={cy}
+          startAngle={startAngle}
+          endAngle={endAngle}
+          innerRadius={innerRadius - 4}
+          outerRadius={innerRadius - 2}
+          fill={fill}
+          opacity={0.5}
+        />
+      </g>
+    );
+  };
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const renderOuterSector = (props: any) => {
+    const { cx, cy, innerRadius, outerRadius, startAngle, endAngle, fill } = props;
+    return (
+      <g>
+        <Sector
+          cx={cx}
+          cy={cy}
+          innerRadius={innerRadius - 5}
+          outerRadius={outerRadius + 8}
+          startAngle={startAngle}
+          endAngle={endAngle}
+          fill={fill}
+          className="transition-all duration-300 ease-out drop-shadow-lg"
+        />
+      </g>
+    );
+  };
+
   const handlePreviousMonth = () => {
     setSelectedDate(subMonths(selectedDate, 1));
   };
@@ -686,86 +753,137 @@ export default function DashboardPage() {
             <h3 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4">
               Distribución del mes
             </h3>
-            {(monthlySummary?.needs_total || 0) + (monthlySummary?.wants_total || 0) + (monthlySummary?.total_savings || 0) > 0 ? (
-              <div className="flex flex-col items-center">
-                <div className="h-52 sm:h-56 w-full">
+            {totalDistAmount > 0 ? (
+              <div className="flex flex-col items-center w-full">
+                {/* Contenedor del gráfico con tamaño expandido */}
+                <div className="relative h-64 sm:h-80 w-full max-w-sm mx-auto flex items-center justify-center">
+
+                  {/* Etiqueta central flotante (absoluta) */}
+                  <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none z-10">
+                    <div className="bg-[var(--background)]/80 backdrop-blur-md px-6 py-4 rounded-full shadow-lg border border-[var(--border)] flex flex-col items-center justify-center text-center animate-fade-in transition-all duration-300 min-w-[140px]">
+                      {activeOuterIndex !== null && categoryDistribution[activeOuterIndex] ? (
+                        <>
+                          <p className="text-[10px] sm:text-xs font-semibold text-[var(--brand-gray)] uppercase tracking-wider mb-1 px-2 line-clamp-1">{categoryDistribution[activeOuterIndex].name}</p>
+                          <p className="text-lg sm:text-xl font-bold" style={{ color: categoryDistribution[activeOuterIndex].color }}>
+                            {formatCurrency(categoryDistribution[activeOuterIndex].amount)}
+                          </p>
+                        </>
+                      ) : activeInnerIndex !== null && innerData[activeInnerIndex] ? (
+                        <>
+                          <p className="text-xs sm:text-sm font-semibold text-[var(--brand-gray)] uppercase tracking-wider mb-1">{innerData[activeInnerIndex].name}</p>
+                          <p className="text-xl sm:text-2xl font-bold" style={{ color: innerData[activeInnerIndex].color }}>
+                            {formatCurrency(innerData[activeInnerIndex].value)}
+                          </p>
+                          <p className="text-[10px] sm:text-xs font-semibold px-2 py-0.5 mt-1 rounded-full bg-[var(--background-secondary)]" style={{ color: innerData[activeInnerIndex].color }}>
+                            {Math.round((innerData[activeInnerIndex].value / totalDistAmount) * 100)}% del total
+                          </p>
+                        </>
+                      ) : (
+                        <>
+                          <p className="text-xs sm:text-sm font-semibold text-[var(--brand-gray)] uppercase tracking-wider mb-1">Total Movido</p>
+                          <p className="text-xl sm:text-2xl font-bold text-[var(--foreground)]">
+                            {formatCurrency(totalDistAmount)}
+                          </p>
+                        </>
+                      )}
+                    </div>
+                  </div>
+
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
-                      <Pie
-                        data={[
-                          { name: "Necesidades", value: monthlySummary?.needs_total || 0, color: "#2EEB8F", segment: "needs" },
-                          { name: "Deseos", value: monthlySummary?.wants_total || 0, color: "#8B4DFF", segment: "wants" },
-                          { name: "Ahorro", value: monthlySummary?.total_savings || 0, color: "#00E5FF", segment: "savings" },
-                        ].filter(item => item.value > 0)}
+                      {/* Defs para filtros SVG y gradientes premium */}
+                      <defs>
+                        <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+                          <feDropShadow dx="0" dy="4" stdDeviation="6" floodOpacity="0.15" floodColor="currentColor" />
+                        </filter>
+                      </defs>
+
+                      {/* Anillo Interior (Segmentos Principales) */}
+                      <PieWithProps
+                        data={innerData}
                         cx="50%"
                         cy="50%"
-                        innerRadius={0}
-                        outerRadius={55}
+                        innerRadius="50%"
+                        outerRadius="70%"
+                        paddingAngle={3}
                         dataKey="value"
-                        label={({ name }) => window.innerWidth > 640 ? name : ""}
-                        labelLine={false}
-                        style={{ fontSize: "11px", cursor: "pointer", fontWeight: "600" }}
-                        onClick={(data) => {
+                        stroke="var(--background)"
+                        strokeWidth={2}
+                        activeIndex={activeInnerIndex ?? -1}
+                        activeShape={renderInnerSector}
+                        onMouseEnter={(_: any, index: number) => setActiveInnerIndex(index)}
+                        onMouseLeave={() => setActiveInnerIndex(null)}
+                        onClick={(data: any) => {
                           if (selectedSegment === data?.payload?.segment) {
                             setSelectedSegment(null);
                           } else {
                             setSelectedSegment(data?.payload?.segment || null);
                           }
                         }}
+                        style={{ cursor: "pointer", filter: "url(#shadow)" }}
                       >
-                        {[
-                          { name: "Necesidades", value: monthlySummary?.needs_total || 0, color: "#2EEB8F", segment: "needs" },
-                          { name: "Deseos", value: monthlySummary?.wants_total || 0, color: "#8B4DFF", segment: "wants" },
-                          { name: "Ahorro", value: monthlySummary?.total_savings || 0, color: "#00E5FF", segment: "savings" },
-                        ].filter(item => item.value > 0).map((entry, index) => (
+                        {innerData.map((entry, index) => (
                           <Cell
                             key={`cell-${index}`}
                             fill={entry.color}
-                            fillOpacity={selectedSegment && selectedSegment !== entry.segment ? 0.4 : 1}
+                            fillOpacity={selectedSegment && selectedSegment !== entry.segment ? 0.3 : 1}
+                            className="transition-all duration-300 ease-in-out"
                           />
                         ))}
-                      </Pie>
-                      <Pie
+                      </PieWithProps>
+
+                      {/* Anillo Exterior (Subcategorías) */}
+                      <PieWithProps
                         data={categoryDistribution}
                         cx="50%"
                         cy="50%"
-                        innerRadius={63}
-                        outerRadius={85}
+                        innerRadius="74%"
+                        outerRadius="88%"
                         dataKey="amount"
-                        paddingAngle={1}
-                        stroke="none"
-                        onClick={(data) => {
+                        paddingAngle={2}
+                        stroke="var(--background)"
+                        strokeWidth={2}
+                        activeIndex={activeOuterIndex ?? -1}
+                        activeShape={renderOuterSector}
+                        onMouseEnter={(_: any, index: number) => setActiveOuterIndex(index)}
+                        onMouseLeave={() => setActiveOuterIndex(null)}
+                        onClick={(data: any) => {
                           if (selectedSegment === data?.payload?.payload?.segment) {
                             setSelectedSegment(null);
                           } else {
                             setSelectedSegment(data?.payload?.payload?.segment || null);
                           }
                         }}
-                        style={{ cursor: "pointer" }}
+                        style={{ cursor: "pointer", filter: "url(#shadow)" }}
                       >
                         {categoryDistribution.map((entry, index) => (
                           <Cell
                             key={`cell-inner-${index}`}
                             fill={entry.color}
-                            fillOpacity={selectedSegment && selectedSegment !== entry.segment ? 0.3 : 1}
+                            fillOpacity={selectedSegment && selectedSegment !== entry.segment ? 0.25 : 0.9}
+                            className="hover:fill-opacity-100 transition-all duration-300 ease-in-out"
                           />
                         ))}
-                      </Pie>
+                      </PieWithProps>
                       <Tooltip
-                        formatter={(value: number, name: string) => [formatCurrency(value), name]}
+                        formatter={(value: number, name: string) => [formatCurrency(value), ""]}
                         contentStyle={{
                           backgroundColor: "var(--background-secondary)",
                           border: "1px solid var(--border)",
-                          borderRadius: "8px",
-                          fontSize: "12px",
+                          borderRadius: "12px",
+                          fontSize: "13px",
                           color: "var(--foreground)",
+                          boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.3), 0 8px 10px -6px rgba(0, 0, 0, 0.1)",
+                          padding: "10px 14px",
+                          fontWeight: "600"
                         }}
-                        itemStyle={{ color: "var(--foreground)" }}
+                        itemStyle={{ color: "var(--foreground)", padding: 0 }}
+                        labelStyle={{ display: "none" }}
                       />
                     </PieChart>
                   </ResponsiveContainer>
                 </div>
-                <div className="flex flex-wrap justify-center gap-3 sm:gap-4 mt-2">
+                <div className="flex flex-wrap justify-center gap-3 sm:gap-4 mt-2 w-full">
                   <div
                     onClick={() => setSelectedSegment(selectedSegment === "needs" ? null : "needs")}
                     className={`flex items-center gap-1.5 cursor-pointer hover:opacity-80 transition-opacity ${selectedSegment && selectedSegment !== "needs" ? "opacity-30" : ""}`}
@@ -801,12 +919,13 @@ export default function DashboardPage() {
                       {categoryDistribution
                         .filter(c => c.segment === selectedSegment)
                         .map(c => (
-                          <div key={c.id} className="flex items-center justify-between text-sm py-2 px-3 rounded-lg bg-[var(--background-secondary)] w-full max-w-[280px] hover:bg-[var(--border)] transition-colors">
-                            <div className="flex items-center gap-2">
-                              <span className="w-2.5 h-2.5 rounded-full shadow-sm" style={{ backgroundColor: c.color }} />
-                              <span className="font-medium truncate max-w-[140px]">{c.name}</span>
+                          <div key={c.id} className="flex items-center justify-between text-sm p-3 rounded-xl bg-gradient-to-r from-[var(--background-secondary)]/50 to-[var(--background-secondary)] w-full w-full border border-transparent hover:border-[var(--border)] transition-all duration-300 shadow-sm relative overflow-hidden group">
+                            <div className="absolute left-0 top-0 bottom-0 w-1 opacity-80 group-hover:opacity-100 transition-opacity" style={{ backgroundColor: c.color }}></div>
+                            <div className="flex items-center gap-3 pl-2">
+                              <span className="w-2.5 h-2.5 rounded-full shadow-[0_0_8px_rgba(255,255,255,0.2)]" style={{ backgroundColor: c.color }} />
+                              <span className="font-medium truncate max-w-[140px] text-[var(--foreground)]">{c.name}</span>
                             </div>
-                            <span className="font-semibold tabular-nums">{formatCurrency(c.amount)}</span>
+                            <span className="font-bold tabular-nums" style={{ color: c.color }}>{formatCurrency(c.amount)}</span>
                           </div>
                         ))}
                       {categoryDistribution.filter(c => c.segment === selectedSegment).length === 0 && (
