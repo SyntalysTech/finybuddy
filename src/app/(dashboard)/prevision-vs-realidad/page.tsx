@@ -299,9 +299,6 @@ function PrevisionVsRealidadPageContent() {
       if (!isExpenseOk && Math.abs(expenseDeviation) > totalBudgetedExpenses * 0.1) {
         messages.push("En gastos vas algo por encima de lo previsto, quizá conviene ir con más calma el resto del mes.");
       }
-      if (!isSavingsOk && budgetedSavings > 0) {
-        messages.push("Aún tienes margen para ahorrar si mantienes el ritmo.");
-      }
       if (!isIncomeOk && totalBudgetedIncome > 0) {
         messages.push("Los ingresos van por debajo de lo esperado. Revisa si hay algún ingreso pendiente.");
       }

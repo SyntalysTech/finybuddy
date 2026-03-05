@@ -302,7 +302,7 @@ function PrevisionPageContent() {
 
     // Check wants
     if (wantsPercent > ruleWants + 10) {
-      messages.push(`Los deseos están al ${wantsPercent}%. Tu objetivo es ${ruleWants}%.`);
+      // Mensaje eliminado por petición
     } else if (wantsPercent <= ruleWants && wantsTotal > 0) {
       messages.push(`Deseos controlados al ${wantsPercent}%.`);
     }
