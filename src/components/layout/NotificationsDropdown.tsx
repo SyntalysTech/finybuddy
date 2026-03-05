@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { Bell, Check, CheckCheck, Sparkles, Info, AlertTriangle, AlertCircle, CheckCircle, X, BarChart3 } from "lucide-react";
+import { Bell, Check, CheckCheck, Sparkles, Info, AlertTriangle, AlertCircle, CheckCircle, X, BarChart3, Trash2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { formatDistanceToNow, format } from "date-fns";
 import { es } from "date-fns/locale";
@@ -120,6 +120,41 @@ export default function NotificationsDropdown() {
     setUnreadCount(0);
   };
 
+  // Borrar notificación individual
+  const deleteNotification = async (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    const { error } = await supabase
+      .from("notifications")
+      .delete()
+      .eq("id", id);
+
+    if (!error) {
+      const deletedNotif = notifications.find(n => n.id === id);
+      setNotifications((prev) => prev.filter((n) => n.id !== id));
+      if (deletedNotif && !deletedNotif.is_read) {
+        setUnreadCount((prev) => Math.max(0, prev - 1));
+      }
+    }
+  };
+
+  // Borrar todas las notificaciones
+  const deleteAllNotifications = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    if (!confirm("¿Estás seguro de que quieres borrar todas las notificaciones?")) return;
+
+    const { error } = await supabase
+      .from("notifications")
+      .delete()
+      .eq("user_id", user.id);
+
+    if (!error) {
+      setNotifications([]);
+      setUnreadCount(0);
+    }
+  };
+
   // Cerrar al hacer click fuera
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -181,15 +216,28 @@ export default function NotificationsDropdown() {
           {/* Header */}
           <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--border)]">
             <h3 className="font-semibold text-sm">Notificaciones</h3>
-            {unreadCount > 0 && (
-              <button
-                onClick={markAllAsRead}
-                className="text-xs text-[var(--brand-cyan)] hover:underline flex items-center gap-1"
-              >
-                <CheckCheck className="w-3 h-3" />
-                Marcar todas
-              </button>
-            )}
+            <div className="flex items-center gap-3">
+              {unreadCount > 0 && (
+                <button
+                  onClick={markAllAsRead}
+                  className="text-[10px] text-[var(--brand-cyan)] hover:opacity-80 flex items-center gap-1 transition-opacity"
+                  title="Marcar todas como leídas"
+                >
+                  <CheckCheck className="w-3 h-3" />
+                  Leídas
+                </button>
+              )}
+              {notifications.length > 0 && (
+                <button
+                  onClick={deleteAllNotifications}
+                  className="text-[10px] text-[var(--danger)] hover:opacity-80 flex items-center gap-1 transition-opacity"
+                  title="Borrar todas"
+                >
+                  <Trash2 className="w-3 h-3" />
+                  Borrar
+                </button>
+              )}
+            </div>
           </div>
 
           {/* Notifications List */}
@@ -211,16 +259,14 @@ export default function NotificationsDropdown() {
                 return (
                   <div
                     key={notification.id}
-                    className={`px-4 py-3 border-b border-[var(--border)] last:border-b-0 hover:bg-[var(--background-secondary)] transition-colors cursor-pointer ${
-                      !notification.is_read ? "bg-[var(--brand-cyan)]/5" : ""
-                    }`}
+                    className={`group px-4 py-3 border-b border-[var(--border)] last:border-b-0 hover:bg-[var(--background-secondary)] transition-colors cursor-pointer ${!notification.is_read ? "bg-[var(--brand-cyan)]/5" : ""
+                      }`}
                     onClick={() => openNotification(notification)}
                   >
                     <div className="flex gap-3">
                       <div
-                        className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${
-                          typeBgColors[notification.type]
-                        }`}
+                        className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${typeBgColors[notification.type]
+                          }`}
                       >
                         <Icon
                           className={`w-4 h-4 ${typeColors[notification.type]}`}
@@ -231,9 +277,18 @@ export default function NotificationsDropdown() {
                           <p className="text-sm font-medium truncate">
                             {notification.title}
                           </p>
-                          {!notification.is_read && (
-                            <span className="w-2 h-2 rounded-full bg-[var(--brand-cyan)] flex-shrink-0 mt-1.5" />
-                          )}
+                          <div className="flex items-center gap-1.5 flex-shrink-0">
+                            {!notification.is_read && (
+                              <span className="w-2 h-2 rounded-full bg-[var(--brand-cyan)]" />
+                            )}
+                            <button
+                              onClick={(e) => deleteNotification(notification.id, e)}
+                              className="p-1 rounded-md hover:bg-[var(--danger)]/10 text-[var(--brand-gray)]/40 hover:text-[var(--danger)] transition-all opacity-0 group-hover:opacity-100"
+                              title="Borrar"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
                         </div>
                         <p className="text-xs text-[var(--brand-gray)] mt-0.5 line-clamp-2">
                           {notification.message}
