@@ -377,12 +377,19 @@ export default function DashboardPage() {
         // Si es gasto, se agrupa por categoría y segmento (necesidades/deseos)
         else if (op.type === "expense") {
           if (!cat) return;
-          const segment = cat.segment || "needs";
+          // Normalizar segmento para evitar fallos si viene null o con nombres distintos
+          let segment = cat.segment?.toLowerCase();
+          if (segment !== "needs" && segment !== "wants" && segment !== "savings") {
+            segment = "needs"; // Default a necesidades si no hay segmento
+          }
+
           if (!merged[cat.id]) {
+            // Asignar color coherente con el segmento si la categoría no tiene uno
+            const defaultColor = segment === "needs" ? "#2EEB8F" : segment === "wants" ? "#8B4DFF" : "#02EAFF";
             merged[cat.id] = {
               id: cat.id,
               name: cat.name,
-              color: cat.color || (segment === "needs" ? "#2EEB8F" : "#8B4DFF"),
+              color: cat.color || defaultColor,
               amount: 0,
               segment
             };
@@ -497,7 +504,26 @@ export default function DashboardPage() {
 
   // Datos activos para mostrar: Por defecto Macros, si seleccionamos uno, mostramos su detalle
   const displayData = selectedSegment
-    ? categoryDistribution.filter(c => c.segment === selectedSegment).map(c => ({ name: c.name, value: c.amount, color: c.color, segment: c.segment, isSub: true }))
+    ? categoryDistribution
+      .filter(c => c.segment === selectedSegment)
+      .map((c, idx, arr) => {
+        // Si estamos en drill-down, forzamos una coherencia cromática para que sea "el mejor gráfico"
+        // Mantenemos el color de la DB si existe, si no, generamos variaciones del color base del segmento
+        const baseColor = selectedSegment === "needs" ? "#2EEB8F" : selectedSegment === "wants" ? "#8B4DFF" : "#02EAFF";
+
+        // Solo variamos el color si no tiene uno específico o para asegurar el "wow" factor
+        // Generamos una variación de opacidad/luminosidad basada en el índice para que se vea premium
+        const opacity = 1 - (idx / Math.max(arr.length, 1)) * 0.5;
+        return {
+          name: c.name,
+          value: c.amount,
+          color: c.color || baseColor, // Mantenemos el color original o el base
+          segment: c.segment,
+          isSub: true,
+          // Añadimos una propiedad extra para efectos visuales si fuera necesario
+          glowColor: baseColor
+        };
+      })
     : innerData;
 
   const currentTotal = displayData.reduce((acc, curr) => acc + curr.value, 0);
@@ -770,8 +796,8 @@ export default function DashboardPage() {
                 <div className="relative h-64 sm:h-80 w-full max-w-sm mx-auto flex items-center justify-center">
 
                   {/* Etiqueta central flotante (absoluta) con diseño espacial */}
-                  <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none z-10">
-                    <div className={`bg-[var(--background)]/80 backdrop-blur-2xl px-6 py-6 rounded-full shadow-[0_0_50px_-12px_rgba(0,0,0,0.5)] border border-[var(--border)]/50 flex flex-col items-center justify-center text-center transition-all duration-700 min-w-[170px] aspect-square pointer-events-auto ${selectedSegment ? 'cursor-pointer hover:scale-110 active:scale-95 group' : ''}`}
+                  <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none z-20">
+                    <div className={`bg-[var(--background)]/80 backdrop-blur-2xl px-6 py-6 rounded-full shadow-[0_0_50px_-12px_rgba(0,0,0,0.5)] border border-[var(--border)]/50 flex flex-col items-center justify-center text-center transition-all duration-700 min-w-[175px] aspect-square pointer-events-auto ${selectedSegment ? 'cursor-pointer hover:scale-110 active:scale-95 group' : ''}`}
                       onClick={() => { if (selectedSegment) { setSelectedSegment(null); setActiveIndex(null); } }}>
                       <div className="relative z-10">
                         {activeIndex !== null && displayData[activeIndex] ? (
@@ -782,7 +808,7 @@ export default function DashboardPage() {
                             </p>
                             <div className="flex items-center justify-center">
                               <span className="px-2 py-0.5 rounded-full text-[10px] sm:text-[11px] font-black bg-white/5 border border-white/10" style={{ color: displayData[activeIndex].color }}>
-                                {Math.round((displayData[activeIndex].value / currentTotal) * 100)}%
+                                {currentTotal > 0 ? Math.round((displayData[activeIndex].value / currentTotal) * 100) : 0}%
                               </span>
                             </div>
                           </div>
