@@ -77,7 +77,16 @@ const CategoryIcon = ({ name, color, className }: { name: string; color?: string
 
   // Detectar si es emoji (compatibilidad)
   const isEmoji = /[\u1000-\uFFFF]/.test(name) || name.length <= 2;
-  if (isEmoji) return <span className={className}>{name}</span>;
+  if (isEmoji) {
+    return (
+      <span
+        className="flex items-center justify-center leading-none select-none transition-transform hover:scale-110"
+        style={{ fontSize: '1.8rem' }}
+      >
+        {name}
+      </span>
+    );
+  }
 
   const IconComp = icons[name];
   if (!IconComp) return <Tag className={className} style={{ color }} />;
@@ -111,6 +120,7 @@ export default function CategoriasPage() {
   const [financialRule, setFinancialRule] = useState<FinancialRule>({ needs: 50, wants: 30, savings: 20 });
   const [showDefaultModal, setShowDefaultModal] = useState(false);
   const [isProcessingDefault, setIsProcessingDefault] = useState(false);
+  const [notification, setNotification] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
     income: true,
     expense: true,
@@ -179,6 +189,13 @@ export default function CategoriasPage() {
   useEffect(() => {
     fetchCategories();
   }, [fetchCategories]);
+
+  useEffect(() => {
+    if (notification) {
+      const timer = setTimeout(() => setNotification(null), 4000);
+      return () => clearTimeout(timer);
+    }
+  }, [notification]);
 
   const handleToggleActive = async (category: Category) => {
     try {
@@ -251,7 +268,7 @@ export default function CategoriasPage() {
       setShowDefaultModal(false);
     } catch (error) {
       console.error("Error toggling default categories:", error);
-      alert("Error al procesar las categorías predeterminadas");
+      setNotification({ message: "Error al procesar las categorías predeterminadas", type: 'error' });
     } finally {
       setIsProcessingDefault(false);
     }
@@ -331,10 +348,10 @@ export default function CategoriasPage() {
 
       await fetchCategories();
       setShowDefaultModal(false);
-      alert("Categorías originales restauradas con éxito.");
+      setNotification({ message: "Categorías originales restauradas con éxito", type: 'success' });
     } catch (error) {
       console.error("Error restoring default categories:", error);
-      alert("Error al restaurar las categorías");
+      setNotification({ message: "Error al restaurar las categorías", type: 'error' });
     } finally {
       setIsProcessingDefault(false);
     }
@@ -989,6 +1006,23 @@ export default function CategoriasPage() {
           </div>
         </div>
       )}
+
+      {/* Custom Notification */}
+      {notification && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[100] animate-slide-in">
+          <div className={`px-6 py-3 rounded-2xl shadow-xl border flex items-center gap-3 min-w-[300px] backdrop-blur-md ${notification.type === 'success'
+            ? 'bg-emerald-500/10 border-emerald-500 text-emerald-500'
+            : 'bg-rose-500/10 border-rose-500 text-rose-500'
+            }`}>
+            {notification.type === 'success' ? (
+              <CheckCircle className="w-5 h-5 shrink-0" />
+            ) : (
+              <AlertCircle className="w-5 h-5 shrink-0" />
+            )}
+            <p className="font-semibold text-sm">{notification.message}</p>
+          </div>
+        </div>
+      )}
     </>
   );
 }
@@ -1027,7 +1061,7 @@ function CategoryModal({
       setIcon("ShoppingBag");
       setColor("#9945FF");
       setType("expense");
-      setSegment("needs"); // Default to "needs" for new expense categories
+      setSegment("needs");
     }
     setError("");
   }, [category, isOpen]);
