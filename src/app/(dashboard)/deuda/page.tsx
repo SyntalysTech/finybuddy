@@ -635,13 +635,13 @@ function DeudaPageContent() {
                             <span className="text-sm text-[var(--brand-gray)]">
                               Pagado: {formatCurrency(debt.original_amount - debt.current_balance)} de {formatCurrency(debt.original_amount)}
                             </span>
-                            <span className="text-sm font-semibold text-[var(--success)]">
+                            <span className="text-sm font-semibold text-[var(--danger)]">
                               {progress.toFixed(0)}%
                             </span>
                           </div>
                           <div className="progress-bar h-3">
                             <div
-                              className="h-full rounded-full transition-all duration-800 bg-[var(--success)]"
+                              className="h-full rounded-full transition-all duration-800 bg-[var(--danger)]"
                               style={{ width: `${Math.max(progress, 2)}%` }}
                             />
                           </div>
