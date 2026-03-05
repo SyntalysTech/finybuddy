@@ -73,6 +73,7 @@ function PrevisionPageContent() {
     wants: true,
     savings: true,
   });
+  const [isRuleExpanded, setIsRuleExpanded] = useState(true);
 
   useEffect(() => {
     try {
@@ -955,139 +956,151 @@ function PrevisionPageContent() {
         {/* Custom Financial Rule Panel */}
         {hasBudget && totalIncome > 0 && (
           <div className="card p-6">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="p-2 rounded-lg bg-[var(--background-secondary)]">
-                <Sparkles className="w-5 h-5 text-[var(--brand-cyan)]" />
+            <div className="flex items-center justify-between gap-3 mb-6">
+              <div
+                className="flex items-center gap-3 cursor-pointer group"
+                onClick={() => setIsRuleExpanded(!isRuleExpanded)}
+              >
+                <div className="p-2 rounded-lg bg-[var(--background-secondary)] flex items-center justify-center relative transition-all hover:scale-105 shadow-sm">
+                  <Sparkles className="w-5 h-5 text-[var(--brand-cyan)]" />
+                  <div className="absolute -right-2 -bottom-1 bg-[var(--brand-cyan)] rounded-full p-0.5 border-2 border-[var(--background)] shadow-sm">
+                    {isRuleExpanded ? <ChevronUp className="w-3 h-3 text-white" /> : <ChevronDown className="w-3 h-3 text-white" />}
+                  </div>
+                </div>
+                <h3 className="font-semibold text-lg">Tu nueva regla financiera</h3>
               </div>
-              <h3 className="font-semibold text-lg">Tu nueva regla financiera</h3>
             </div>
 
-            {Math.abs(availableBalance) < 0.01 ? (
-              // Estado CONFIRMADA
-              <div>
-                <p className="text-sm text-[var(--foreground)] mb-1">
-                  Genial, has creado tu propia regla financiera. La regla más común es la 50/30/20, pero esta es la tuya según tu presupuesto.
-                </p>
-                <p className="text-sm font-medium text-[var(--foreground)] mb-4">
-                  {savingsPercent > 50
-                    ? "Estupendo porcentaje de ahorro, sigue así."
-                    : savingsPercent >= 20
-                      ? "Es un muy buen porcentaje de ahorro."
-                      : "Vamos a intentar mejorar ese ahorro. Quizá puedas ajustar algunos gastos."}
-                </p>
+            {isRuleExpanded && (
+              <>
+                {Math.abs(availableBalance) < 0.01 ? (
+                  // Estado CONFIRMADA
+                  <div>
+                    <p className="text-sm text-[var(--foreground)] mb-1">
+                      Genial, has creado tu propia regla financiera. La regla más común es la 50/30/20, pero esta es la tuya según tu presupuesto.
+                    </p>
+                    <p className="text-sm font-medium text-[var(--foreground)] mb-4">
+                      {savingsPercent > 50
+                        ? "Estupendo porcentaje de ahorro, sigue así."
+                        : savingsPercent >= 20
+                          ? "Es un muy buen porcentaje de ahorro."
+                          : "Vamos a intentar mejorar ese ahorro. Quizá puedas ajustar algunos gastos."}
+                    </p>
 
-                {/* Progress Bar Confirmada */}
-                <div className="progress-bar h-4 flex mb-6">
-                  <div
-                    className="transition-all"
-                    style={{ width: `${needsPercent}%`, background: "linear-gradient(to right, #2EEB8F, #1EEA8A)" }}
-                    title={`Necesidades: ${needsPercent}%`}
-                  />
-                  <div
-                    className="transition-all"
-                    style={{ width: `${wantsPercent}%`, background: "linear-gradient(to right, #3B82F6, #2563EB)" }}
-                    title={`Deseos: ${wantsPercent}%`}
-                  />
-                  <div
-                    className="transition-all"
-                    style={{ width: `${savingsPercent}%`, background: "linear-gradient(to right, #00E5FF, #00DDF0)" }}
-                    title={`Ahorro: ${savingsPercent}%`}
-                  />
-                </div>
-
-                <div className="flex flex-col sm:grid sm:grid-cols-3 gap-3 sm:gap-4">
-                  {/* Needs Card */}
-                  <div className="rounded-xl overflow-hidden flex flex-col h-full bg-[#EAFBF3]">
-                    <div className="px-3 py-2 sm:px-4 sm:py-3 flex justify-between items-center text-white" style={{ background: "linear-gradient(to right, #2EEB8F, #1EEA8A)" }}>
-                      <span className="font-bold text-sm sm:text-base">Necesidades</span>
-                      <span className="font-bold text-sm sm:text-base">{needsPercent}%</span>
+                    {/* Progress Bar Confirmada */}
+                    <div className="progress-bar h-4 flex mb-6">
+                      <div
+                        className="transition-all"
+                        style={{ width: `${needsPercent}%`, background: "linear-gradient(to right, #2EEB8F, #1EEA8A)" }}
+                        title={`Necesidades: ${needsPercent}%`}
+                      />
+                      <div
+                        className="transition-all"
+                        style={{ width: `${wantsPercent}%`, background: "linear-gradient(to right, #3B82F6, #2563EB)" }}
+                        title={`Deseos: ${wantsPercent}%`}
+                      />
+                      <div
+                        className="transition-all"
+                        style={{ width: `${savingsPercent}%`, background: "linear-gradient(to right, #00E5FF, #00DDF0)" }}
+                        title={`Ahorro: ${savingsPercent}%`}
+                      />
                     </div>
-                    <div className="px-3 py-3 sm:px-4 sm:py-4 flex-1">
-                      <span className="text-xs sm:text-sm text-[var(--brand-gray)] block">Gastos esenciales</span>
+
+                    <div className="flex flex-col sm:grid sm:grid-cols-3 gap-3 sm:gap-4">
+                      {/* Needs Card */}
+                      <div className="rounded-xl overflow-hidden flex flex-col h-full bg-[#EAFBF3] border border-transparent">
+                        <div className="px-3 py-2 sm:px-4 sm:py-3 flex justify-between items-center text-white" style={{ background: "linear-gradient(to right, #2EEB8F, #1EEA8A)" }}>
+                          <span className="font-bold text-sm sm:text-base">Necesidades</span>
+                          <span className="font-bold text-sm sm:text-base">{needsPercent}%</span>
+                        </div>
+                        <div className="px-3 py-3 sm:px-4 sm:py-4 flex-1">
+                          <span className="text-xs sm:text-sm text-[var(--brand-gray)] block">Gastos esenciales</span>
+                        </div>
+                      </div>
+
+                      {/* Wants Card */}
+                      <div className="rounded-xl overflow-hidden flex flex-col h-full bg-white border border-[var(--border)] shadow-sm">
+                        <div className="px-3 py-2 sm:px-4 sm:py-3 flex justify-between items-center text-white" style={{ background: "linear-gradient(to right, #3B82F6, #2563EB)" }}>
+                          <span className="font-bold text-sm sm:text-base">Deseos</span>
+                          <span className="font-bold text-sm sm:text-base">{wantsPercent}%</span>
+                        </div>
+                        <div className="px-3 py-3 sm:px-4 sm:py-4 flex-1">
+                          <span className="text-xs sm:text-sm text-[var(--brand-gray)] block">Gastos opcionales</span>
+                        </div>
+                      </div>
+
+                      {/* Savings Card */}
+                      <div className="rounded-xl overflow-hidden flex flex-col h-full bg-[#E5FAFD] border border-transparent">
+                        <div className="px-3 py-2 sm:px-4 sm:py-3 flex justify-between items-center text-white" style={{ background: "linear-gradient(to right, #00E5FF, #00DDF0)" }}>
+                          <span className="font-bold text-sm sm:text-base">Ahorro</span>
+                          <span className="font-bold text-sm sm:text-base">{savingsPercent}%</span>
+                        </div>
+                        <div className="px-3 py-3 sm:px-4 sm:py-4 flex-1">
+                          <span className="text-xs sm:text-sm text-[var(--brand-gray)] block">Ahorro e inversión</span>
+                        </div>
+                      </div>
                     </div>
                   </div>
+                ) : (
+                  // Estado PENDIENTE (descuadrado)
+                  <div className="opacity-60">
+                    <p className="text-sm font-medium text-[var(--foreground)] mb-4">
+                      Presupuesto pendiente de cuadrar
+                    </p>
 
-                  {/* Wants Card */}
-                  <div className="rounded-xl overflow-hidden flex flex-col h-full bg-[var(--background-secondary)]/50">
-                    <div className="px-3 py-2 sm:px-4 sm:py-3 flex justify-between items-center text-white" style={{ background: "linear-gradient(to right, #3B82F6, #2563EB)" }}>
-                      <span className="font-bold text-sm sm:text-base">Deseos</span>
-                      <span className="font-bold text-sm sm:text-base">{wantsPercent}%</span>
+                    {/* Progress Bar Pendiente */}
+                    <div className="progress-bar h-4 flex mb-6">
+                      <div
+                        className="transition-all opacity-50"
+                        style={{ width: `${needsPercent}%`, background: "linear-gradient(to right, #2EEB8F, #1EEA8A)" }}
+                      />
+                      <div
+                        className="transition-all opacity-50"
+                        style={{ width: `${wantsPercent}%`, background: "linear-gradient(to right, #3B82F6, #2563EB)" }}
+                      />
+                      <div
+                        className="transition-all opacity-50"
+                        style={{ width: `${savingsPercent}%`, background: "linear-gradient(to right, #00E5FF, #00DDF0)" }}
+                      />
                     </div>
-                    <div className="px-3 py-3 sm:px-4 sm:py-4 flex-1">
-                      <span className="text-xs sm:text-sm text-[var(--brand-gray)] block">Gastos opcionales</span>
+
+                    <div className="flex flex-col sm:grid sm:grid-cols-3 gap-3 sm:gap-4 opacity-70">
+                      {/* Needs Card */}
+                      <div className="rounded-xl overflow-hidden flex flex-col h-full bg-[#EAFBF3] border border-transparent">
+                        <div className="px-3 py-2 sm:px-4 sm:py-3 flex justify-between items-center text-white" style={{ background: "linear-gradient(to right, #2EEB8F, #1EEA8A)" }}>
+                          <span className="font-bold text-sm sm:text-base">Necesidades</span>
+                          <span className="font-bold text-sm sm:text-base">{needsPercent}%</span>
+                        </div>
+                        <div className="px-3 py-3 sm:px-4 sm:py-4 flex-1">
+                          <span className="text-xs sm:text-sm text-[var(--brand-gray)] block">Gastos esenciales</span>
+                        </div>
+                      </div>
+
+                      {/* Wants Card */}
+                      <div className="rounded-xl overflow-hidden flex flex-col h-full bg-white border border-[var(--border)] shadow-sm">
+                        <div className="px-3 py-2 sm:px-4 sm:py-3 flex justify-between items-center text-white" style={{ background: "linear-gradient(to right, #3B82F6, #2563EB)" }}>
+                          <span className="font-bold text-sm sm:text-base">Deseos</span>
+                          <span className="font-bold text-sm sm:text-base">{wantsPercent}%</span>
+                        </div>
+                        <div className="px-3 py-3 sm:px-4 sm:py-4 flex-1">
+                          <span className="text-xs sm:text-sm text-[var(--brand-gray)] block">Gastos opcionales</span>
+                        </div>
+                      </div>
+
+                      {/* Savings Card */}
+                      <div className="rounded-xl overflow-hidden flex flex-col h-full bg-[#E5FAFD] border border-transparent">
+                        <div className="px-3 py-2 sm:px-4 sm:py-3 flex justify-between items-center text-white" style={{ background: "linear-gradient(to right, #00E5FF, #00DDF0)" }}>
+                          <span className="font-bold text-sm sm:text-base">Ahorro</span>
+                          <span className="font-bold text-sm sm:text-base">{savingsPercent}%</span>
+                        </div>
+                        <div className="px-3 py-3 sm:px-4 sm:py-4 flex-1">
+                          <span className="text-xs sm:text-sm text-[var(--brand-gray)] block">Ahorro e inversión</span>
+                        </div>
+                      </div>
                     </div>
                   </div>
-
-                  {/* Savings Card */}
-                  <div className="rounded-xl overflow-hidden flex flex-col h-full bg-[#E5FAFD]">
-                    <div className="px-3 py-2 sm:px-4 sm:py-3 flex justify-between items-center text-white" style={{ background: "linear-gradient(to right, #00E5FF, #00DDF0)" }}>
-                      <span className="font-bold text-sm sm:text-base">Ahorro</span>
-                      <span className="font-bold text-sm sm:text-base">{savingsPercent}%</span>
-                    </div>
-                    <div className="px-3 py-3 sm:px-4 sm:py-4 flex-1">
-                      <span className="text-xs sm:text-sm text-[var(--brand-gray)] block">Ahorro e inversión</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ) : (
-              // Estado PENDIENTE (descuadrado)
-              <div className="opacity-60">
-                <p className="text-sm font-medium text-[var(--foreground)] mb-4">
-                  Presupuesto pendiente de cuadrar
-                </p>
-
-                {/* Progress Bar Pendiente */}
-                <div className="progress-bar h-4 flex mb-6">
-                  <div
-                    className="transition-all opacity-50"
-                    style={{ width: `${needsPercent}%`, background: "linear-gradient(to right, #2EEB8F, #1EEA8A)" }}
-                  />
-                  <div
-                    className="transition-all opacity-50"
-                    style={{ width: `${wantsPercent}%`, background: "linear-gradient(to right, #3B82F6, #2563EB)" }}
-                  />
-                  <div
-                    className="transition-all opacity-50"
-                    style={{ width: `${savingsPercent}%`, background: "linear-gradient(to right, #00E5FF, #00DDF0)" }}
-                  />
-                </div>
-
-                <div className="flex flex-col sm:grid sm:grid-cols-3 gap-3 sm:gap-4 opacity-70">
-                  {/* Needs Card */}
-                  <div className="rounded-xl overflow-hidden flex flex-col h-full bg-[#EAFBF3]">
-                    <div className="px-3 py-2 sm:px-4 sm:py-3 flex justify-between items-center text-white" style={{ background: "linear-gradient(to right, #2EEB8F, #1EEA8A)" }}>
-                      <span className="font-bold text-sm sm:text-base">Necesidades</span>
-                      <span className="font-bold text-sm sm:text-base">{needsPercent}%</span>
-                    </div>
-                    <div className="px-3 py-3 sm:px-4 sm:py-4 flex-1">
-                      <span className="text-xs sm:text-sm text-[var(--brand-gray)] block">Gastos esenciales</span>
-                    </div>
-                  </div>
-
-                  {/* Wants Card */}
-                  <div className="rounded-xl overflow-hidden flex flex-col h-full bg-[var(--background-secondary)]/50">
-                    <div className="px-3 py-2 sm:px-4 sm:py-3 flex justify-between items-center text-white" style={{ background: "linear-gradient(to right, #3B82F6, #2563EB)" }}>
-                      <span className="font-bold text-sm sm:text-base">Deseos</span>
-                      <span className="font-bold text-sm sm:text-base">{wantsPercent}%</span>
-                    </div>
-                    <div className="px-3 py-3 sm:px-4 sm:py-4 flex-1">
-                      <span className="text-xs sm:text-sm text-[var(--brand-gray)] block">Gastos opcionales</span>
-                    </div>
-                  </div>
-
-                  {/* Savings Card */}
-                  <div className="rounded-xl overflow-hidden flex flex-col h-full bg-[#E5FAFD]">
-                    <div className="px-3 py-2 sm:px-4 sm:py-3 flex justify-between items-center text-white" style={{ background: "linear-gradient(to right, #00E5FF, #00DDF0)" }}>
-                      <span className="font-bold text-sm sm:text-base">Ahorro</span>
-                      <span className="font-bold text-sm sm:text-base">{savingsPercent}%</span>
-                    </div>
-                    <div className="px-3 py-3 sm:px-4 sm:py-4 flex-1">
-                      <span className="text-xs sm:text-sm text-[var(--brand-gray)] block">Ahorro e inversión</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
+                )}
+              </>
             )}
           </div>
         )}
@@ -1182,7 +1195,7 @@ function PrevisionPageContent() {
               {/* Needs */}
               <div className="card overflow-hidden">
                 <div
-                  className="px-6 py-4 border-b border-[var(--border)] bg-[var(--success)]/5 cursor-pointer hover:bg-[var(--success)]/10 transition-colors"
+                  className="px-6 py-4 border-b border-[var(--border)] bg-[var(--danger)]/5 cursor-pointer hover:bg-[var(--danger)]/10 transition-colors"
                   onClick={() => toggleSection('needs')}
                 >
                   <div className="flex items-center justify-between">
@@ -1218,7 +1231,7 @@ function PrevisionPageContent() {
               {/* Wants */}
               <div className="card overflow-hidden">
                 <div
-                  className="px-6 py-4 border-b border-[var(--border)] bg-[var(--warning)]/5 cursor-pointer hover:bg-[var(--warning)]/10 transition-colors"
+                  className="px-6 py-4 border-b border-[var(--border)] bg-[var(--danger)]/5 cursor-pointer hover:bg-[var(--danger)]/10 transition-colors"
                   onClick={() => toggleSection('wants')}
                 >
                   <div className="flex items-center justify-between">
