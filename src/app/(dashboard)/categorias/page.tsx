@@ -47,8 +47,8 @@ const CATEGORY_TYPES = [
 ];
 
 const SEGMENTS = [
-  { value: "needs", label: "Necesidades", description: "Gastos esenciales", color: "#02EAFF" },
-  { value: "wants", label: "Deseos", description: "Gastos opcionales", color: "#9945FF" },
+  { value: "needs", label: "Necesidades", description: "Gastos esenciales", color: "#10B981" },
+  { value: "wants", label: "Deseos", description: "Gastos opcionales", color: "#8B4DFF" },
 ];
 
 const ICON_OPTIONS = [

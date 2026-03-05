@@ -120,6 +120,28 @@ function PrevisionVsRealidadPageContent() {
     const startDate = `${selectedYear}-${String(selectedMonth).padStart(2, "0")}-01`;
     const endDate = new Date(selectedYear, selectedMonth, 0).toISOString().split("T")[0];
 
+    // --- SYNC EXTRA DATA ---
+    // 1. Fetch savings contributions
+    const { data: contribsData } = await supabase
+      .from("savings_contributions")
+      .select("amount")
+      .eq("user_id", user.id)
+      .gte("contribution_date", startDate)
+      .lte("contribution_date", endDate);
+
+    const extraActualSavings = contribsData?.reduce((acc, c) => acc + c.amount, 0) || 0;
+
+    // 2. Fetch debt payments
+    const { data: paymentsData } = await supabase
+      .from("debt_payments")
+      .select("amount")
+      .eq("user_id", user.id)
+      .gte("payment_date", startDate)
+      .lte("payment_date", endDate);
+
+    const extraActualExpensesFromDebts = paymentsData?.reduce((acc, p) => acc + p.amount, 0) || 0;
+    // ------------------------
+
     const { data: operationsData } = await supabase
       .from("operations")
       .select(`
@@ -132,12 +154,12 @@ function PrevisionVsRealidadPageContent() {
       .gte("operation_date", startDate)
       .lte("operation_date", endDate);
 
-    // Calculate actual savings from operations with type "savings"
+    // Calculate actual savings from operations AND contributions
     const savingsOps = operationsData?.filter(op => op.type === "savings") || [];
-    const totalActualSavings = savingsOps.reduce((sum, op) => sum + op.amount, 0);
+    const totalActualSavings = savingsOps.reduce((sum, op) => sum + op.amount, 0) + extraActualSavings;
     setActualSavingsFromOps(totalActualSavings);
 
-    // Aggregate operations by category (excluding savings type for category breakdown)
+    // Aggregate operations by category
     const actualByCategory: Record<string, number> = {};
     operationsData?.forEach(op => {
       if (op.category_id) {
@@ -193,6 +215,22 @@ function PrevisionVsRealidadPageContent() {
           percentage: 100,
         });
       }
+    }
+
+    // Add virtual category for Debt Payments if any
+    if (extraActualExpensesFromDebts > 0) {
+      comparisonData.push({
+        category_id: "debt-payments-summary",
+        category_name: "Pagos de Deudas",
+        category_icon: "💳",
+        category_color: "#2EEB8F",
+        segment: "needs",
+        type: "expense",
+        budgeted: 0,
+        actual: extraActualExpensesFromDebts,
+        difference: -extraActualExpensesFromDebts,
+        percentage: 100,
+      });
     }
 
     setData(comparisonData);
@@ -577,7 +615,11 @@ function PrevisionVsRealidadPageContent() {
                 >
                   <div className="flex items-center justify-between mb-2">
                     <h3 className="font-semibold flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full bg-[var(--success)]"></span>
                       Necesidades
+                      <span className="text-[10px] bg-[var(--success)]/10 text-[var(--success)] px-2 py-0.5 rounded-full font-bold">
+                        {totalActualIncome > 0 ? Math.round((needsActual / totalActualIncome) * 100) : 0}% de ingresos
+                      </span>
                       {expandedPanels.needs ? (
                         <ChevronUp className="w-4 h-4 text-[var(--brand-gray)]" />
                       ) : (
@@ -585,7 +627,7 @@ function PrevisionVsRealidadPageContent() {
                       )}
                     </h3>
                     <div className="text-right text-sm">
-                      <span className="font-bold">{formatCurrency(needsActual)}</span>
+                      <span className="font-bold text-[var(--success)]">{formatCurrency(needsActual)}</span>
                       <span className="text-[var(--brand-gray)]"> / {formatCurrency(needsBudgeted)}</span>
                     </div>
                   </div>
@@ -608,11 +650,15 @@ function PrevisionVsRealidadPageContent() {
               <div className="card overflow-hidden">
                 <button
                   onClick={() => togglePanel('wants')}
-                  className="w-full px-6 py-4 border-b border-[var(--border)] bg-[var(--warning)]/5 hover:bg-[var(--warning)]/10 transition-colors"
+                  className="w-full px-6 py-4 border-b border-[var(--border)] bg-[var(--brand-purple)]/5 hover:bg-[var(--brand-purple)]/10 transition-colors"
                 >
                   <div className="flex items-center justify-between mb-2">
                     <h3 className="font-semibold flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full bg-[var(--brand-purple)]"></span>
                       Deseos
+                      <span className="text-[10px] bg-[var(--brand-purple)]/10 text-[var(--brand-purple)] px-2 py-0.5 rounded-full font-bold">
+                        {totalActualIncome > 0 ? Math.round((wantsActual / totalActualIncome) * 100) : 0}% de ingresos
+                      </span>
                       {expandedPanels.wants ? (
                         <ChevronUp className="w-4 h-4 text-[var(--brand-gray)]" />
                       ) : (
@@ -620,7 +666,7 @@ function PrevisionVsRealidadPageContent() {
                       )}
                     </h3>
                     <div className="text-right text-sm">
-                      <span className="font-bold">{formatCurrency(wantsActual)}</span>
+                      <span className="font-bold text-[var(--brand-purple)]">{formatCurrency(wantsActual)}</span>
                       <span className="text-[var(--brand-gray)]"> / {formatCurrency(wantsBudgeted)}</span>
                     </div>
                   </div>
@@ -649,7 +695,10 @@ function PrevisionVsRealidadPageContent() {
                   <div className="flex items-center justify-between mb-2">
                     <h3 className="font-semibold flex items-center gap-2">
                       <PiggyBank className="w-5 h-5 text-[var(--brand-cyan)]" />
-                      Ahorro total del mes
+                      Ahorro
+                      <span className="text-[10px] bg-[var(--brand-cyan)]/10 text-[var(--brand-cyan)] px-2 py-0.5 rounded-full font-bold">
+                        {totalActualIncome > 0 ? Math.round((actualSavings / totalActualIncome) * 100) : 0}% de ingresos
+                      </span>
                       {expandedPanels.savingsTotal ? (
                         <ChevronUp className="w-4 h-4 text-[var(--brand-gray)]" />
                       ) : (

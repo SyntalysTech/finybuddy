@@ -227,6 +227,30 @@ export default function DashboardPage() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
+    // 4. Fetch additional data for synchronization (Savings Contributions & Debt Payments)
+    const startDate = `${selectedYear}-${String(selectedMonth).padStart(2, "0")}-01`;
+    const endDate = new Date(selectedYear, selectedMonth, 0).toISOString().split("T")[0];
+
+    // Fetch savings contributions for the month
+    const { data: contribsData } = await supabase
+      .from("savings_contributions")
+      .select("amount")
+      .eq("user_id", user.id)
+      .gte("contribution_date", startDate)
+      .lte("contribution_date", endDate);
+
+    const extraSavings = contribsData?.reduce((acc, c) => acc + c.amount, 0) || 0;
+
+    // Fetch debt payments for the month
+    const { data: paymentsData } = await supabase
+      .from("debt_payments")
+      .select("amount")
+      .eq("user_id", user.id)
+      .gte("payment_date", startDate)
+      .lte("payment_date", endDate);
+
+    const extraExpenses = paymentsData?.reduce((acc, p) => acc + p.amount, 0) || 0;
+
     // Fetch monthly summary using RPC function
     const { data: summaryData } = await supabase.rpc("get_monthly_summary", {
       p_user_id: user.id,
@@ -235,14 +259,21 @@ export default function DashboardPage() {
     });
 
     if (summaryData && summaryData.length > 0) {
-      setMonthlySummary(summaryData[0]);
+      const baseSummary = summaryData[0];
+      setMonthlySummary({
+        ...baseSummary,
+        total_expenses: baseSummary.total_expenses + extraExpenses,
+        total_savings: baseSummary.total_savings + extraSavings,
+        balance: baseSummary.total_income - (baseSummary.total_expenses + extraExpenses),
+        needs_total: baseSummary.needs_total + extraExpenses,
+      });
     } else {
       setMonthlySummary({
         total_income: 0,
-        total_expenses: 0,
-        total_savings: 0,
-        balance: 0,
-        needs_total: 0,
+        total_expenses: extraExpenses,
+        total_savings: extraSavings,
+        balance: -extraExpenses,
+        needs_total: extraExpenses,
         wants_total: 0,
         savings_total: 0,
       });
@@ -318,9 +349,6 @@ export default function DashboardPage() {
     }
 
     // Fetch recent operations (last 5)
-    const startDate = `${selectedYear}-${String(selectedMonth).padStart(2, "0")}-01`;
-    const endDate = new Date(selectedYear, selectedMonth, 0).toISOString().split("T")[0];
-
     const { data: operationsData } = await supabase
       .from("operations")
       .select(`
@@ -362,50 +390,48 @@ export default function DashboardPage() {
     if (allOpsData) {
       const merged: Record<string, CategoryDistribution> = {};
 
-      // Procesar gastos y ahorros para el gráfico de distribución
       allOpsData.forEach((op: any) => {
         const cat = Array.isArray(op.category) ? op.category[0] : op.category;
 
-        // Si es ahorro, se agrupa siempre en el segmento de ahorro
         if (op.type === "savings") {
           const savingsId = "savings-total";
           if (!merged[savingsId]) {
-            merged[savingsId] = {
-              id: savingsId,
-              name: "Ahorro",
-              color: "#02EAFF", // Cyan FinyBuddy
-              amount: 0,
-              segment: "savings"
-            };
+            merged[savingsId] = { id: savingsId, name: "Ahorro", color: "#02EAFF", amount: 0, segment: "savings" };
           }
           merged[savingsId].amount += op.amount;
         }
-        // Si es gasto, se agrupa por categoría y segmento (necesidades/deseos)
         else if (op.type === "expense") {
           if (!cat) return;
-          // Normalizar segmento para evitar fallos (trim y lowercase)
           let segment = (cat.segment || "needs").trim().toLowerCase();
           if (segment !== "needs" && segment !== "wants" && segment !== "savings") {
-            segment = "needs"; // Default de seguridad
+            segment = "needs";
           }
 
           if (!merged[cat.id]) {
-            // Forzamos el color del segmento para asegurar coherencia visual absoluta según requerimiento (Verde=Necesidades, Morado=Deseos)
             const finalColor = segment === "needs" ? "#2EEB8F" : (segment === "wants" ? "#8B4DFF" : (cat.color || "#02EAFF"));
-
-            merged[cat.id] = {
-              id: cat.id,
-              name: cat.name,
-              color: finalColor,
-              amount: 0,
-              segment: segment as "needs" | "wants" | "savings"
-            };
+            merged[cat.id] = { id: cat.id, name: cat.name, color: finalColor, amount: 0, segment: segment as "needs" | "wants" | "savings" };
           }
           merged[cat.id].amount += op.amount;
         }
       });
 
-      setCategoryDistribution(Object.values(merged).filter(c => c.amount > 0).sort((a, b) => b.amount - a.amount));
+      if (extraSavings !== 0) {
+        const savingsId = "savings-total";
+        if (!merged[savingsId]) {
+          merged[savingsId] = { id: savingsId, name: "Ahorro", color: "#02EAFF", amount: 0, segment: "savings" };
+        }
+        merged[savingsId].amount += extraSavings;
+      }
+
+      if (extraExpenses !== 0) {
+        const debtId = "debt-payments-summary";
+        if (!merged[debtId]) {
+          merged[debtId] = { id: debtId, name: "Pagos de Deudas", color: "#2EEB8F", amount: 0, segment: "needs" };
+        }
+        merged[debtId].amount += extraExpenses;
+      }
+
+      setCategoryDistribution(Object.values(merged).filter(c => Math.abs(c.amount) > 0).sort((a, b) => b.amount - a.amount));
     }
 
     setLoading(false);
@@ -589,6 +615,29 @@ export default function DashboardPage() {
     if (nextMonth <= new Date()) {
       setSelectedDate(nextMonth);
     }
+  };
+
+  const handleDeepScan = () => {
+    if (isScanning) return;
+    setIsScanning(true);
+    setScanProgress(0);
+
+    // Simular escaneo profundo con pasos de progresión
+    const interval = setInterval(() => {
+      setScanProgress((prev) => {
+        if (prev >= 100) {
+          clearInterval(interval);
+          setTimeout(() => {
+            setIsScanning(false);
+            fetchDashboardData();
+          }, 800);
+          return 100;
+        }
+        // Incrementos aleatorios para que parezca más "humano/IA"
+        const next = prev + Math.floor(Math.random() * 15) + 5;
+        return next > 100 ? 100 : next;
+      });
+    }, 200);
   };
 
   const typeConfig = {
@@ -1018,14 +1067,41 @@ export default function DashboardPage() {
                     <Bot className="w-3 h-3 text-[var(--brand-cyan)]" />
                   </div>
                 </div>
-                <div className="min-w-0">
-                  <div className="flex items-center gap-2">
-                    <h3 className="text-lg font-black text-[var(--brand-cyan)] uppercase tracking-tighter">Análisis de Finy AI</h3>
-                    <div className="px-2 py-0.5 rounded-full bg-[var(--brand-cyan)]/10 border border-[var(--brand-cyan)]/30 text-[9px] text-[var(--brand-cyan)] font-black animate-pulse uppercase">Modo Analista</div>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <h3 className="text-lg font-black text-[var(--brand-cyan)] uppercase tracking-tighter">Análisis de Finy AI</h3>
+                        <div className="px-2 py-0.5 rounded-full bg-[var(--brand-cyan)]/10 border border-[var(--brand-cyan)]/30 text-[9px] text-[var(--brand-cyan)] font-black animate-pulse uppercase">Modo Analista</div>
+                      </div>
+                      <p className="text-[10px] text-[var(--brand-gray)] font-black uppercase tracking-widest opacity-80 mt-0.5">Metadatos en Tiempo Real</p>
+                    </div>
+                    <button
+                      onClick={handleDeepScan}
+                      disabled={isScanning}
+                      className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[var(--brand-cyan)]/10 border border-[var(--brand-cyan)]/20 text-[10px] font-black text-[var(--brand-cyan)] uppercase hover:bg-[var(--brand-cyan)] hover:text-white transition-all group/btn disabled:opacity-50"
+                    >
+                      <Rocket className={`w-3.5 h-3.5 ${isScanning ? 'animate-bounce' : 'group-hover/btn:-translate-y-0.5 transition-transform'}`} />
+                      {isScanning ? 'Escaneando...' : 'Deep Scan'}
+                    </button>
                   </div>
-                  <p className="text-[10px] text-[var(--brand-gray)] font-black uppercase tracking-widest opacity-80 mt-0.5">Metadatos en Tiempo Real</p>
                 </div>
               </div>
+
+              {isScanning && (
+                <div className="mb-6 space-y-2 animate-in fade-in slide-in-from-top-4 duration-500">
+                  <div className="flex justify-between items-end">
+                    <p className="text-[10px] font-black text-[var(--brand-cyan)] uppercase tracking-[0.2em]">Escaneo Profundo en curso...</p>
+                    <p className="text-xs font-black text-[var(--brand-cyan)]">{scanProgress}%</p>
+                  </div>
+                  <div className="progress-bar h-2.5">
+                    <div
+                      className="progress-bar-fill bg-[var(--brand-cyan)]"
+                      style={{ width: `${scanProgress}%` }}
+                    />
+                  </div>
+                </div>
+              )}
 
               <div className="space-y-4 relative">
                 {loading ? (
@@ -1135,13 +1211,11 @@ export default function DashboardPage() {
                       <p className="text-xs sm:text-sm text-[var(--brand-gray)]">progreso total</p>
                     </div>
                   </div>
-                  <div className="h-4 sm:h-5 rounded-full overflow-hidden bg-slate-200/50 dark:bg-slate-800/50 shadow-inner border border-[var(--border)] p-0 relative group/progress">
+                  <div className="progress-bar h-4">
                     <div
-                      className="h-full rounded-full bg-gradient-to-r from-[var(--brand-cyan)] to-[var(--brand-purple)] shadow-[0_0_15px_rgba(2,234,255,0.5)] relative transition-all duration-1000 ease-out"
+                      className="progress-bar-fill bg-gradient-to-r from-[var(--brand-cyan)] to-[var(--brand-purple)] shadow-[0_0_15px_rgba(2,234,255,0.4)]"
                       style={{ width: `${Math.max(Math.min(savingsSummary.overall_progress, 100), 2)}%` }}
-                    >
-                      <div className="absolute inset-0 bg-gradient-to-b from-white/20 to-transparent opacity-40" />
-                    </div>
+                    />
                   </div>
                   <div className="flex justify-between text-xs sm:text-sm text-[var(--brand-gray)]">
                     <span className="truncate mr-2">Ahorrado: {formatCurrency(savingsSummary.total_saved)}</span>
@@ -1188,13 +1262,11 @@ export default function DashboardPage() {
                       <p className="text-xs sm:text-sm text-[var(--brand-gray)]">pagado</p>
                     </div>
                   </div>
-                  <div className="h-4 sm:h-5 rounded-full overflow-hidden bg-slate-200/50 dark:bg-slate-800/50 shadow-inner border border-[var(--border)] p-0 relative">
+                  <div className="progress-bar h-4">
                     <div
-                      className="h-full rounded-full bg-gradient-to-r from-[var(--success)] to-[var(--success)] shadow-[0_0_15px_rgba(46,235,143,0.4)] relative transition-all duration-1000 ease-out"
+                      className="progress-bar-fill bg-gradient-to-r from-[var(--success)] to-[var(--success)] shadow-[0_0_15px_rgba(46,235,143,0.3)]"
                       style={{ width: `${Math.max(Math.min(debtsSummary.overall_progress, 100), 2)}%` }}
-                    >
-                      <div className="absolute inset-0 bg-gradient-to-b from-white/20 to-transparent opacity-40" />
-                    </div>
+                    />
                   </div>
 
                   <div className="flex justify-between text-xs sm:text-sm text-[var(--brand-gray)]">

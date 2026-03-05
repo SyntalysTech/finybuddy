@@ -254,21 +254,21 @@ ${context.monthlyTrend.map(m => `${m.month}: +${m.income.toLocaleString("es-ES")
 
 GASTOS POR CATEGORIA:
 ${context.categories.filter(c => c.operationCount > 0).length > 0
-    ? context.categories.filter(c => c.operationCount > 0).slice(0, 10).map(c => `${c.name}: ${c.totalSpent.toLocaleString("es-ES")} euros (${c.operationCount} ops)`).join(" | ")
-    : "Sin datos este mes"}
+      ? context.categories.filter(c => c.operationCount > 0).slice(0, 10).map(c => `${c.name}: ${c.totalSpent.toLocaleString("es-ES")} euros (${c.operationCount} ops)`).join(" | ")
+      : "Sin datos este mes"}
 
 CATEGORIAS DISPONIBLES:
 ${categoriesList}
 
 METAS DE AHORRO:
 ${context.savingsGoals.length > 0
-    ? context.savingsGoals.map(g => `${g.name}: ${g.current.toLocaleString("es-ES")}/${g.target.toLocaleString("es-ES")} (${g.progress}%)`).join(" | ")
-    : "Sin metas activas"}
+      ? context.savingsGoals.map(g => `${g.name}: ${g.current.toLocaleString("es-ES")}/${g.target.toLocaleString("es-ES")} (${g.progress}%)`).join(" | ")
+      : "Sin metas activas"}
 
 DEUDAS:
 ${context.debts.length > 0
-    ? context.debts.map(d => `${d.name}: debe ${d.currentBalance.toLocaleString("es-ES")} de ${d.originalAmount.toLocaleString("es-ES")} (${d.progress}% pagado)`).join(" | ")
-    : "Sin deudas"}
+      ? context.debts.map(d => `${d.name}: debe ${d.currentBalance.toLocaleString("es-ES")} de ${d.originalAmount.toLocaleString("es-ES")} (${d.progress}% pagado)`).join(" | ")
+      : "Sin deudas"}
 
 ULTIMAS OPERACIONES (con ID):
 ${context.recentOperations.slice(0, 8).map(op => `[ID:${op.id}] ${op.date}: ${op.concept} ${op.type === "expense" ? "-" : "+"}${op.amount}`).join(" | ")}
@@ -378,7 +378,8 @@ INGRESO EXTRAORDINARIO:
 5. SIEMPRE en euros con el simbolo correcto.
 6. Si preguntan por inversiones/cripto/bolsa: "Ahi no soy experto. Mi rollo es ayudarte con el dia a dia. Para inversiones, mejor un especialista!"
 7. Termina con energia: "Cualquier cosa aqui estoy!", "Seguimos dandole!", "A por ello!"
-8. PROACTIVIDAD CONTEXTUAL: Cuando veas patrones de los nuevos clusters (flujo de caja, estacionalidad, anomalias en ingresos), mencionalos naturalmente en tus respuestas. No esperes a que el usuario pregunte.`;
+8. PROACTIVIDAD CONTEXTUAL: Cuando veas patrones de los nuevos clusters (flujo de caja, estacionalidad, anomalias en ingresos), mencionalos naturalmente en tus respuestas. No esperes a que el usuario pregunte.
+9. CATEGORIZACIÓN OBLIGATORIA: NUNCA registres una operación como "Sin categoría" o con ID nulo. Si no estás seguro de la categoría, elige la más lógica basándote en el concepto o pregunta al usuario antes de proceder. Todas las operaciones DEBEN tener una categoría válida de la lista proporcionada.`;
 }
 
 // Define the tools (functions) that the AI can use
