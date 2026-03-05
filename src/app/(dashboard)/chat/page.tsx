@@ -208,11 +208,20 @@ function ChatPageContent() {
     };
   }, [supabase, loadConversations]);
 
-  // Auto-scroll to bottom when messages change or loading starts
+  // Auto-scroll logic refined to prevent jumpiness
   useEffect(() => {
-    // Usamos 'auto' para evitar que el 'smooth' compita con el renderizado rápido de mensajes (streaming)
-    // lo cual evita los saltos y parones que reporta el usuario.
-    messagesEndRef.current?.scrollIntoView({ behavior: loading ? "smooth" : "auto" });
+    if (messages.length === 0) return;
+
+    // Si estamos cargando el inicio de la respuesta, usamos smooth
+    // pero si ya estamos recibiendo texto (streaming), usamos auto para no saturar al navegador
+    const isStreaming = messages.length > 0 &&
+      messages[messages.length - 1].role === "assistant" &&
+      messages[messages.length - 1].content.length > 5;
+
+    messagesEndRef.current?.scrollIntoView({
+      behavior: isStreaming ? "auto" : "smooth",
+      block: "end"
+    });
   }, [messages, loading]);
 
   // Auto-resize textarea
@@ -270,8 +279,7 @@ function ChatPageContent() {
       let buffer = "";
 
       if (reader) {
-        // Add an initial empty assistant message to avoid "emptying" the chat
-        setMessages(prev => [...prev, { role: "assistant", content: "..." }]);
+        let hasStartedAssistantMessage = false;
 
         while (true) {
           const { done, value } = await reader.read();
@@ -291,23 +299,19 @@ function ChatPageContent() {
               const parsed = JSON.parse(data);
               const delta = parsed.choices?.[0]?.delta?.content;
               if (delta) {
-                if (fullContent === "") {
-                  fullContent = delta;
-                } else {
-                  fullContent += delta;
-                }
-
+                fullContent += delta;
                 const snapshot = fullContent;
-                setMessages(prev => {
-                  const updated = [...prev];
-                  const lastMessage = updated[updated.length - 1];
-                  if (lastMessage && lastMessage.role === "assistant") {
+
+                if (!hasStartedAssistantMessage) {
+                  setMessages(prev => [...prev, { role: "assistant", content: snapshot }]);
+                  hasStartedAssistantMessage = true;
+                } else {
+                  setMessages(prev => {
+                    const updated = [...prev];
                     updated[updated.length - 1] = { role: "assistant", content: snapshot };
-                  } else {
-                    updated.push({ role: "assistant", content: snapshot });
-                  }
-                  return updated;
-                });
+                    return updated;
+                  });
+                }
               }
             } catch {
               // skip malformed chunks
@@ -841,7 +845,10 @@ function ChatPageContent() {
                 {messages.map((message, index) => (
                   <div
                     key={index}
-                    className={`flex gap-3 sm:gap-4 animate-in fade-in slide-in-from-bottom-2 duration-500 ${message.role === "user" ? "flex-row-reverse" : ""}`}
+                    className={`flex gap-3 sm:gap-4 ${message.role === "user" ? "flex-row-reverse" : ""} ${
+                      // Solo animamos la entrada de un mensaje nuevo, no durante el streaming
+                      index === messages.length - 1 && !loading ? "animate-in fade-in slide-in-from-bottom-2 duration-500" : ""
+                      }`}
                   >
                     {/* Avatar - Mascot Only Mode */}
                     <div className="shrink-0 pt-1">
