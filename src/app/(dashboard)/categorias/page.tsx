@@ -58,11 +58,28 @@ const SEGMENTS = [
 ];
 
 const ICON_OPTIONS = [
-  "Home", "Building2", "Sofa", "Bed", "Droplets", "Zap", "Utensils", "Pizza", "Coffee", "Car",
-  "Bus", "Plane", "ShoppingBag", "Shirt", "Smartphone", "Laptop", "Gamepad2", "Stethoscope", "Pill", "GraduationCap",
-  "Briefcase", "Wallet", "CreditCard", "Banknote", "PiggyBank", "Palmtree", "Music", "Camera", "Heart", "Gift",
-  "Baby", "Dog", "Cat", "Hammer", "Wrench", "Lightbulb", "Users", "Dumbbell", "Theater", "Brush",
-  "Guitar", "Package", "Radio", "Trash"
+  // Casa y Hogar
+  "🏠", "🏢", "🏘️", "🛋️", "🛌", "🚿", "💡", "🔑", "📦",
+  // Alimentación
+  "🛒", "🍎", "🍗", "🍕", "🍔", "🍣", "🌮", "🍝", "🍰", "🍩", "🍕", "🥤", "☕", "🍺", "🍷", "🍽️",
+  // Transporte
+  "🚗", "🚕", "🚌", "🚇", "✈️", "🚂", "🚲", "🛴", "⛽", "🅿️", "🔧",
+  // Ocio y Entretenimiento
+  "🎮", "🕹️", "🎬", "🍿", "📺", "📻", "🎵", "🎸", "🎨", "🎭", "🎪", "🎡", "🎢", "🎳",
+  // Salud y Cuidado
+  "💊", "🩺", "⚕️", "🏥", "🦷", "👓", "🧴", "🧼", "🧖", "💇", "💪", "🏃", "🧘",
+  // Compras y Estilo
+  "🛍️", "🎁", "👕", "👗", "👟", "👠", "👒", "💄", "💍", "💎", "👜",
+  // Trabajo y Educación
+  "💼", "💻", "📁", "📎", "📌", "📄", "📈", "📉", "📚", "🎓", "🖋️", "📏",
+  // Familia y Mascotas
+  "👶", "🍼", "🧸", "🐶", "🐱", "🐰", "🐾", "🦴", "🐹",
+  // Finanzas
+  "💰", "💳", "💵", "💸", "🏦", "💹", "📊", "🪙", "🏧", "⚖️", "🛡️",
+  // Viajes y Naturaleza
+  "🏖️", "🏝️", "🏕️", "🏨", "🚢", "🏔️", "🌍", "🗺️", "⛱️", "🌴", "🌲", "🍀",
+  // Varios
+  "📱", "🔋", "🔔", "✉️", "📫", "📸", "⏲️", "🔨", "🪚", "🧹", "🗑️", "📝", "✨", "🔥", "💧", "⚡", "🆘", "🎯"
 ];
 
 
