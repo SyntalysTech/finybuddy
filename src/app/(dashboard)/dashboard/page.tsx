@@ -355,19 +355,34 @@ export default function DashboardPage() {
 
     if (allOpsData) {
       const merged: Record<string, CategoryDistribution> = {};
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
+      // Procesar gastos y ahorros para el gráfico de distribución
       allOpsData.forEach((op: any) => {
         const cat = Array.isArray(op.category) ? op.category[0] : op.category;
-        if (!cat) return;
 
-        // We only care about expenses and savings
-        if (op.type === "expense" || op.type === "savings") {
-          const segment = op.type === "savings" ? "savings" : (cat.segment || "needs");
+        // Si es ahorro, se agrupa siempre en el segmento de ahorro
+        if (op.type === "savings") {
+          const savingsId = "savings-total";
+          if (!merged[savingsId]) {
+            merged[savingsId] = {
+              id: savingsId,
+              name: "Ahorro",
+              color: "#02EAFF", // Cyan FinyBuddy
+              amount: 0,
+              segment: "savings"
+            };
+          }
+          merged[savingsId].amount += op.amount;
+        }
+        // Si es gasto, se agrupa por categoría y segmento (necesidades/deseos)
+        else if (op.type === "expense") {
+          if (!cat) return;
+          const segment = cat.segment || "needs";
           if (!merged[cat.id]) {
             merged[cat.id] = {
               id: cat.id,
               name: cat.name,
-              color: cat.color || (segment === "needs" ? "#2EEB8F" : segment === "wants" ? "#8B4DFF" : "#00E5FF"),
+              color: cat.color || (segment === "needs" ? "#2EEB8F" : "#8B4DFF"),
               amount: 0,
               segment
             };
@@ -375,6 +390,7 @@ export default function DashboardPage() {
           merged[cat.id].amount += op.amount;
         }
       });
+
       setCategoryDistribution(Object.values(merged).filter(c => c.amount > 0).sort((a, b) => b.amount - a.amount));
     }
 
@@ -499,11 +515,16 @@ export default function DashboardPage() {
           cx={cx}
           cy={cy}
           innerRadius={innerRadius}
-          outerRadius={outerRadius + 8}
+          outerRadius={outerRadius + 12}
           startAngle={startAngle}
           endAngle={endAngle}
           fill={fill}
-          className="transition-all duration-300 ease-out"
+          stroke={fill}
+          strokeWidth={2}
+          className="transition-all duration-500 ease-out"
+          style={{
+            filter: `drop-shadow(0 0 12px ${fill}40)`,
+          }}
         />
       </g>
     );
@@ -748,43 +769,50 @@ export default function DashboardPage() {
                 {/* Contenedor del gráfico con tamaño expandido */}
                 <div className="relative h-64 sm:h-80 w-full max-w-sm mx-auto flex items-center justify-center">
 
-                  {/* Etiqueta central flotante (absoluta) */}
+                  {/* Etiqueta central flotante (absoluta) con diseño espacial */}
                   <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none z-10">
-                    <div className={`bg-[var(--background)]/95 backdrop-blur-xl px-7 py-5 rounded-full shadow-2xl border border-[var(--border)] flex flex-col items-center justify-center text-center transition-all duration-500 min-w-[160px] pointer-events-auto ${selectedSegment ? 'cursor-pointer hover:scale-105 active:scale-95 group' : ''}`}
+                    <div className={`bg-[var(--background)]/80 backdrop-blur-2xl px-6 py-6 rounded-full shadow-[0_0_50px_-12px_rgba(0,0,0,0.5)] border border-[var(--border)]/50 flex flex-col items-center justify-center text-center transition-all duration-700 min-w-[170px] aspect-square pointer-events-auto ${selectedSegment ? 'cursor-pointer hover:scale-110 active:scale-95 group' : ''}`}
                       onClick={() => { if (selectedSegment) { setSelectedSegment(null); setActiveIndex(null); } }}>
-                      {activeIndex !== null && displayData[activeIndex] ? (
-                        <div className="animate-in fade-in zoom-in duration-300">
-                          <p className="text-[10px] sm:text-xs font-bold text-[var(--brand-gray)] uppercase tracking-[0.15em] mb-1 px-2 line-clamp-1 translate-y-[-2px]">{displayData[activeIndex].name}</p>
-                          <p className="text-xl sm:text-2xl font-black tabular-nums tracking-tight" style={{ color: displayData[activeIndex].color }}>
-                            {formatCurrency(displayData[activeIndex].value)}
-                          </p>
-                          <div className="mt-1.5 flex items-center justify-center gap-1.5">
-                            <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ backgroundColor: displayData[activeIndex].color }} />
-                            <p className="text-[10px] sm:text-xs font-bold px-2 py-0.5 rounded-full bg-[var(--background-secondary)]" style={{ color: displayData[activeIndex].color }}>
-                              {Math.round((displayData[activeIndex].value / currentTotal) * 100)}% {selectedSegment ? 'categoría' : 'total'}
+                      <div className="relative z-10">
+                        {activeIndex !== null && displayData[activeIndex] ? (
+                          <div className="animate-in fade-in zoom-in duration-500">
+                            <p className="text-[9px] sm:text-[10px] font-black text-[var(--brand-gray)] uppercase tracking-[0.3em] mb-1 px-2 line-clamp-1 opacity-70">{displayData[activeIndex].name}</p>
+                            <p className="text-xl sm:text-2xl font-black tabular-nums tracking-tighter leading-none mb-1.5" style={{ color: displayData[activeIndex].color }}>
+                              {formatCurrency(displayData[activeIndex].value)}
+                            </p>
+                            <div className="flex items-center justify-center">
+                              <span className="px-2 py-0.5 rounded-full text-[10px] sm:text-[11px] font-black bg-white/5 border border-white/10" style={{ color: displayData[activeIndex].color }}>
+                                {Math.round((displayData[activeIndex].value / currentTotal) * 100)}%
+                              </span>
+                            </div>
+                          </div>
+                        ) : selectedSegment ? (
+                          <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 flex flex-col items-center">
+                            <div className="mb-2 p-1.5 rounded-full bg-[var(--brand-cyan)]/20 text-[var(--brand-cyan)] group-hover:bg-[var(--brand-cyan)] group-hover:text-white transition-all duration-500 shadow-lg shadow-[var(--brand-cyan)]/20">
+                              <ChevronLeft className="w-4 h-4" />
+                            </div>
+                            <p className="text-xl sm:text-2xl font-black text-[var(--foreground)] tracking-tighter leading-none mb-1">
+                              {formatCurrency(currentTotal)}
+                            </p>
+                            <p className="text-[9px] text-[var(--brand-gray)] font-black uppercase tracking-[0.2em] opacity-60">
+                              Total {selectedSegment === "needs" ? "Necesidades" : selectedSegment === "wants" ? "Deseos" : "Ahorro"}
                             </p>
                           </div>
-                        </div>
-                      ) : selectedSegment ? (
-                        <div className="animate-in fade-in slide-in-from-bottom-2 duration-300 flex flex-col items-center">
-                          <div className="mb-1.5 p-1 rounded-full bg-[var(--brand-cyan)]/10 text-[var(--brand-cyan)] group-hover:bg-[var(--brand-cyan)] group-hover:text-white transition-all duration-300">
-                            <ChevronLeft className="w-4 h-4" />
+                        ) : (
+                          <div className="animate-in fade-in duration-1000 flex flex-col items-center">
+                            <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-[var(--brand-cyan)]/20 to-transparent flex items-center justify-center mb-2">
+                              <TrendingUp className="w-4 h-4 text-[var(--brand-cyan)]" />
+                            </div>
+                            <p className="text-[9px] sm:text-[10px] font-black text-[var(--brand-gray)] uppercase tracking-[0.4em] mb-1 opacity-50">Distribución</p>
+                            <p className="text-2xl sm:text-3xl font-black text-[var(--foreground)] tracking-tightest leading-none">
+                              {formatCurrency(currentTotal)}
+                            </p>
                           </div>
-                          <p className="text-xl sm:text-2xl font-black text-[var(--foreground)] tracking-tight">
-                            {formatCurrency(currentTotal)}
-                          </p>
-                          <p className="text-[10px] text-[var(--brand-gray)] font-bold uppercase tracking-wider mt-0.5">
-                            Total {selectedSegment === "needs" ? "Necesidades" : selectedSegment === "wants" ? "Deseos" : "Ahorro"}
-                          </p>
-                        </div>
-                      ) : (
-                        <div className="animate-in fade-in duration-500 flex flex-col items-center">
-                          <p className="text-[10px] sm:text-xs font-bold text-[var(--brand-gray)] uppercase tracking-[0.2em] mb-1.5">Distribución</p>
-                          <p className="text-2xl sm:text-3xl font-black text-[var(--foreground)] tracking-tighter">
-                            {formatCurrency(currentTotal)}
-                          </p>
-                        </div>
-                      )}
+                        )}
+                      </div>
+
+                      {/* Círculo decorativo pulsante */}
+                      <div className="absolute inset-0 rounded-full border border-[var(--brand-cyan)]/5 animate-ping opacity-20 pointer-events-none" />
                     </div>
                   </div>
 
