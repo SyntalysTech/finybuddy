@@ -40,10 +40,10 @@ interface Conversation {
 }
 
 const QUICK_PROMPTS = [
-  { icon: Wallet, text: "¿Cuánto puedo gastar hoy?", color: "text-[var(--success)]" },
-  { icon: Activity, text: "¿Cómo voy este mes?", color: "text-[var(--brand-cyan)]" },
-  { icon: TrendingDown, text: "¿Cuál es mi mayor fuga de dinero?", color: "text-[var(--danger)]" },
-  { icon: Target, text: "Reto semanal", color: "text-[var(--brand-purple)]" },
+  { icon: Wallet, text: "Analiza mi presupuesto del mes", label: "Presupuesto", color: "text-[var(--success)]", bg: "bg-[var(--success)]/10" },
+  { icon: Activity, text: "¿Cómo van mis metas de ahorro?", label: "Ahorro", color: "text-[var(--brand-cyan)]", bg: "bg-[var(--brand-cyan)]/10" },
+  { icon: TrendingDown, text: "Busca fugas en mis gastos hormiga", label: "Gastos", color: "text-[var(--danger)]", bg: "bg-[var(--danger)]/10" },
+  { icon: Bot, text: "Dame un consejo financiero proactivo", label: "Estrategia", color: "text-[var(--brand-purple)]", bg: "bg-[var(--brand-purple)]/10" },
 ];
 
 function ChatPageContent() {
@@ -608,67 +608,97 @@ function ChatPageContent() {
       >
         <div className="w-72 h-full flex flex-col">
           {/* Header del historial */}
-          <div className="p-4 border-b border-[var(--border)] flex items-center justify-between">
-            <h2 className="font-semibold text-sm">Historial</h2>
-            <div className="flex items-center gap-1">
+          <div className="p-6 border-b border-[var(--border)]">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="font-bold text-lg">Conversaciones</h2>
               <button
                 onClick={startNewChat}
-                className="p-2 rounded-lg hover:bg-[var(--background)] transition-colors"
+                className="p-2 rounded-xl bg-[var(--brand-purple)]/10 text-[var(--brand-purple)] hover:bg-[var(--brand-purple)] hover:text-white transition-all shadow-sm"
                 title="Nueva conversación"
               >
-                <Plus className="w-4 h-4" />
+                <Plus className="w-5 h-5" />
               </button>
-              <button
-                onClick={() => setShowHistory(false)}
-                className="p-2 rounded-lg hover:bg-[var(--background)] transition-colors lg:hidden"
-              >
-                <ChevronLeft className="w-4 h-4" />
-              </button>
+            </div>
+            <div className="relative">
+              <input
+                type="text"
+                placeholder="Buscar charla..."
+                className="w-full px-3 py-2 bg-[var(--background)] border border-[var(--border)] rounded-lg text-xs focus:outline-none focus:border-[var(--brand-purple)]"
+              />
             </div>
           </div>
 
           {/* Lista de conversaciones */}
-          <div className="flex-1 overflow-y-auto p-2">
+          <div className="flex-1 overflow-y-auto p-4 space-y-6">
             {loadingHistory ? (
-              <div className="flex items-center justify-center py-8">
-                <Loader2 className="w-5 h-5 animate-spin text-[var(--brand-gray)]" />
+              <div className="flex flex-col items-center justify-center py-12 gap-3">
+                <Loader2 className="w-6 h-6 animate-spin text-[var(--brand-purple)]" />
+                <p className="text-xs text-[var(--brand-gray)]">Cargando chats...</p>
               </div>
             ) : conversations.length === 0 ? (
-              <p className="text-sm text-[var(--brand-gray)] text-center py-8">
-                No hay conversaciones
-              </p>
+              <div className="text-center py-12">
+                <div className="w-12 h-12 rounded-full bg-[var(--background)] flex items-center justify-center mx-auto mb-3">
+                  <MessageSquare className="w-6 h-6 text-[var(--brand-gray)]" />
+                </div>
+                <p className="text-sm text-[var(--brand-gray)] font-medium">Sin historial aún</p>
+                <p className="text-xs text-[var(--brand-gray)]/60 mt-1">¡Saluda a FinyBot!</p>
+              </div>
             ) : (
-              <div className="space-y-1">
-                {conversations.map((conv) => (
-                  <button
-                    key={conv.id}
-                    onClick={() => loadConversationMessages(conv.id)}
-                    className={`w-full p-3 rounded-lg text-left transition-colors group flex items-start gap-2 ${currentConversationId === conv.id
-                      ? "bg-[var(--brand-purple)]/10 border border-[var(--brand-purple)]/30"
-                      : "hover:bg-[var(--background)]"
-                      }`}
-                  >
-                    <MessageSquare className="w-4 h-4 shrink-0 mt-0.5 text-[var(--brand-gray)]" />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium truncate">{conv.title}</p>
-                      <p className="text-xs text-[var(--brand-gray)]">
-                        {new Date(conv.updated_at).toLocaleDateString("es-ES", {
-                          day: "numeric",
-                          month: "short",
-                        })}
-                      </p>
+              <div className="space-y-4">
+                {/* Agrupar conversaciones por fecha (MOCK logic for grouping simplified) */}
+                <div className="space-y-1">
+                  <h3 className="text-[10px] font-bold text-[var(--brand-gray)] uppercase tracking-wider px-2 mb-2">Recientes</h3>
+                  {conversations.map((conv) => (
+                    <div key={conv.id} className="group relative">
+                      <button
+                        onClick={() => loadConversationMessages(conv.id)}
+                        className={`w-full p-3 rounded-xl text-left transition-all border ${currentConversationId === conv.id
+                          ? "bg-white dark:bg-[var(--background)] border-[var(--brand-purple)] shadow-sm"
+                          : "hover:bg-white dark:hover:bg-[var(--background)] border-transparent hover:border-[var(--border)]"
+                          }`}
+                      >
+                        <div className="flex items-start gap-3">
+                          <div className={`p-2 rounded-lg shrink-0 ${currentConversationId === conv.id ? "bg-[var(--brand-purple)] text-white" : "bg-[var(--background)] text-[var(--brand-gray)]"}`}>
+                            <MessageSquare className="w-3.5 h-3.5" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className={`text-sm font-semibold truncate ${currentConversationId === conv.id ? "text-[var(--foreground)]" : "text-[var(--brand-gray)] group-hover:text-[var(--foreground)]"}`}>
+                              {conv.title}
+                            </p>
+                            <p className="text-[10px] text-[var(--brand-gray)]/70 mt-0.5">
+                              {new Date(conv.updated_at).toLocaleDateString("es-ES", {
+                                day: "numeric",
+                                month: "short",
+                              })}
+                            </p>
+                          </div>
+                        </div>
+                      </button>
+                      <button
+                        onClick={(e) => deleteConversation(conv.id, e)}
+                        className="absolute right-2 top-1/2 -translate-y-1/2 p-2 rounded-lg opacity-0 group-hover:opacity-100 hover:bg-[var(--danger)]/10 hover:text-[var(--danger)] transition-all z-10"
+                        title="Eliminar"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
                     </div>
-                    <button
-                      onClick={(e) => deleteConversation(conv.id, e)}
-                      className="p-1 rounded opacity-0 group-hover:opacity-100 hover:bg-[var(--danger)]/10 hover:text-[var(--danger)] transition-all"
-                      title="Eliminar conversación"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
-                  </button>
-                ))}
+                  ))}
+                </div>
               </div>
             )}
+          </div>
+
+          {/* User Profile Summary in Sidebar */}
+          <div className="p-4 border-t border-[var(--border)] bg-[var(--background)]">
+            <div className="flex items-center gap-3 p-2 rounded-xl border border-transparent hover:border-[var(--border)] hover:bg-[var(--background-secondary)] transition-all cursor-pointer">
+              <div className="w-10 h-10 rounded-full bg-[var(--brand-purple)] flex items-center justify-center text-white overflow-hidden relative">
+                {userAvatar ? <Image src={userAvatar} alt="Profile" fill className="object-cover" /> : <User className="w-5 h-5" />}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-bold truncate">{profile?.full_name || "Usuario"}</p>
+                <p className="text-[10px] text-[var(--success)] font-bold uppercase tracking-tighter">Pro member</p>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -676,57 +706,68 @@ function ChatPageContent() {
       {/* Contenido principal del chat */}
       <div className="flex-1 flex flex-col h-full min-w-0">
         {/* Header integrado */}
-        <div className="shrink-0 border-b border-[var(--border)] bg-[var(--background)]">
-          <div className="px-3 sm:px-6 py-3 sm:py-4 flex items-center gap-2 sm:gap-4">
-            {/* Botón toggle historial */}
-            <button
-              onClick={() => setShowHistory(!showHistory)}
-              className={`p-1.5 sm:p-2 rounded-lg transition-colors ${showHistory
-                ? "bg-[var(--brand-purple)]/10 text-[var(--brand-purple)]"
-                : "hover:bg-[var(--background-secondary)]"
-                }`}
-              title={showHistory ? "Cerrar historial" : "Ver historial"}
-            >
-              {showHistory ? (
-                <ChevronLeft className="w-5 h-5" />
-              ) : (
-                <MessageSquare className="w-5 h-5" />
-              )}
-            </button>
+        <div className="shrink-0 border-b border-[var(--border)] bg-white/50 dark:bg-[var(--background)]/50 backdrop-blur-md sticky top-0 z-20">
+          <div className="px-4 sm:px-8 py-4 flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              {/* Botón toggle historial */}
+              <button
+                onClick={() => setShowHistory(!showHistory)}
+                className={`p-2.5 rounded-xl transition-all ${showHistory
+                  ? "bg-[var(--brand-purple)] text-white shadow-lg shadow-[var(--brand-purple)]/20"
+                  : "bg-[var(--background-secondary)] text-[var(--brand-gray)] hover:text-[var(--foreground)]"
+                  }`}
+              >
+                <div className="relative">
+                  <MessageSquare className="w-5 h-5" />
+                  {!showHistory && conversations.length > 0 && (
+                    <span className="absolute -top-1 -right-1 w-2 h-2 bg-[var(--danger)] rounded-full border-2 border-[var(--background)]" />
+                  )}
+                </div>
+              </button>
 
-            <div className="w-8 h-8 sm:w-10 sm:h-10 relative shrink-0">
-              <Image
-                src="/assets/finy-mascota-minimalista.png"
-                alt="FinyBot"
-                fill
-                className="object-contain"
-              />
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 sm:w-12 sm:h-12 relative shrink-0 group">
+                  <div className="absolute inset-0 bg-gradient-to-tr from-[var(--brand-purple)] to-[var(--brand-cyan)] rounded-2xl rotate-6 opacity-20 group-hover:rotate-12 transition-transform" />
+                  <div className="relative w-full h-full bg-[var(--background-secondary)] rounded-2xl border border-[var(--border)] flex items-center justify-center p-2 group-hover:-translate-y-1 transition-transform">
+                    <Image
+                      src="/assets/finy-mascota-minimalista.png"
+                      alt="FinyBot"
+                      fill
+                      className="object-contain p-2"
+                    />
+                  </div>
+                </div>
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2">
+                    <h1 className="text-lg font-black tracking-tight">FinyBot</h1>
+                    <span className="flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-widest bg-[var(--success)]/10 text-[var(--success)]">
+                      <span className="w-1.5 h-1.5 rounded-full bg-[var(--success)] animate-pulse" />
+                      Live
+                    </span>
+                  </div>
+                  <p className="text-xs text-[var(--brand-gray)] opacity-60 font-medium hidden sm:block">Inteligencia Financiera Activa</p>
+                </div>
+              </div>
             </div>
-            <div className="min-w-0 flex-1">
-              <h1 className="text-base sm:text-lg font-bold">FinyBot</h1>
-              <p className="text-xs text-[var(--brand-gray)] truncate hidden sm:block">Tu asistente financiero personal</p>
-            </div>
-            <button
-              onClick={toggleCallMode}
-              className="p-1.5 sm:p-2 rounded-lg bg-[var(--brand-purple)]/10 text-[var(--brand-purple)] hover:bg-[var(--brand-purple)] hover:text-white transition-all shadow-lg shadow-[var(--brand-purple)]/20"
-              title="Modo Llamada"
-            >
-              <Phone className="w-4 h-4 sm:w-5 sm:h-5" />
-            </button>
-            <div className="flex items-center gap-1 sm:gap-2">
-              {/* Botón nueva conversación */}
+
+            <div className="flex items-center gap-2 sm:gap-4">
+              <button
+                onClick={toggleCallMode}
+                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[var(--brand-purple)]/10 text-[var(--brand-purple)] hover:bg-[var(--brand-purple)] hover:text-white transition-all font-bold text-xs group"
+              >
+                <Phone className="w-4 h-4 group-hover:animate-bounce" />
+                <span className="hidden sm:inline">Modo Voz</span>
+              </button>
+
+              <div className="h-8 w-[1px] bg-[var(--border)] mx-1 hidden sm:block" />
+
               <button
                 onClick={startNewChat}
-                className="p-1.5 sm:p-2 rounded-lg hover:bg-[var(--background-secondary)] transition-colors"
+                className="p-2.5 rounded-xl hover:bg-[var(--background-secondary)] text-[var(--brand-gray)] transition-all"
                 title="Nueva conversación"
               >
-                <Plus className="w-4 h-4 sm:w-5 sm:h-5" />
+                <Plus className="w-5 h-5" />
               </button>
-              <span className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-[var(--success)]/10 text-[var(--success)]">
-                <span className="w-1.5 h-1.5 rounded-full bg-[var(--success)] animate-pulse" />
-                Online
-              </span>
-              <span className="sm:hidden w-2 h-2 rounded-full bg-[var(--success)] animate-pulse" />
             </div>
           </div>
         </div>
@@ -734,113 +775,115 @@ function ChatPageContent() {
         {/* Messages area - ocupa todo el espacio disponible */}
         <div className="flex-1 overflow-y-auto">
           {messages.length === 0 ? (
-            // Welcome screen - centrado vertical y horizontal
-            <div className="h-full flex flex-col items-center justify-center px-4 sm:px-6 py-8 sm:py-12">
-              <div className="w-16 h-16 sm:w-20 sm:h-20 relative mb-4 sm:mb-5">
+            // Welcome screen - premium layout
+            <div className="h-full flex flex-col items-center justify-center px-4 max-w-4xl mx-auto overflow-y-auto">
+              <div className="w-24 h-24 sm:w-32 sm:h-32 relative mb-8 animate-float">
+                <div className="absolute inset-0 bg-[var(--brand-purple)]/20 rounded-full blur-2xl animate-pulse" />
                 <Image
                   src="/assets/finy-mascota-minimalista.png"
                   alt="FinyBot"
                   fill
-                  className="object-contain"
+                  className="object-contain relative z-10"
                 />
               </div>
-              <h2 className="text-lg sm:text-xl font-bold mb-2 text-center">¿En qué te puedo ayudar?</h2>
-              <p className="text-[var(--brand-gray)] text-xs sm:text-sm mb-6 sm:mb-8 max-w-md text-center px-4">
-                Tengo acceso a todos tus datos financieros para darte consejos personalizados.
+              <h2 className="text-2xl sm:text-4xl font-black mb-3 text-center tracking-tight">
+                Hola {getFirstName() || profile?.full_name}, <br />
+                <span className="text-[var(--brand-purple)]">¿Hablamos de tus finanzas?</span>
+              </h2>
+              <p className="text-[var(--brand-gray)] text-sm sm:text-base mb-10 max-w-md text-center">
+                Analizo tus movimientos en tiempo real para darte consejos inteligentes y personalizados.
               </p>
 
-              {/* Quick prompts - grid responsive */}
-              <div className="grid grid-cols-2 gap-2 sm:gap-3 w-full max-w-4xl px-2 sm:px-0">
+              {/* Quick prompts grid */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full px-4">
                 {QUICK_PROMPTS.map((prompt, index) => {
                   const Icon = prompt.icon;
                   return (
                     <button
                       key={index}
                       onClick={() => handleQuickPrompt(prompt.text)}
-                      className="flex flex-col items-center gap-1.5 sm:gap-2 p-3 sm:p-4 rounded-xl bg-[var(--background-secondary)] border border-[var(--border)] hover:border-[var(--brand-purple)] hover:bg-[var(--brand-purple)]/5 transition-all text-center group"
+                      className="flex items-center gap-4 p-5 rounded-2xl bg-[var(--background-secondary)] border border-[var(--border)] hover:border-[var(--brand-purple)] hover:bg-white dark:hover:bg-[var(--background)] transition-all group shadow-sm"
                     >
-                      <div className={`p-1.5 sm:p-2 rounded-lg bg-[var(--background)] group-hover:scale-110 transition-transform`}>
-                        <Icon className={`w-4 h-4 sm:w-5 sm:h-5 ${prompt.color}`} />
+                      <div className={`p-3 rounded-xl ${prompt.bg} ${prompt.color} group-hover:scale-110 transition-transform`}>
+                        <Icon className="w-6 h-6" />
                       </div>
-                      <span className="text-[10px] sm:text-xs font-medium leading-tight">{prompt.text}</span>
+                      <div className="text-left">
+                        <p className="text-xs font-black text-[var(--brand-gray)] uppercase tracking-widest mb-0.5">{prompt.label}</p>
+                        <p className="text-sm font-semibold">{prompt.text}</p>
+                      </div>
                     </button>
                   );
                 })}
               </div>
+
+              <div className="mt-12 flex items-center gap-2 text-[var(--brand-gray)]/50 text-[10px] font-bold uppercase tracking-[0.2em]">
+                <Activity className="w-3 h-3" />
+                Conectado al motor financiero v4.0
+              </div>
             </div>
           ) : (
             // Chat messages - full width con padding adaptativo
-            <div className="px-3 sm:px-6 lg:px-8 py-4 sm:py-6 space-y-3 sm:space-y-4">
-              {messages.map((message, index) => (
-                <div
-                  key={index}
-                  className={`flex gap-2 sm:gap-3 max-w-4xl ${message.role === "user" ? "ml-auto flex-row-reverse" : ""
-                    }`}
-                >
-                  {/* Avatar */}
-                  {message.role === "user" ? (
-                    <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full shrink-0 bg-[var(--brand-purple)] overflow-hidden relative">
-                      {userAvatar ? (
-                        <Image
-                          src={userAvatar}
-                          alt="Tu avatar"
-                          fill
-                          className="object-cover"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center">
-                          <User className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white" />
-                        </div>
-                      )}
-                    </div>
-                  ) : (
-                    <div className="w-7 h-7 sm:w-8 sm:h-8 relative shrink-0">
-                      <Image
-                        src="/assets/finy-mascota-minimalista.png"
-                        alt="FinyBot"
-                        fill
-                        className="object-contain"
-                      />
-                    </div>
-                  )}
-
-                  {/* Message content */}
+            <div className="px-4 pb-32 max-w-5xl mx-auto w-full pt-6">
+              <div className="space-y-6">
+                {messages.map((message, index) => (
                   <div
-                    className={`px-3 sm:px-4 py-2 sm:py-3 rounded-2xl max-w-[85%] sm:max-w-[75%] ${message.role === "user"
-                      ? "bg-[var(--brand-purple)] text-white rounded-br-md"
-                      : "bg-[var(--background-secondary)] border border-[var(--border)] rounded-bl-md"
-                      }`}
+                    key={index}
+                    className={`flex gap-3 sm:gap-4 ${message.role === "user" ? "flex-row-reverse" : ""}`}
                   >
-                    {message.role === "user" ? (
-                      <p className="text-xs sm:text-sm text-white">{message.content}</p>
-                    ) : (
-                      <div className="text-xs sm:text-sm leading-relaxed [&_p]:mb-2 [&_p:last-child]:mb-0 [&_strong]:text-[var(--brand-cyan)] [&_strong]:font-semibold [&_ul]:list-disc [&_ul]:pl-4 [&_ul]:my-2 [&_ol]:list-decimal [&_ol]:pl-4 [&_ol]:my-2 [&_li]:my-0.5">
-                        <ReactMarkdown>{message.content}</ReactMarkdown>
+                    {/* Avatar with status indicator */}
+                    <div className="shrink-0 relative">
+                      <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full overflow-hidden border-2 ${message.role === "user" ? "border-[var(--brand-purple)] bg-[var(--brand-purple)]" : "border-[var(--brand-cyan)] bg-[var(--background-secondary)]"}`}>
+                        {message.role === "user" ? (
+                          userAvatar ? <Image src={userAvatar} alt="Profile" fill className="object-cover" /> : <div className="w-full h-full flex items-center justify-center"><User className="w-5 h-5 text-white" /></div>
+                        ) : (
+                          <Image src="/assets/finy-mascota-minimalista.png" alt="Finy" fill className="object-contain p-1" />
+                        )}
                       </div>
-                    )}
+                    </div>
+
+                    {/* Message content refined */}
+                    <div className={`flex flex-col ${message.role === "user" ? "items-end" : "items-start"} max-w-[85%] sm:max-w-[80%]`}>
+                      <div
+                        className={`px-4 py-3 rounded-2xl shadow-sm ${message.role === "user"
+                          ? "bg-[var(--brand-purple)] text-white rounded-tr-none"
+                          : "bg-[var(--background-secondary)] border border-[var(--border)] rounded-tl-none dark:bg-white/5 backdrop-blur-sm"
+                          }`}
+                      >
+                        {message.role === "user" ? (
+                          <p className="text-sm font-medium leading-relaxed">{message.content}</p>
+                        ) : (
+                          <div className="text-sm leading-relaxed prose prose-sm dark:prose-invert max-w-none [&_p]:mb-2 [&_p:last-child]:mb-0 [&_strong]:text-[var(--brand-cyan)] [&_strong]:font-bold [&_ul]:list-disc [&_ul]:pl-4 [&_ul]:my-2 [&_li]:my-1">
+                            <ReactMarkdown>{message.content}</ReactMarkdown>
+                          </div>
+                        )}
+                      </div>
+                      <span className="text-[10px] text-[var(--brand-gray)]/50 mt-1 font-bold uppercase tracking-widest px-1">
+                        {message.role === "user" ? "Enviado" : "FinyBot • Inteligencia Artificial"}
+                      </span>
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))}
+              </div>
 
               {/* Loading indicator - hide once streaming starts */}
               {loading && !(messages.length > 0 && messages[messages.length - 1]?.role === "assistant" && messages[messages.length - 1]?.content) && (
-                <div className="flex gap-2 sm:gap-3 max-w-4xl">
-                  <div className="w-7 h-7 sm:w-8 sm:h-8 relative shrink-0">
-                    <Image
-                      src="/assets/finy-mascota-minimalista.png"
-                      alt="FinyBot"
-                      fill
-                      className="object-contain"
-                    />
+                <div className="flex gap-4">
+                  <div className="w-10 h-10 shrink-0 relative">
+                    <div className="absolute inset-0 bg-[var(--brand-cyan)]/20 rounded-full animate-ping" />
+                    <Image src="/assets/finy-mascota-minimalista.png" alt="Finy" fill className="object-contain relative z-10 p-1" />
                   </div>
-                  <div className="px-3 sm:px-4 py-2 sm:py-3 rounded-2xl rounded-bl-md bg-[var(--background-secondary)] border border-[var(--border)]">
-                    <div className="flex items-center gap-2 text-[var(--brand-gray)]">
-                      <div className="flex gap-1">
-                        <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-[var(--brand-purple)] animate-bounce" style={{ animationDelay: "0ms" }} />
-                        <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-[var(--brand-purple)] animate-bounce" style={{ animationDelay: "150ms" }} />
-                        <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-[var(--brand-purple)] animate-bounce" style={{ animationDelay: "300ms" }} />
+                  <div className="px-5 py-4 rounded-2xl rounded-tl-none bg-[var(--background-secondary)] border border-[var(--border)] shadow-sm">
+                    <div className="flex flex-col gap-2">
+                      <div className="flex gap-1.5 items-center">
+                        <span className="w-2 h-2 rounded-full bg-[var(--brand-purple)] animate-bounce" style={{ animationDelay: "0ms" }} />
+                        <span className="w-2 h-2 rounded-full bg-[var(--brand-purple)] animate-bounce" style={{ animationDelay: "150ms" }} />
+                        <span className="w-2 h-2 rounded-full bg-[var(--brand-purple)] animate-bounce" style={{ animationDelay: "300ms" }} />
+                        <span className="text-xs font-black text-[var(--brand-purple)] uppercase tracking-widest ml-1">FinyBot está analizando...</span>
                       </div>
-                      <span className="text-xs sm:text-sm">Pensando...</span>
+                      <div className="h-1.5 w-40 bg-[var(--background)] rounded-full overflow-hidden">
+                        <div className="h-full bg-gradient-to-r from-[var(--brand-purple)] to-[var(--brand-cyan)] animate-progress-fast" />
+                      </div>
+                      <p className="text-[10px] text-[var(--brand-gray)] opacity-60 italic">Consultando contexto financiero del usuario...</p>
                     </div>
                   </div>
                 </div>
@@ -851,147 +894,171 @@ function ChatPageContent() {
           )}
         </div>
 
-        {/* Input area - fijado abajo */}
-        <div className="shrink-0 border-t border-[var(--border)] bg-[var(--background)] p-2 sm:p-4">
-          <form onSubmit={handleSubmit} className="max-w-4xl mx-auto">
-            <div className="flex items-end gap-1.5 sm:gap-2">
-              {/* Mic button */}
-              <button
-                type="button"
-                onClick={handleMicClick}
-                disabled={loading || isTranscribing}
-                className={`p-2.5 sm:p-3 rounded-xl sm:rounded-2xl transition-all shrink-0 ${isRecording
-                  ? "bg-[var(--danger)] text-white animate-pulse"
-                  : "bg-[var(--background-secondary)] border border-[var(--border)] text-[var(--brand-gray)] hover:text-[var(--foreground)] hover:border-[var(--brand-purple)]"
-                  } disabled:opacity-50 disabled:cursor-not-allowed`}
-                title={isRecording ? "Detener grabación" : "Grabar mensaje de voz"}
-              >
-                {isTranscribing ? (
-                  <Loader2 className="w-4 h-4 sm:w-5 sm:h-5 animate-spin" />
-                ) : isRecording ? (
-                  <Square className="w-4 h-4 sm:w-5 sm:h-5" />
-                ) : (
-                  <Mic className="w-4 h-4 sm:w-5 sm:h-5" />
-                )}
-              </button>
+        <div className="fixed bottom-0 left-0 right-0 lg:left-auto lg:w-[calc(100%-288px)] p-4 sm:p-6 bg-gradient-to-t from-[var(--background)] via-[var(--background)]/95 to-transparent z-10">
+          <div className="max-w-4xl mx-auto relative group">
+            {/* Context Floating Chip (Cool Detail using OpenAI context logic) */}
+            {messages.length > 0 && !loading && (
+              <div className="absolute -top-10 left-1/2 -translate-x-1/2 flex items-center gap-2 px-3 py-1.5 rounded-full bg-white dark:bg-[var(--background-secondary)] border border-[var(--border)] shadow-xl animate-fade-in-up">
+                <div className="w-2 h-2 rounded-full bg-[var(--brand-cyan)] animate-pulse" />
+                <span className="text-[10px] font-bold uppercase tracking-widest text-[var(--brand-gray)]">Finy está listo para ejecutar tus órdenes</span>
+              </div>
+            )}
 
-              <div className="flex-1 relative">
-                {isTranscribing && (
-                  <div className="absolute -top-8 left-0 flex items-center gap-2 text-xs text-[var(--brand-purple)] animate-pulse">
-                    <Loader2 className="w-3 h-3 animate-spin" />
-                    Transcribiendo audio...
-                  </div>
-                )}
+            <form onSubmit={handleSubmit} className="relative">
+              <div className="relative flex items-center gap-3 p-3 sm:p-4 bg-white dark:bg-[var(--background-secondary)] border-2 border-[var(--border)] rounded-2xl sm:rounded-3xl shadow-2xl shadow-black/5 focus-within:border-[var(--brand-purple)] transition-all">
+                {/* Action Button (Mic) */}
+                <button
+                  type="button"
+                  onClick={handleMicClick}
+                  disabled={loading || isTranscribing}
+                  className={`group relative p-2 sm:p-3 rounded-xl sm:rounded-2xl transition-all ${isRecording
+                    ? "bg-[var(--danger)] text-white animate-pulse"
+                    : "bg-[var(--background)] text-[var(--brand-gray)] hover:bg-[var(--brand-purple)]/10 hover:text-[var(--brand-purple)]"
+                    }`}
+                >
+                  {isTranscribing ? (
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                  ) : isRecording ? (
+                    <Square className="w-5 h-5" />
+                  ) : (
+                    <Mic className="w-5 h-5" />
+                  )}
+                  {/* Tooltip hint */}
+                  {!isRecording && (
+                    <span className="absolute -top-12 left-1/2 -translate-x-1/2 px-2 py-1 rounded bg-black text-white text-[10px] font-bold opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+                      Hablar con Finy
+                    </span>
+                  )}
+                </button>
+
                 <textarea
                   ref={inputRef}
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   onKeyDown={handleKeyDown}
-                  placeholder={isRecording ? "Grabando..." : isTranscribing ? "Transcribiendo audio..." : "Escribe tu mensaje..."}
+                  placeholder={isRecording ? "Te escucho..." : isTranscribing ? "Procesando voz..." : "¿Qué quieres lograr hoy?"}
                   rows={1}
-                  className="w-full px-3 sm:px-4 py-2.5 sm:py-3 bg-[var(--background-secondary)] border border-[var(--border)] rounded-xl sm:rounded-2xl resize-none focus:outline-none focus:border-[var(--brand-purple)] focus:ring-2 focus:ring-[var(--brand-purple)]/20 text-xs sm:text-sm"
+                  className="flex-1 bg-transparent border-none focus:ring-0 text-sm sm:text-base font-medium placeholder:text-[var(--brand-gray)]/40 resize-none min-h-[24px] max-h-[120px]"
                   disabled={loading || isRecording}
                 />
+
+                <button
+                  type="submit"
+                  disabled={!input.trim() || loading || isRecording}
+                  className={`p-3 sm:p-4 rounded-xl sm:rounded-2xl transition-all ${!input.trim() || loading || isRecording
+                    ? "bg-[var(--border)] text-[var(--brand-gray)]"
+                    : "bg-[var(--brand-purple)] text-white shadow-lg shadow-[var(--brand-purple)]/20 hover:scale-105 active:scale-95"
+                    }`}
+                >
+                  {loading ? (
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                  ) : (
+                    <Send className="w-5 h-5" />
+                  )}
+                </button>
               </div>
-              <button
-                type="submit"
-                disabled={!input.trim() || loading || isRecording}
-                className="p-2.5 sm:p-3 rounded-xl sm:rounded-2xl gradient-brand text-white hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
-              >
-                {loading ? (
-                  <Loader2 className="w-4 h-4 sm:w-5 sm:h-5 animate-spin" />
-                ) : (
-                  <Send className="w-4 h-4 sm:w-5 sm:h-5" />
-                )}
-              </button>
-            </div>
-            {isRecording && (
-              <p className="text-[10px] sm:text-xs text-[var(--danger)] mt-1.5 sm:mt-2 text-center animate-pulse">
-                Grabando audio... Pulsa el botón rojo para enviar
-              </p>
-            )}
-          </form>
+            </form>
+
+            <p className="text-[10px] text-center text-[var(--brand-gray)]/40 mt-3 font-medium uppercase tracking-[0.2em] sm:block hidden ">
+              FinyBot v4.1 • Presiona <kbd className="font-sans px-1 text-[8px]">Enter</kbd> para enviar
+            </p>
+          </div>
         </div>
       </div>{/* Fin contenido principal del chat */}
 
-      {/* Overlay de Modo Llamada */}
+      {/* Overlay de Modo Llamada - Futuristic Premium Design */}
       {isCallMode && (
-        <div className="fixed inset-0 z-[100] bg-[var(--background)]/80 backdrop-blur-2xl animate-fade-in flex flex-col items-center justify-between py-12 px-6">
-          <div className="absolute top-0 right-0 w-full h-full overflow-hidden pointer-events-none opacity-30">
-            <div className="absolute top-[-10%] right-[-10%] w-[50%] h-[50%] bg-[var(--brand-purple)]/20 rounded-full blur-[120px] animate-pulse" />
-            <div className="absolute bottom-[-10%] left-[-10%] w-[50%] h-[50%] bg-[var(--brand-cyan)]/20 rounded-full blur-[120px] animate-pulse" style={{ animationDelay: "1000ms" }} />
+        <div className="fixed inset-0 z-[100] bg-[var(--background)] animate-fade-in flex flex-col items-center justify-between py-16 px-6 overflow-hidden">
+          {/* Background Ambient Orbs */}
+          <div className="absolute inset-0 pointer-events-none">
+            <div className="absolute top-[-20%] left-[-10%] w-[70%] h-[70%] bg-[var(--brand-purple)]/10 rounded-full blur-[120px] animate-pulse" />
+            <div className="absolute bottom-[-20%] right-[-10%] w-[70%] h-[70%] bg-[var(--brand-cyan)]/10 rounded-full blur-[120px] animate-pulse-slow" />
+            <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 brightness-50 contrast-150" />
           </div>
 
-          {/* Call Header */}
-          <div className="w-full max-w-md flex items-center justify-center gap-2">
-            <div className="w-2 h-2 rounded-full bg-[var(--success)] animate-pulse" />
-            <span className="text-xs font-black uppercase tracking-[0.3em] text-[var(--brand-gray)]">Llamada en curso con FinyBot</span>
+          {/* Top Info */}
+          <div className="relative z-10 w-full max-w-md flex flex-col items-center">
+            <div className="px-4 py-1.5 rounded-full bg-white/5 border border-white/10 backdrop-blur-md flex items-center gap-3 mb-4">
+              <div className="w-2 h-2 rounded-full bg-[var(--success)] animate-pulse" />
+              <span className="text-[10px] font-black uppercase tracking-[0.4em] text-white/50">Encriptación de voz activa</span>
+            </div>
+            <h2 className="text-sm font-medium text-[var(--brand-gray)]">Sesión segura con FinyBot</h2>
           </div>
 
-          {/* Mascot Section */}
-          <div className="relative flex-1 flex flex-col items-center justify-center gap-8 w-full">
-            <div className={`relative w-40 h-40 sm:w-56 sm:h-56 transition-all duration-700 ${callStatus === 'speaking' ? 'scale-110' : 'scale-100'}`}>
-              {/* Animated Rings */}
-              <div className={`absolute inset-0 rounded-full border-2 border-[var(--brand-purple)]/20 animate-ping shadow-[0_0_40px_rgba(139,77,255,0.2)] ${callStatus === 'speaking' ? 'opacity-100' : 'opacity-0'}`} />
-              <div className={`absolute inset-0 rounded-full border border-[var(--brand-cyan)]/30 animate-pulse ${callStatus === 'listening' ? 'opacity-100' : 'opacity-0'}`} />
+          {/* Central AI Entity Visualizer */}
+          <div className="relative flex-1 flex flex-col items-center justify-center w-full max-w-2xl">
+            <div className={`relative transition-all duration-1000 ease-out ${callStatus === 'speaking' ? 'scale-110' : 'scale-100'}`}>
 
-              <div className="absolute inset-0 bg-gradient-to-tr from-[var(--brand-purple)]/20 to-[var(--brand-cyan)]/10 rounded-full blur-2xl" />
+              {/* Dynamic Aura */}
+              <div className={`absolute inset-[-40px] rounded-full transition-opacity duration-700 ${callStatus === 'listening' ? 'opacity-100' : 'opacity-0'}`}>
+                <div className="absolute inset-0 rounded-full border border-[var(--brand-cyan)]/20 animate-ping-slow" />
+                <div className="absolute inset-0 rounded-full border border-[var(--brand-cyan)]/10 animate-pulse" />
+              </div>
 
-              <div className="relative w-full h-full bg-[var(--background-secondary)] rounded-full border border-white/10 shadow-2xl flex items-center justify-center overflow-hidden">
+              <div className={`absolute inset-[-60px] rounded-full transition-opacity duration-700 ${callStatus === 'speaking' ? 'opacity-100' : 'opacity-0'}`}>
+                <div className="absolute inset-0 rounded-full border border-[var(--brand-purple)]/30 animate-ping" />
+                <div className="absolute inset-0 rounded-full border-2 border-[var(--brand-purple)]/10 animate-pulse" />
+              </div>
+
+              {/* Main Mascot Container */}
+              <div className="relative w-48 h-48 sm:w-64 sm:h-64 rounded-[48px] bg-gradient-to-tr from-white/10 to-white/5 border border-white/20 shadow-2xl backdrop-blur-2xl flex items-center justify-center p-8 group">
+                <div className="absolute inset-0 bg-gradient-to-tr from-[var(--brand-purple)]/20 to-[var(--brand-cyan)]/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-[48px]" />
                 <Image
                   src="/assets/finy-mascota-minimalista.png"
                   alt="Finy"
-                  width={180}
-                  height={180}
-                  className={`object-contain transition-transform duration-500 ${callStatus === 'speaking' ? 'animate-bounce' : 'group-hover:scale-110'}`}
+                  width={220}
+                  height={220}
+                  className={`object-contain relative z-10 transition-all duration-500 ${callStatus === 'speaking' ? 'scale-110 drop-shadow-[0_0_30px_rgba(139,77,255,0.4)]' : 'grayscale-[20%] opacity-80'}`}
                 />
               </div>
 
-              {/* Activity bars */}
-              <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-1 h-8">
-                {[1, 2, 3, 4, 5].map((i) => (
+              {/* Waveform Visualizer */}
+              <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 flex items-end gap-1.5 h-12">
+                {[1, 2, 3, 4, 5, 6, 7].map((i) => (
                   <div
                     key={i}
-                    className={`w-1 bg-[var(--brand-cyan)] rounded-full transition-all duration-150 ${callStatus === 'speaking' ? 'animate-music-bar' : 'h-1'}`}
+                    className={`w-1.5 rounded-full transition-all duration-300 ${callStatus === 'speaking' ? 'bg-[var(--brand-purple)] animate-music-bar' : 'bg-[var(--border)] h-2'}`}
                     style={{
-                      animationDelay: `${i * 100}ms`,
-                      height: callStatus === 'speaking' ? '100%' : '4px'
+                      animationDelay: `${i * 120}ms`,
+                      height: callStatus === 'speaking' ? `${20 + Math.random() * 80}%` : '8px'
                     }}
                   />
                 ))}
               </div>
             </div>
 
-            <div className="text-center space-y-2">
-              <h3 className="text-2xl font-black text-white tracking-tight">
-                {callStatus === 'listening' ? 'Escuchándote...' :
-                  callStatus === 'thinking' ? 'Analizando...' :
-                    callStatus === 'speaking' ? 'Finy hablando' : 'Conectado'}
-              </h3>
-              <p className="text-sm text-[var(--brand-gray)] font-medium max-w-xs mx-auto min-h-[1.5em] italic">
-                {interimTranscript || (callStatus === 'listening' ? 'Di algo como: "¿Cómo van mis ahorros?"' : '')}
+            {/* Transcription / Status Text */}
+            <div className="mt-20 text-center px-6 max-w-lg min-h-[100px] flex flex-col items-center justify-center">
+              <div className={`text-3xl font-black mb-4 transition-colors ${callStatus === 'listening' ? 'text-[var(--brand-cyan)]' : 'text-white'}`}>
+                {callStatus === 'listening' ? 'Te escucho...' :
+                  callStatus === 'thinking' ? 'Procesando...' :
+                    callStatus === 'speaking' ? 'Finy responde' : 'Conectando'}
+              </div>
+              <p className="text-base text-[var(--brand-gray)] font-medium leading-relaxed italic opacity-80">
+                {interimTranscript || (callStatus === 'listening' ? 'Prueba a decir: "¿Cómo va mi ahorro para el coche?"' : 'Analizando tu situación financiera actual...')}
               </p>
             </div>
           </div>
 
-          {/* Call Controls */}
-          <div className="flex items-center gap-6 sm:gap-10">
+          {/* Call Control Bar */}
+          <div className="relative z-10 flex items-center gap-8 sm:gap-14 px-8 py-6 rounded-[32px] bg-white/5 border border-white/10 backdrop-blur-xl mb-4 shadow-2xl">
             <button
               onClick={() => setIsMuted(!isMuted)}
-              className={`w-14 h-14 rounded-full flex items-center justify-center transition-all ${isMuted ? 'bg-[var(--danger)] text-white' : 'bg-white/10 text-white hover:bg-white/20'}`}
+              className={`group relative w-16 h-16 rounded-2xl flex items-center justify-center transition-all ${isMuted ? 'bg-[var(--danger)] text-white' : 'bg-white/10 text-white hover:bg-white/20'}`}
             >
               {isMuted ? <MicOff className="w-6 h-6" /> : <Volume2 className="w-6 h-6" />}
+              <span className="absolute -top-10 scale-0 group-hover:scale-100 transition-transform text-[10px] font-black uppercase text-white/50">{isMuted ? 'Unmute' : 'Mute'}</span>
             </button>
 
             <button
               onClick={toggleCallMode}
-              className="w-20 h-20 rounded-full bg-[var(--danger)] text-white flex items-center justify-center shadow-2xl shadow-[var(--danger)]/30 hover:scale-110 active:scale-95 transition-all"
+              className="w-24 h-24 rounded-[32px] bg-[var(--danger)] text-white flex items-center justify-center shadow-[0_0_50px_rgba(239,68,68,0.4)] hover:scale-110 active:scale-95 transition-all"
             >
-              <PhoneOff className="w-8 h-8" />
+              <PhoneOff className="w-10 h-10" />
             </button>
 
-            <div className="w-14 h-14 rounded-full bg-white/10 text-white flex items-center justify-center">
-              <Bot className="w-6 h-6" />
+            <div className="w-16 h-16 rounded-2xl bg-white/10 text-white flex items-center justify-center border border-white/5">
+              <Bot className="w-6 h-6 opacity-40" />
             </div>
           </div>
         </div>
