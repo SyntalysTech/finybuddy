@@ -27,7 +27,20 @@ import {
   Settings,
   ChevronDown,
   ChevronUp,
+  BarChart3,
+  History,
 } from "lucide-react";
+import {
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  ComposedChart,
+  Line,
+  Cell,
+} from "recharts";
 import { format, subMonths, addMonths } from "date-fns";
 import { es } from "date-fns/locale";
 import FinyInfoPanel from "@/components/ui/FinyInfoPanel";
@@ -74,6 +87,9 @@ function PrevisionPageContent() {
     savings: true,
   });
   const [isRuleExpanded, setIsRuleExpanded] = useState(true);
+  const [showHistoryCategory, setShowHistoryCategory] = useState<Category | null>(null);
+  const [historyData, setHistoryData] = useState<any[]>([]);
+  const [loadingHistory, setLoadingHistory] = useState(false);
 
   useEffect(() => {
     try {
@@ -214,6 +230,82 @@ function PrevisionPageContent() {
     setLoading(false);
     setHasChanges(false);
   }, [selectedYear, selectedMonth, supabase]);
+
+  const fetchCategoryHistory = async (category: Category) => {
+    setLoadingHistory(true);
+    setShowHistoryCategory(category);
+
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      setLoadingHistory(false);
+      return;
+    }
+
+    const months: any[] = [];
+    const today = new Date();
+
+    for (let i = 3; i >= 0; i--) {
+      const d = subMonths(today, i);
+      const year = d.getFullYear();
+      const month = d.getMonth() + 1;
+      const monthLabel = format(d, "MMM", { locale: es });
+
+      const start = new Date(year, month - 1, 1);
+      const end = new Date(year, month, 0);
+
+      months.push({
+        year,
+        month,
+        monthLabel,
+        startDate: format(start, "yyyy-MM-01"),
+        endDate: format(end, "yyyy-MM-dd"),
+        amount: 0
+      });
+    }
+
+    const startDate = months[0].startDate;
+    const endDate = months[months.length - 1].endDate;
+
+    const { data: operations, error } = await supabase
+      .from("operations")
+      .select("amount, operation_date")
+      .eq("user_id", user.id)
+      .eq("category_id", category.id)
+      .gte("operation_date", startDate)
+      .lte("operation_date", endDate);
+
+    if (error) {
+      console.error("Error fetching operations history:", error);
+      setLoadingHistory(false);
+      return;
+    }
+
+    const processedData = months.map(m => {
+      const totalAmount = operations?.reduce((sum, op) => {
+        const opDate = new Date(op.operation_date);
+        if (opDate.getMonth() + 1 === m.month && opDate.getFullYear() === m.year) {
+          return sum + Number(op.amount);
+        }
+        return sum;
+      }, 0) || 0;
+
+      return {
+        name: m.monthLabel.charAt(0).toUpperCase() + m.monthLabel.slice(1),
+        amount: totalAmount
+      };
+    });
+
+    const sum = processedData.reduce((s, d) => s + d.amount, 0);
+    const average = sum / 4;
+
+    const dataWithAverage = processedData.map(d => ({
+      ...d,
+      average: Number(average.toFixed(2))
+    }));
+
+    setHistoryData(dataWithAverage);
+    setLoadingHistory(false);
+  };
 
   useEffect(() => {
     fetchData();
@@ -849,6 +941,13 @@ function PrevisionPageContent() {
                 {formatCurrency(budget.amount)}
               </span>
               <button
+                onClick={() => fetchCategoryHistory(budget.category)}
+                className="p-2 rounded-lg hover:bg-[var(--background-secondary)] transition-colors group relative"
+                title="Ver historial y promedio"
+              >
+                <BarChart3 className="w-4 h-4 text-[var(--brand-cyan)]" />
+              </button>
+              <button
                 onClick={() => startEditing(budget.category_id, budget.amount)}
                 className="p-2 rounded-lg hover:bg-[var(--background-secondary)] transition-colors"
               >
@@ -1473,6 +1572,104 @@ function PrevisionPageContent() {
                   Sí, eliminar
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Category History Modal */}
+      {showHistoryCategory && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-[var(--background)] rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden">
+            <div className="px-6 py-4 border-b border-[var(--border)] flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <span className="text-2xl">{showHistoryCategory.icon}</span>
+                <div>
+                  <h2 className="text-lg font-semibold">{showHistoryCategory.name}</h2>
+                  <p className="text-xs text-[var(--brand-gray)]">Historial últimos 4 meses</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowHistoryCategory(null)}
+                className="p-1 rounded-lg hover:bg-[var(--background-secondary)] transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="p-6">
+              {loadingHistory ? (
+                <div className="h-64 flex flex-col items-center justify-center gap-3">
+                  <div className="w-8 h-8 border-4 border-[var(--brand-cyan)] border-t-transparent rounded-full animate-spin" />
+                  <p className="text-sm text-[var(--brand-gray)]">Calculando promedios...</p>
+                </div>
+              ) : (
+                <>
+                  <div className="h-64 w-full mb-6">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <ComposedChart data={historyData}>
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" />
+                        <XAxis
+                          dataKey="name"
+                          axisLine={false}
+                          tickLine={false}
+                          tick={{ fill: 'var(--brand-gray)', fontSize: 12 }}
+                        />
+                        <YAxis
+                          hide
+                        />
+                        <Tooltip
+                          contentStyle={{
+                            backgroundColor: 'var(--background)',
+                            border: '1px solid var(--border)',
+                            borderRadius: '12px',
+                            boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+                          }}
+                          formatter={(value: number) => [formatCurrency(value), 'Trackeado']}
+                        />
+                        <Bar
+                          dataKey="amount"
+                          fill="var(--brand-cyan)"
+                          radius={[4, 4, 0, 0]}
+                          barSize={40}
+                        />
+                        <Line
+                          type="monotone"
+                          dataKey="average"
+                          stroke="var(--danger)"
+                          strokeWidth={2}
+                          dot={false}
+                          strokeDasharray="5 5"
+                        />
+                      </ComposedChart>
+                    </ResponsiveContainer>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="p-4 rounded-xl bg-[var(--background-secondary)]">
+                      <p className="text-xs text-[var(--brand-gray)] mb-1">Promedio mensual</p>
+                      <p className="text-xl font-bold text-[var(--brand-cyan)]">
+                        {formatCurrency(historyData[0]?.average || 0)}
+                      </p>
+                    </div>
+                    <div className="p-4 rounded-xl bg-[var(--background-secondary)]">
+                      <p className="text-xs text-[var(--brand-gray)] mb-1">Último mes</p>
+                      <p className="text-xl font-bold">
+                        {formatCurrency(historyData[historyData.length - 1]?.amount || 0)}
+                      </p>
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={() => {
+                      const avg = historyData[0]?.average || 0;
+                      startEditing(showHistoryCategory.id, avg);
+                      setShowHistoryCategory(null);
+                    }}
+                    className="w-full mt-6 flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-[var(--brand-cyan)]/10 text-[var(--brand-cyan)] font-medium hover:bg-[var(--brand-cyan)] hover:text-white transition-all"
+                  >
+                    Usar promedio como previsión
+                  </button>
+                </>
+              )}
             </div>
           </div>
         </div>
