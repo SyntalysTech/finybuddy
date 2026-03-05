@@ -101,6 +101,8 @@ export default function CategoriasPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [viewMode, setViewMode] = useState<"cards" | "list" | "table">("cards");
   const [financialRule, setFinancialRule] = useState<FinancialRule>({ needs: 50, wants: 30, savings: 20 });
+  const [showDefaultModal, setShowDefaultModal] = useState(false);
+  const [isProcessingDefault, setIsProcessingDefault] = useState(false);
 
   const supabase = createClient();
 
@@ -205,6 +207,33 @@ export default function CategoriasPage() {
       fetchCategories();
     } catch (error) {
       console.error("Error deleting category:", error);
+    }
+  };
+
+  const handleToggleAllDefault = async (activate: boolean) => {
+    setIsProcessingDefault(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { error } = await supabase
+        .from("categories")
+        .update({
+          is_active: activate,
+          updated_at: new Date().toISOString()
+        })
+        .eq("user_id", user.id)
+        .eq("is_default", true);
+
+      if (error) throw error;
+
+      await fetchCategories();
+      setShowDefaultModal(false);
+    } catch (error) {
+      console.error("Error toggling default categories:", error);
+      alert("Error al procesar las categorías predeterminadas");
+    } finally {
+      setIsProcessingDefault(false);
     }
   };
 
@@ -709,6 +738,15 @@ export default function CategoriasPage() {
                 <span className="sm:hidden">Inactivas</span>
               </span>
             </label>
+
+            {/* Default Categories Toggle Button */}
+            <button
+              onClick={() => setShowDefaultModal(true)}
+              className="flex items-center gap-2 px-3 py-1.5 sm:py-2 bg-[var(--background-secondary)] border border-[var(--border)] rounded-lg text-xs sm:text-sm font-medium hover:border-[var(--brand-purple)] transition-colors ml-auto"
+            >
+              <Settings className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[var(--brand-purple)]" />
+              <span>Categorías Predeterminadas</span>
+            </button>
           </div>
         </div>
 
@@ -793,6 +831,65 @@ export default function CategoriasPage() {
             : `¿Estás seguro de que quieres eliminar la categoría "${deletingCategory?.name}"?`
         }
       />
+
+      {/* Default Categories Toggle Modal */}
+      {showDefaultModal && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-[var(--background)] rounded-2xl shadow-2xl w-full max-w-md overflow-hidden animate-slide-in">
+            <div className="px-6 py-4 border-b border-[var(--border)] flex items-center justify-between">
+              <h2 className="text-lg font-semibold">Categorías Predeterminadas</h2>
+              <button
+                onClick={() => setShowDefaultModal(false)}
+                className="p-1 rounded-lg hover:bg-[var(--background-secondary)] transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-4">
+              <div className="flex items-center gap-3 p-4 rounded-xl bg-[var(--brand-purple)]/5 border border-[var(--brand-purple)]/20">
+                <Info className="w-5 h-5 text-[var(--brand-purple)] shrink-0" />
+                <p className="text-sm">
+                  Puedes activar o desactivar todas las categorías que FinyBuddy crea por defecto. Esto no afectará a tus categorías personalizadas.
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 gap-3 pt-2">
+                <button
+                  onClick={() => handleToggleAllDefault(true)}
+                  disabled={isProcessingDefault}
+                  className="flex items-center justify-center gap-2 w-full p-4 rounded-xl border-2 border-[var(--success)] text-[var(--success)] font-semibold hover:bg-[var(--success)]/10 transition-all disabled:opacity-50"
+                >
+                  <Eye className="w-5 h-5" />
+                  Activar todas las predeterminadas
+                </button>
+
+                <button
+                  onClick={() => handleToggleAllDefault(false)}
+                  disabled={isProcessingDefault}
+                  className="flex items-center justify-center gap-2 w-full p-4 rounded-xl border-2 border-[var(--danger)] text-[var(--danger)] font-semibold hover:bg-[var(--danger)]/10 transition-all disabled:opacity-50"
+                >
+                  <EyeOff className="w-5 h-5" />
+                  Desactivar todas las predeterminadas
+                </button>
+              </div>
+
+              <p className="text-[10px] text-[var(--brand-gray)] text-center italic mt-4">
+                * Las categorías con operaciones asociadas seguirán mostrándose en tus informes aunque estén inactivas.
+              </p>
+            </div>
+
+            <div className="px-6 py-4 bg-[var(--background-secondary)] text-right">
+              <button
+                onClick={() => setShowDefaultModal(false)}
+                className="px-6 py-2 rounded-xl border border-[var(--border)] font-medium hover:bg-[var(--border-light)] transition-colors"
+              >
+                Cerrar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }
