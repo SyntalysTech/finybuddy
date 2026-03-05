@@ -187,10 +187,10 @@ export default function Sidebar() {
                       <ProBadge className="ml-auto shrink-0" />
                     )}
                     {active && (
-                      <div
-                        className={`ml-auto w-2 h-2 rounded-full bg-gradient-to-br from-[#02EAFF] to-[#7739FE] flex-shrink-0 transition-all duration-300 ease-in-out shadow-lg shadow-[#02EAFF]/30 ${collapsed && !isMobile ? "opacity-0 scale-0" : "opacity-100 scale-100 animate-pulse"
-                          }`}
-                      />
+                      <div className="ml-auto relative flex items-center justify-center w-4 h-4 mr-1">
+                        <div className="absolute inset-0 rounded-full bg-[var(--brand-cyan)] opacity-20 animate-ping" />
+                        <div className="w-2 h-2 rounded-full bg-gradient-to-br from-[#02EAFF] to-[#7739FE] shadow-[0_0_10px_rgba(2,234,255,0.8)] z-10" />
+                      </div>
                     )}
                   </Link>
                 </li>
