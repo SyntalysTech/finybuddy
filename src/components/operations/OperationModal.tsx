@@ -183,6 +183,10 @@ export default function OperationModal({ isOpen, onClose, onSave, operation, pre
       setError("Introduce un concepto");
       return;
     }
+    if (!categoryId) {
+      setError("Selecciona una categoría");
+      return;
+    }
 
     setLoading(true);
 
@@ -197,7 +201,7 @@ export default function OperationModal({ isOpen, onClose, onSave, operation, pre
         concept: concept.trim(),
         description: description.trim() || null,
         operation_date: operationDate,
-        category_id: categoryId || null,
+        category_id: categoryId,
       };
 
       if (operation) {
@@ -299,11 +303,10 @@ export default function OperationModal({ isOpen, onClose, onSave, operation, pre
                       setType(op.value as "income" | "expense" | "savings");
                       setCategoryId("");
                     }}
-                    className={`flex flex-col items-center gap-0.5 sm:gap-1 p-2 sm:p-3 rounded-lg sm:rounded-xl border-2 transition-all ${
-                      isSelected
-                        ? `border-current ${op.color} ${op.bg}`
-                        : "border-[var(--border)] hover:border-[var(--brand-gray)]"
-                    }`}
+                    className={`flex flex-col items-center gap-0.5 sm:gap-1 p-2 sm:p-3 rounded-lg sm:rounded-xl border-2 transition-all ${isSelected
+                      ? `border-current ${op.color} ${op.bg}`
+                      : "border-[var(--border)] hover:border-[var(--brand-gray)]"
+                      }`}
                   >
                     <Icon className={`w-4 h-4 sm:w-5 sm:h-5 ${isSelected ? op.color : "text-[var(--brand-gray)]"}`} />
                     <span className={`text-[10px] sm:text-xs font-medium ${isSelected ? op.color : ""}`}>
@@ -327,7 +330,7 @@ export default function OperationModal({ isOpen, onClose, onSave, operation, pre
                   onChange={(e) => setCategoryId(e.target.value)}
                   className="w-full pl-9 sm:pl-10 pr-4 py-2.5 sm:py-3 bg-[var(--background-secondary)] border border-[var(--border)] rounded-lg sm:rounded-xl text-sm focus:outline-none focus:border-[var(--brand-cyan)] focus:ring-1 focus:ring-[var(--brand-cyan)] appearance-none"
                 >
-                  <option value="">Sin categoría</option>
+                  <option value="" disabled>Selecciona una categoría</option>
                   {filteredCategories.map((cat) => (
                     <option key={cat.id} value={cat.id}>
                       {cat.icon} {cat.name}
