@@ -853,13 +853,13 @@ function ChatPageContent() {
                   return (
                     <div
                       key={index}
-                      className={`flex gap-3 sm:gap-4 ${message.role === "user" ? "flex-row-reverse" : ""} ${
+                      className={`flex gap-3 sm:gap-4 items-center ${message.role === "user" ? "flex-row-reverse" : ""} ${
                         // Solo animamos la entrada de un mensaje nuevo, no durante el streaming
                         index === messages.length - 1 && !loading ? "animate-in fade-in slide-in-from-bottom-2 duration-500" : ""
                         }`}
                     >
                       {/* Avatar - Mascot Only Mode */}
-                      <div className="shrink-0 pt-1">
+                      <div className="shrink-0">
                         <div className={`w-10 h-10 sm:w-12 sm:h-12 relative flex items-center justify-center`}>
                           {message.role === "user" ? (
                             <div className="w-full h-full rounded-2xl overflow-hidden border-2 border-[var(--brand-purple)] bg-[var(--background-secondary)] p-1">
@@ -889,7 +889,7 @@ function ChatPageContent() {
                             </div>
                           )}
                         </div>
-                        <span className="text-[10px] text-[var(--brand-gray)]/50 mt-1 font-bold uppercase tracking-widest px-1">
+                        <span className="text-[10px] text-[var(--brand-gray)]/60 mt-1 font-bold uppercase tracking-widest px-1 opacity-70">
                           {message.role === "user" ? "Tú" : "FinyBot • Analista"}
                         </span>
                       </div>
@@ -939,13 +939,13 @@ function ChatPageContent() {
             )}
 
             <form onSubmit={handleSubmit} className="relative">
-              <div className="relative flex items-center gap-3 p-3 sm:p-4 bg-white dark:bg-[var(--background-secondary)] border-2 border-[var(--border)] rounded-2xl sm:rounded-3xl shadow-2xl shadow-black/5 focus-within:border-[var(--brand-purple)] transition-all">
+              <div className="relative flex items-center gap-3 p-3 sm:p-4 bg-white dark:bg-[var(--background-secondary)] border-2 border-[var(--border)] rounded-2xl sm:rounded-3xl shadow-2xl shadow-black/5 focus-within:border-[var(--brand-purple)] transition-all outline-none">
                 {/* Action Button (Mic) */}
                 <button
                   type="button"
                   onClick={handleMicClick}
                   disabled={loading || isTranscribing}
-                  className={`group relative p-2 sm:p-3 rounded-xl sm:rounded-2xl transition-all ${isRecording
+                  className={`group relative p-2 sm:p-3 rounded-xl sm:rounded-2xl transition-all outline-none focus:outline-none ${isRecording
                     ? "bg-[var(--danger)] text-white animate-pulse"
                     : "bg-[var(--background)] text-[var(--brand-gray)] hover:bg-[var(--brand-purple)]/10 hover:text-[var(--brand-purple)]"
                     }`}
@@ -957,12 +957,6 @@ function ChatPageContent() {
                   ) : (
                     <Mic className="w-5 h-5" />
                   )}
-                  {/* Tooltip hint */}
-                  {!isRecording && (
-                    <span className="absolute -top-12 left-1/2 -translate-x-1/2 px-2 py-1 rounded bg-black text-white text-[10px] font-bold opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
-                      Hablar con Finy
-                    </span>
-                  )}
                 </button>
 
                 <textarea
@@ -972,14 +966,14 @@ function ChatPageContent() {
                   onKeyDown={handleKeyDown}
                   placeholder={isRecording ? "Te escucho..." : isTranscribing ? "Procesando voz..." : "¿Qué quieres lograr hoy?"}
                   rows={1}
-                  className="flex-1 bg-transparent border-none focus:ring-0 text-sm sm:text-base font-bold text-slate-900 dark:text-white placeholder:text-slate-400 resize-none min-h-[24px] max-h-[120px] py-1"
+                  className="flex-1 bg-transparent border-none focus:ring-0 outline-none focus:outline-none text-sm sm:text-base font-bold text-slate-900 dark:text-white placeholder:text-slate-400 resize-none min-h-[24px] max-h-[120px] py-1"
                   disabled={loading || isRecording}
                 />
 
                 <button
                   type="submit"
                   disabled={!input.trim() || loading || isRecording}
-                  className={`p-3 sm:p-4 rounded-xl sm:rounded-2xl transition-all ${!input.trim() || loading || isRecording
+                  className={`p-3 sm:p-4 rounded-xl sm:rounded-2xl transition-all outline-none focus:outline-none ${!input.trim() || loading || isRecording
                     ? "bg-[var(--border)] text-[var(--brand-gray)]"
                     : "bg-[var(--brand-purple)] text-white shadow-lg shadow-[var(--brand-purple)]/20 hover:scale-105 active:scale-95"
                     }`}
@@ -994,7 +988,7 @@ function ChatPageContent() {
             </form>
 
             <p className="text-[10px] text-center text-[var(--brand-gray)]/40 mt-3 font-medium uppercase tracking-[0.2em] sm:block hidden ">
-              FinyBot v4.1 • Presiona <kbd className="font-sans px-1 text-[8px]">Enter</kbd> para enviar
+              FinyBot v4.1 • Presiona <span className="bg-[var(--border)] px-1.5 py-0.5 rounded text-[8px] text-[var(--brand-gray)]">Enter</span> para enviar
             </p>
           </div>
         </div>
