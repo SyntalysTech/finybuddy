@@ -612,7 +612,7 @@ function PrevisionVsRealidadPageContent() {
               <div className="card overflow-hidden">
                 <button
                   onClick={() => togglePanel('wants')}
-                  className="w-full px-6 py-4 border-b border-[var(--border)] bg-[#3B82F6]/5 hover:bg-[#3B82F6]/10 transition-colors"
+                  className="w-full px-6 py-4 border-b border-[var(--border)] bg-[var(--background-secondary)]/50 hover:bg-[var(--background-secondary)] transition-colors"
                 >
                   <div className="flex items-center justify-between mb-2">
                     <h3 className="font-semibold flex items-center gap-2">

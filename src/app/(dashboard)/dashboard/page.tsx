@@ -1212,7 +1212,7 @@ export default function DashboardPage() {
                       </div>
                     </div>
                     <div className="text-right">
-                      <p className="text-base sm:text-lg font-semibold text-[var(--success)] animate-count">
+                      <p className="text-base sm:text-lg font-semibold text-[var(--danger)] animate-count">
                         {Math.round(debtsSummary.overall_progress)}%
                       </p>
                       <p className="text-xs sm:text-sm text-[var(--brand-gray)]">pagado</p>
@@ -1220,7 +1220,7 @@ export default function DashboardPage() {
                   </div>
                   <div className="progress-bar h-4">
                     <div
-                      className="progress-bar-fill bg-gradient-to-r from-[var(--success)] to-[var(--success)] shadow-[0_0_15px_rgba(46,235,143,0.3)]"
+                      className="progress-bar-fill bg-gradient-to-r from-[var(--danger)] to-[var(--danger)] shadow-[0_0_15px_rgba(239,68,68,0.3)]"
                       style={{ width: `${Math.max(Math.min(debtsSummary.overall_progress, 100), 2)}%` }}
                     />
                   </div>

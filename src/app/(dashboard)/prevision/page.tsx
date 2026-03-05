@@ -957,8 +957,8 @@ function PrevisionPageContent() {
         {hasBudget && totalIncome > 0 && (
           <div className="card p-6">
             <div className="flex items-center gap-3 mb-4">
-              <div className="p-2 rounded-lg bg-[var(--brand-purple)]/10">
-                <Sparkles className="w-5 h-5 text-[var(--brand-purple)]" />
+              <div className="p-2 rounded-lg bg-[var(--background-secondary)]">
+                <Sparkles className="w-5 h-5 text-[var(--brand-cyan)]" />
               </div>
               <h3 className="font-semibold text-lg">Tu nueva regla financiera</h3>
             </div>
@@ -969,7 +969,7 @@ function PrevisionPageContent() {
                 <p className="text-sm text-[var(--foreground)] mb-1">
                   Genial, has creado tu propia regla financiera. La regla más común es la 50/30/20, pero esta es la tuya según tu presupuesto.
                 </p>
-                <p className="text-sm font-medium text-[var(--brand-purple)] mb-4">
+                <p className="text-sm font-medium text-[var(--foreground)] mb-4">
                   {savingsPercent > 50
                     ? "Estupendo porcentaje de ahorro, sigue así."
                     : savingsPercent >= 20
@@ -1009,7 +1009,7 @@ function PrevisionPageContent() {
                   </div>
 
                   {/* Wants Card */}
-                  <div className="rounded-xl overflow-hidden flex flex-col h-full bg-[#EBF5FF]">
+                  <div className="rounded-xl overflow-hidden flex flex-col h-full bg-[var(--background-secondary)]/50">
                     <div className="px-3 py-2 sm:px-4 sm:py-3 flex justify-between items-center text-white" style={{ background: "linear-gradient(to right, #3B82F6, #2563EB)" }}>
                       <span className="font-bold text-sm sm:text-base">Deseos</span>
                       <span className="font-bold text-sm sm:text-base">{wantsPercent}%</span>
@@ -1034,7 +1034,7 @@ function PrevisionPageContent() {
             ) : (
               // Estado PENDIENTE (descuadrado)
               <div className="opacity-60">
-                <p className="text-sm font-medium text-[var(--brand-purple)] mb-4">
+                <p className="text-sm font-medium text-[var(--foreground)] mb-4">
                   Presupuesto pendiente de cuadrar
                 </p>
 
@@ -1067,7 +1067,7 @@ function PrevisionPageContent() {
                   </div>
 
                   {/* Wants Card */}
-                  <div className="rounded-xl overflow-hidden flex flex-col h-full bg-[#EBF5FF]">
+                  <div className="rounded-xl overflow-hidden flex flex-col h-full bg-[var(--background-secondary)]/50">
                     <div className="px-3 py-2 sm:px-4 sm:py-3 flex justify-between items-center text-white" style={{ background: "linear-gradient(to right, #3B82F6, #2563EB)" }}>
                       <span className="font-bold text-sm sm:text-base">Deseos</span>
                       <span className="font-bold text-sm sm:text-base">{wantsPercent}%</span>

@@ -63,7 +63,7 @@ export default function FinyInfoPanel({
   const defaultFinybotMessage = "Puedes preguntarme cualquier duda usando Finybot, ya sea por texto o por audio.";
 
   return (
-    <div className={`rounded-xl sm:rounded-2xl border border-[var(--brand-cyan)]/20 bg-gradient-to-br from-[var(--brand-cyan)]/5 via-transparent to-[var(--brand-purple)]/5 overflow-hidden backdrop-blur-sm transition-all duration-300 ${className}`}>
+    <div className={`rounded-xl sm:rounded-2xl border border-[var(--border)] bg-[var(--background-secondary)]/50 overflow-hidden backdrop-blur-sm transition-all duration-300 ${className}`}>
       {/* Header */}
       <button
         onClick={toggleExpanded}
@@ -79,7 +79,7 @@ export default function FinyInfoPanel({
         </div>
         <div className="flex-1 text-left min-w-0">
           <div className="flex items-center gap-1.5">
-            <h4 className="font-semibold text-sm text-[var(--brand-cyan)]">Finy</h4>
+            <h4 className="font-semibold text-sm text-[var(--foreground)]">Finy</h4>
             <Sparkles className="w-3 h-3 text-[var(--brand-cyan)] opacity-60" />
           </div>
           <p className="text-xs text-[var(--brand-gray)] truncate">Tu asistente financiero</p>
@@ -106,10 +106,10 @@ export default function FinyInfoPanel({
 
           {/* Dynamic messages */}
           {dynamicMessages && dynamicMessages.length > 0 && (
-            <div className="p-2.5 sm:p-3 rounded-lg sm:rounded-xl bg-[var(--brand-cyan)]/10 border border-[var(--brand-cyan)]/20 space-y-1.5">
+            <div className="space-y-1.5 px-0.5">
               {dynamicMessages.map((message, index) => (
-                <p key={index} className="text-xs sm:text-sm text-[var(--foreground)] flex items-start gap-2">
-                  <span className="text-[var(--brand-cyan)] mt-0.5 shrink-0 text-base leading-none">&#x2022;</span>
+                <p key={index} className="text-xs sm:text-sm text-[var(--foreground)]/90 flex items-start gap-2">
+                  <span className="text-[var(--brand-cyan)] mt-0.5 shrink-0 text-base leading-none opacity-60">&#x2022;</span>
                   <span>{message}</span>
                 </p>
               ))}
