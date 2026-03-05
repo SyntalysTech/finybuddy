@@ -476,7 +476,7 @@ export default function DashboardPage() {
         messages.push(`Tus Necesidades (${Math.round(needsPercent)}%) superan el objetivo del ${ruleNeeds}%. Evalúa gastos fijos.`);
       }
       if (wantsPercent > ruleWants + 5) {
-        messages.push(`Tus Deseos están en el ${Math.round(wantsPercent)}%. Intenta priorizar el ahorro los próximos días.`);
+        // Mensaje de Deseos (morado) eliminado por petición
       }
       if (savingsPercent >= ruleSavings) {
         messages.push(`¡Enhorabuena! Has alcanzado tu objetivo de ahorro del ${ruleSavings}% de tus ingresos.`);

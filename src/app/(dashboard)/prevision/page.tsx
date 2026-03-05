@@ -288,16 +288,16 @@ function PrevisionPageContent() {
 
     // Check savings
     if (savingsPercent < ruleSavings && totalSavings > 0) {
-      messages.push(`El ahorro está al ${savingsPercent}%. Tu objetivo es ${ruleSavings}%.`);
+      // Mensaje eliminado por petición
     } else if (savingsPercent >= ruleSavings && totalSavings > 0) {
-      messages.push(`Ahorro previsto al ${savingsPercent}%. Buen plan.`);
+      // Mensaje eliminado por petición
     } else if (totalSavings === 0 && totalIncome > 0) {
-      messages.push(`No tienes ahorro previsto. Cualquier cantidad ayuda.`);
+      // Mensaje eliminado por petición
     }
 
     // Check needs
     if (needsPercent > ruleNeeds + 10) {
-      messages.push(`Las necesidades están al ${needsPercent}%. Tu objetivo es ${ruleNeeds}%.`);
+      // Mensaje eliminado por petición
     }
 
     // Check wants
