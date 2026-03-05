@@ -106,7 +106,7 @@ export default function FinyInfoPanel({
 
           {/* Dynamic messages */}
           {dynamicMessages && dynamicMessages.length > 0 && (
-            <div className="p-2.5 sm:p-3 rounded-lg sm:rounded-xl bg-[var(--brand-purple)]/8 border border-[var(--brand-purple)]/10 space-y-1.5">
+            <div className="p-2.5 sm:p-3 rounded-lg sm:rounded-xl bg-[var(--brand-cyan)]/10 border border-[var(--brand-cyan)]/20 space-y-1.5">
               {dynamicMessages.map((message, index) => (
                 <p key={index} className="text-xs sm:text-sm text-[var(--foreground)] flex items-start gap-2">
                   <span className="text-[var(--brand-cyan)] mt-0.5 shrink-0 text-base leading-none">&#x2022;</span>

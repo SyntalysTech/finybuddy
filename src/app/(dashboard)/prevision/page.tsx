@@ -304,7 +304,7 @@ function PrevisionPageContent() {
     if (wantsPercent > ruleWants + 10) {
       // Mensaje eliminado por petición
     } else if (wantsPercent <= ruleWants && wantsTotal > 0) {
-      messages.push(`Deseos controlados al ${wantsPercent}%.`);
+      // Mensaje eliminado por petición
     }
 
     // No budget set
