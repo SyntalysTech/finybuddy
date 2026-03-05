@@ -148,6 +148,7 @@ export default function CategoriasPage() {
   });
   const [isSelectionMode, setIsSelectionMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [showBulkDeleteModal, setShowBulkDeleteModal] = useState(false);
 
   const supabase = createClient();
 
@@ -248,7 +249,10 @@ export default function CategoriasPage() {
 
     // Check if category has operations
     if (deletingCategory.operation_count && deletingCategory.operation_count > 0) {
-      alert(`No se puede eliminar la categoría "${deletingCategory.name}" porque tiene ${deletingCategory.operation_count} operaciones asociadas. Desactívala en su lugar.`);
+      setNotification({
+        message: `No se puede eliminar "${deletingCategory.name}" porque tiene operaciones. Desactívala en su lugar.`,
+        type: 'error'
+      });
       setShowDeleteModal(false);
       setDeletingCategory(null);
       return;
@@ -283,10 +287,10 @@ export default function CategoriasPage() {
       return;
     }
 
-    if (!confirm(`¿Estás seguro de que quieres eliminar las ${selectedIds.length} categorías seleccionadas?`)) {
-      return;
-    }
+    setShowBulkDeleteModal(true);
+  };
 
+  const handleConfirmBulkDelete = async () => {
     try {
       const { error } = await supabase
         .from("categories")
@@ -302,6 +306,8 @@ export default function CategoriasPage() {
     } catch (error) {
       console.error("Error deleting categories:", error);
       setNotification({ message: "Error al eliminar las categorías", type: 'error' });
+    } finally {
+      setShowBulkDeleteModal(false);
     }
   };
 
@@ -1147,6 +1153,15 @@ export default function CategoriasPage() {
           </div>
         </div>
       )}
+
+      {/* Bulk Delete Confirmation */}
+      <DeleteConfirmModal
+        isOpen={showBulkDeleteModal}
+        onClose={() => setShowBulkDeleteModal(false)}
+        onConfirm={handleConfirmBulkDelete}
+        title="Eliminar categorías"
+        message={`¿Estás seguro de que quieres eliminar las ${selectedIds.length} categorías seleccionadas? Esta acción no se puede deshacer.`}
+      />
 
       {/* Custom Notification */}
       {notification && (
