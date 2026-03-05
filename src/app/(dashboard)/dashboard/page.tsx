@@ -146,6 +146,66 @@ const getGreeting = () => {
   return "Buenas noches"; // 20:00 - 05:59
 };
 
+// Frase contextual dinámica basada en los datos del mes
+const getContextualPhrase = (
+  summary: MonthlySummary | null,
+  savingsSummary: SavingsSummary | null,
+  debtsSummary: DebtsSummary | null,
+  formatCurrency: (amount: number) => string
+): string => {
+  if (!summary) return "Sincronizando tus finanzas en tiempo real...";
+
+  const { total_income, total_expenses, total_savings, balance } = summary;
+
+  // Cálculo de ahorro real basado exclusivamente en operaciones de ahorro
+  const actualSavingsRate = total_income > 0 ? (total_savings / total_income) * 100 : 0;
+  const isExcellent = actualSavingsRate >= 30;
+  const isGood = actualSavingsRate >= 20;
+  const isOk = actualSavingsRate >= 10;
+
+  if (total_income === 0 && total_expenses === 0) {
+    return "Tu panel está listo. Empieza a registrar ingresos y gastos para ver tu análisis.";
+  }
+
+  // 1. Prioridad: Alertas Críticas (Basadas en balance/disponibilidad)
+  if (balance < 0) {
+    return `¡Ojo! Este mes tienes un descubierto de ${formatCurrency(Math.abs(balance))}. Toca revisar prioridades y controlar los gastos.`;
+  }
+
+  // 2. Prioridad: Insights de Ahorro basados en operaciones reales
+  if (total_income > 0 && total_savings > 0) {
+    const pctStr = Math.round(actualSavingsRate);
+    if (isExcellent) {
+      return `¡Espectacular! Estás ahorrando el ${pctStr}% de lo que ganas (${formatCurrency(total_savings)}). Gestión de nivel experto.`;
+    }
+    if (isGood) {
+      return `Buen trabajo: has destinado un ${pctStr}% a ahorro (${formatCurrency(total_savings)}) este mes. ¡Sigue así!`;
+    }
+    if (isOk) {
+      return `Vas por buen camino: tu ahorro trackeado es del ${pctStr}% de tus ingresos (${formatCurrency(total_savings)}).`;
+    }
+  }
+
+  // 3. Situación ajustada o sin ahorro trackeado
+  if (total_income > 0 && total_savings === 0) {
+    if (balance > 100) {
+      return `Tienes ${formatCurrency(balance)} disponibles. Sería un buen momento para mover algo a ahorro y empezar a trackearlo.`;
+    }
+    return "Aún no he detectado operaciones de ahorro este mes. ¡Recuerda pagarte a ti mismo primero!";
+  }
+
+  // 4. Metas y Deudas
+  if (savingsSummary && savingsSummary.overall_progress >= 90 && savingsSummary.overall_progress < 100) {
+    return "¡Casi lo tienes! Tu meta de ahorro principal está al 90%. Falta el último empujón.";
+  }
+
+  if (debtsSummary && debtsSummary.overall_progress >= 90 && debtsSummary.active_debts > 0) {
+    return "Liquidación inminente: estás a punto de saldar tus deudas. ¡Libertad financiera a la vista!";
+  }
+
+  return "Sigue trackeando tus operaciones para que pueda darte mejores consejos financieros.";
+};
+
 // Auditoría Finy IA dinámica basada en los datos del mes
 const generateFinyInsights = (
   summary: MonthlySummary | null,
@@ -153,12 +213,17 @@ const generateFinyInsights = (
   debtsSummary: DebtsSummary | null,
   monthlyEvolution: MonthlyEvolution[],
   categoryDistribution: CategoryDistribution[],
-  formatCurrency: (amount: number) => string
+  formatCurrency: (amount: number) => string,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  profile: any
 ): string[] => {
   if (!summary) return ["Analizando tus movimientos financieros..."];
 
   const insights: string[] = [];
   const { total_income, total_expenses } = summary;
+
+  const ruleNeeds = profile?.rule_needs_percent ?? 50;
+  const ruleWants = profile?.rule_wants_percent ?? 30;
 
   if (total_income === 0 && total_expenses === 0) {
     return ["Tu panel está listo. Empieza a registrar ingresos y gastos para ver tu análisis."];
@@ -197,10 +262,10 @@ const generateFinyInsights = (
   if (totalCategorized > 0) {
     const needsPct = Math.round((summary.needs_total / totalCategorized) * 100);
     const wantsPct = Math.round((summary.wants_total / totalCategorized) * 100);
-    if (needsPct > 60) {
-      insights.push(`Revisando tu gráfico de distribución, tus "Necesidades" consumen el ${needsPct}% de tus salidas. Estás algo por encima del 50% ideal. Cuidado con la inflación de estilo de vida fijo.`);
-    } else if (wantsPct > 40) {
-      insights.push(`Tus "Deseos" representan ahora mismo el ${wantsPct}% de la distribución del mes. Intenta ajustar este porcentaje hacia el 30% para blindar tu planificación mensual.`);
+    if (needsPct > ruleNeeds + 10) {
+      insights.push(`Revisando tu gráfico de distribución, tus "Necesidades" consumen el ${needsPct}% de tus salidas. Estás algo por encima del ${ruleNeeds}% ideal fijado para ti. Cuidado con la inflación de estilo de vida fijo.`);
+    } else if (wantsPct > ruleWants + 10) {
+      insights.push(`Tus "Deseos" representan ahora mismo el ${wantsPct}% de la distribución del mes. Intenta ajustar este porcentaje hacia tu meta personal del ${ruleWants}% para blindar tu planificación mensual.`);
     } else if (wantsPct > 0 || needsPct > 0) {
       insights.push(`¡Excelente equilibrio! Tienes una distribución muy sana entre tus necesidades (${needsPct}%) y deseos (${wantsPct}%). Estás demostrando un perfil ahorrador ejemplar.`);
     }
@@ -449,81 +514,11 @@ export default function DashboardPage() {
   const greeting = getGreeting();
   const firstName = getFirstName();
   const dailyQuote = getDailyQuote();
-  const finyInsights = generateFinyInsights(monthlySummary, savingsSummary, debtsSummary, monthlyEvolution, categoryDistribution, formatCurrency);
+  const contextualPhrase = getContextualPhrase(monthlySummary, savingsSummary, debtsSummary, formatCurrency);
+  const finyInsights = generateFinyInsights(monthlySummary, savingsSummary, debtsSummary, monthlyEvolution, categoryDistribution, formatCurrency, profile);
 
-  // Finy interpretation based on financial data - Tono cercano y educativo
-  const getFinyMessage = () => {
-    if (!monthlySummary) return ["Cargando análisis..."];
-    const { total_income, total_expenses, needs_total, wants_total, total_savings: savings_total } = monthlySummary;
-    const ruleNeeds = profile?.rule_needs_percent ?? 50;
-    const ruleWants = profile?.rule_wants_percent ?? 30;
-    const ruleSavings = profile?.rule_savings_percent ?? 20;
+  // Finy intelligence data computation replaced by finyInsights
 
-    const messages: string[] = [];
-
-    // Cálculos avanzados para el analista
-    const daysInMonth = new Date(selectedYear, selectedMonth, 0).getDate();
-    const currentDay = selectedDate.getMonth() === new Date().getMonth() && selectedDate.getFullYear() === new Date().getFullYear()
-      ? new Date().getDate()
-      : daysInMonth;
-
-    const remainingDays = daysInMonth - currentDay;
-    const balance = total_income - total_expenses;
-    const avgDailyExpense = total_expenses / (currentDay || 1);
-    const projectedExpenses = avgDailyExpense * daysInMonth;
-    const projectedBalance = total_income - projectedExpenses;
-
-    // 1. Proyección de fin de mes
-    if (total_income > 0 && total_expenses > 0) {
-      if (projectedBalance > 0) {
-        messages.push(`Proyectas terminar el mes con un excedente de ${formatCurrency(projectedBalance)}.`);
-      } else {
-        messages.push(`¡Alerta! Con este ritmo de gasto podrías terminar el mes con ${formatCurrency(Math.abs(projectedBalance))} en negativo.`);
-      }
-    }
-
-    // 2. Margen de maniobra
-    const dailyMargin = balance > 0 ? balance / (remainingDays || 1) : 0;
-    if (dailyMargin > 0 && remainingDays > 0) {
-      messages.push(`Cuentas con un margen diario de ${formatCurrency(dailyMargin)} para mantenerte en positivo hasta fin de mes.`);
-    }
-
-    // 3. Análisis de Reglas (50/30/20)
-    if (total_income > 0) {
-      const needsPercent = (needs_total / total_income) * 100;
-      const wantsPercent = (wants_total / total_income) * 100;
-      const savingsPercent = (savings_total / total_income) * 100;
-
-      if (needsPercent > ruleNeeds + 5) {
-        messages.push(`Tus Necesidades (${Math.round(needsPercent)}%) superan el objetivo del ${ruleNeeds}%. Evalúa gastos fijos.`);
-      }
-      if (wantsPercent > ruleWants + 5) {
-        // Mensaje de Deseos (morado) eliminado por petición
-      }
-      if (savingsPercent >= ruleSavings) {
-        messages.push(`¡Enhorabuena! Has alcanzado tu objetivo de ahorro del ${ruleSavings}% de tus ingresos.`);
-      } else if (savingsPercent < ruleSavings * 0.5) {
-        messages.push(`El ahorro actual (${Math.round(savingsPercent)}%) es bajo. Intenta destinar un extra si recibes algún ingreso.`);
-      }
-    }
-
-    // 4. Metas y Deudas
-    if (savingsSummary && savingsSummary.active_goals > 0 && savingsSummary.overall_progress < 100) {
-      messages.push(`Tus metas de ahorro están al ${Math.round(savingsSummary.overall_progress)}%. Estás a un paso de tus objetivos.`);
-    }
-
-    if (debtsSummary && debtsSummary.active_debts > 0 && debtsSummary.overall_progress < 100) {
-      messages.push(`Llevas liquidado el ${Math.round(debtsSummary.overall_progress)}% de tus deudas. ¡Sigue así!`);
-    }
-
-    // 5. Libertad Financiera (Cojín generado este mes)
-    const daysOfFreedom = balance > 0 ? Math.floor(balance / (avgDailyExpense || 1)) : 0;
-    if (daysOfFreedom > 0) {
-      messages.push(`Has generado ${daysOfFreedom} días de libertad financiera extra con la gestión de este mes.`);
-    }
-
-    return messages.length > 0 ? messages : ["Todo controlado por ahora. Sigue así."];
-  };
 
   // Data for bar chart - using real savings from operations
   const barData = monthlyEvolution.map(item => ({
@@ -673,64 +668,26 @@ export default function DashboardPage() {
       />
 
       <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
-        {/* AI Audit Panel */}
-        <div className="glass-brand p-5 sm:p-6 mb-6 rounded-xl sm:rounded-2xl animate-slide-in-down relative overflow-hidden">
-          {/* Subtle gradient glow in background */}
-          <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-bl from-[var(--brand-cyan)]/10 to-transparent rounded-full blur-3xl pointer-events-none" />
-
-          <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 relative">
-            {/* Mascot Element */}
-            <div className="flex-shrink-0 flex sm:flex-col items-center gap-4 sm:gap-2">
-              <div className="relative animate-float-slow">
-                <div className="absolute inset-0 bg-[var(--brand-cyan)]/20 blur-xl rounded-full" />
-                <Image
-                  src="/assets/finy-mascota-minimalista.png"
-                  alt="FinyBuddy AI"
-                  width={56}
-                  height={56}
-                  className="rounded-xl w-14 h-14 sm:w-16 sm:h-16 object-contain relative z-10 drop-shadow-xl"
-                />
-              </div>
-              <div className="hidden sm:flex flex-col items-center">
-                <span className="text-[10px] font-bold tracking-widest text-[var(--brand-cyan)] uppercase">Auditoría</span>
-                <span className="text-xs text-[var(--brand-gray)]">Finy IA</span>
-              </div>
+        {/* Frase contextual dinámica con mascota */}
+        <div className="glass-brand p-3 sm:p-4 rounded-xl sm:rounded-2xl animate-slide-in-down relative overflow-hidden mb-5">
+          <div className="absolute top-0 left-0 w-24 h-24 bg-gradient-to-br from-[var(--brand-cyan)]/8 to-transparent rounded-br-full pointer-events-none" />
+          <div className="flex items-center gap-2.5 sm:gap-3 relative">
+            <div className="animate-float-slow flex-shrink-0">
+              <Image
+                src="/assets/finy-mascota-minimalista.png"
+                alt="FinyBuddy"
+                width={40}
+                height={40}
+                className="rounded-xl w-9 h-9 sm:w-11 sm:h-11 object-contain"
+              />
             </div>
-
-            {/* Content Element */}
             <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 mb-3">
-                <Sparkles className="w-5 h-5 text-[var(--brand-cyan)]" />
-                <h3 className="text-lg sm:text-xl font-bold text-white">
-                  Análisis de tu Mes
-                </h3>
-              </div>
-
-              {loading ? (
-                <div className="flex items-center gap-3 py-4">
-                  <div className="w-4 h-4 rounded-full border-2 border-[var(--brand-cyan)] border-t-transparent animate-spin" />
-                  <p className="text-sm text-white/80">Procesando millones de datos en milisegundos...</p>
-                </div>
-              ) : (
-                <div className="space-y-3 mt-4">
-                  {finyInsights.map((insight, idx) => (
-                    <div key={idx} className="flex gap-3 items-start group">
-                      <div className="w-1.5 h-1.5 rounded-full bg-[var(--brand-cyan)] mt-2 flex-shrink-0 group-hover:scale-150 transition-transform shadow-[0_0_8px_rgba(2,234,255,0.8)]" />
-                      <p className="text-sm sm:text-[15px] text-white/90 leading-relaxed font-medium">
-                        {insight}
-                      </p>
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {/* Pro-tip motivational footer */}
-              <div className="mt-5 pt-4 border-t border-white/10 flex items-start gap-3">
-                <Target className="w-4 h-4 text-[var(--brand-gray)] mt-0.5 flex-shrink-0" />
-                <p className="text-xs sm:text-sm text-[var(--brand-gray)] italic leading-relaxed">
-                  &ldquo;{dailyQuote}&rdquo;
-                </p>
-              </div>
+              <p className="text-sm sm:text-base font-bold text-white mb-0.5 leading-normal">
+                {loading ? "Analizando tus datos..." : contextualPhrase}
+              </p>
+              <p className="text-[10px] sm:text-xs text-[var(--brand-gray)] italic line-clamp-2 leading-relaxed opacity-90">
+                &ldquo;{dailyQuote}&rdquo;
+              </p>
             </div>
           </div>
         </div>
@@ -1050,32 +1007,38 @@ export default function DashboardPage() {
           {/* Finy Intelligence Column */}
           <div className="flex flex-col gap-4 sm:gap-6">
 
-            {/* Finy AI Analyst Panel - Con Viñetas Ultra-Premium */}
-            <div className="glass-brand rounded-2xl p-6 sm:p-8 animate-slide-in-right relative overflow-hidden flex-1 border border-white/10 dark:border-white/5 shadow-2xl">
-              <div className="absolute top-0 right-0 w-48 h-48 bg-gradient-to-bl from-[var(--brand-cyan)]/10 to-transparent rounded-full -mr-24 -mt-24 blur-3xl pointer-events-none" />
-              <div className="flex items-center gap-4 mb-6 relative">
-                <div className="relative group/avatar">
-                  <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-[var(--brand-cyan)]/30 to-transparent p-1 shadow-inner backdrop-blur-sm group-hover/avatar:rotate-3 transition-transform">
+            {/* AI Audit Panel */}
+            <div className="glass-brand p-5 sm:p-6 rounded-xl sm:rounded-2xl animate-slide-in-right relative overflow-hidden flex-1 border border-white/10 dark:border-white/5 shadow-2xl">
+              {/* Subtle gradient glow in background */}
+              <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-bl from-[var(--brand-cyan)]/10 to-transparent rounded-full blur-3xl pointer-events-none" />
+
+              <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 relative">
+                {/* Mascot Element */}
+                <div className="flex-shrink-0 flex sm:flex-col items-center gap-4 sm:gap-2">
+                  <div className="relative animate-float-slow">
+                    <div className="absolute inset-0 bg-[var(--brand-cyan)]/20 blur-xl rounded-full" />
                     <Image
                       src="/assets/finy-mascota-minimalista.png"
-                      alt="Finy"
-                      width={64}
-                      height={64}
-                      className="rounded-xl w-full h-full object-contain filter drop-shadow-[0_0_12px_rgba(2,234,255,0.5)]"
+                      alt="FinyBuddy AI"
+                      width={56}
+                      height={56}
+                      className="rounded-xl w-14 h-14 sm:w-16 sm:h-16 object-contain relative z-10 drop-shadow-xl"
                     />
                   </div>
-                  <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-[var(--background)] rounded-full flex items-center justify-center shadow-lg border border-white/10">
-                    <Bot className="w-3 h-3 text-[var(--brand-cyan)]" />
+                  <div className="hidden sm:flex flex-col items-center mt-1">
+                    <span className="text-[10px] font-bold tracking-widest text-[var(--brand-cyan)] uppercase">Auditoría</span>
+                    <span className="text-xs text-[var(--brand-gray)]">Finy IA</span>
                   </div>
                 </div>
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <h3 className="text-lg font-black text-[var(--brand-cyan)] uppercase tracking-tighter">Análisis de Finy AI</h3>
-                        <div className="px-2 py-0.5 rounded-full bg-[var(--brand-cyan)]/10 border border-[var(--brand-cyan)]/30 text-[9px] text-[var(--brand-cyan)] font-black animate-pulse uppercase">Modo Analista</div>
-                      </div>
-                      <p className="text-[10px] text-[var(--brand-gray)] font-black uppercase tracking-widest opacity-80 mt-0.5">Metadatos en Tiempo Real</p>
+
+                {/* Content Element */}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between mb-3 border-b border-white/10 pb-3">
+                    <div className="flex items-center gap-2">
+                      <Sparkles className="w-5 h-5 text-[var(--brand-cyan)]" />
+                      <h3 className="text-lg sm:text-xl font-bold text-white">
+                        Análisis de Finy AI
+                      </h3>
                     </div>
                     <button
                       onClick={handleDeepScan}
@@ -1086,46 +1049,40 @@ export default function DashboardPage() {
                       {isScanning ? 'Escaneando...' : 'Deep Scan'}
                     </button>
                   </div>
-                </div>
-              </div>
 
-              {isScanning && (
-                <div className="mb-6 space-y-2 animate-in fade-in slide-in-from-top-4 duration-500">
-                  <div className="flex justify-between items-end">
-                    <p className="text-[10px] font-black text-[var(--brand-cyan)] uppercase tracking-[0.2em]">Escaneo Profundo en curso...</p>
-                    <p className="text-xs font-black text-[var(--brand-cyan)]">{scanProgress}%</p>
-                  </div>
-                  <div className="progress-bar h-2.5">
-                    <div
-                      className="progress-bar-fill bg-[var(--brand-cyan)]"
-                      style={{ width: `${scanProgress}%` }}
-                    />
-                  </div>
-                </div>
-              )}
-
-              <div className="space-y-4 relative">
-                {loading ? (
-                  <div className="flex items-center gap-4 py-6">
-                    <div className="flex gap-2">
-                      <span className="w-2.5 h-2.5 rounded-full bg-[var(--brand-cyan)] animate-bounce" />
-                      <span className="w-2.5 h-2.5 rounded-full bg-[var(--brand-cyan)] animate-bounce delay-150" />
-                      <span className="w-2.5 h-2.5 rounded-full bg-[var(--brand-cyan)] animate-bounce delay-300" />
-                    </div>
-                    <span className="text-xs font-black text-[var(--brand-gray)] uppercase tracking-[0.2em] animate-pulse">Sincronizando...</span>
-                  </div>
-                ) : (
-                  getFinyMessage()?.map((message, index) => (
-                    <div key={index} className={`group/item flex items-start gap-4 p-4 rounded-2xl bg-white/5 dark:bg-black/20 hover:bg-white/10 dark:hover:bg-black/30 border border-white/5 hover:border-[var(--brand-cyan)]/20 transition-all duration-300 animate-slide-in-left stagger-${Math.min(index + 1, 3)}`}>
-                      <div className="mt-1 flex-shrink-0">
-                        <div className="w-6 h-6 rounded-lg bg-gradient-to-br from-[var(--brand-cyan)]/10 to-[#3B82F6]/20 flex items-center justify-center group-hover/item:scale-110 group-hover/item:rotate-12 transition-all border border-white/5 shadow-sm">
-                          <Zap className="w-3.5 h-3.5 text-[var(--brand-cyan)]" />
-                        </div>
+                  {isScanning && (
+                    <div className="mb-5 mt-2 space-y-2 animate-in fade-in slide-in-from-top-4 duration-500">
+                      <div className="flex justify-between items-end">
+                        <p className="text-[10px] font-black text-[var(--brand-cyan)] uppercase tracking-[0.2em]">Escaneo Profundo en curso...</p>
+                        <p className="text-xs font-black text-[var(--brand-cyan)]">{scanProgress}%</p>
                       </div>
-                      <p className="text-xs sm:text-[14px] text-[var(--foreground)] font-bold leading-relaxed drop-shadow-sm">{message}</p>
+                      <div className="progress-bar h-2.5">
+                        <div
+                          className="progress-bar-fill bg-[var(--brand-cyan)]"
+                          style={{ width: `${scanProgress}%` }}
+                        />
+                      </div>
                     </div>
-                  ))
-                )}
+                  )}
+
+                  {loading ? (
+                    <div className="flex items-center gap-3 py-4">
+                      <div className="w-4 h-4 rounded-full border-2 border-[var(--brand-cyan)] border-t-transparent animate-spin" />
+                      <p className="text-sm text-white/80">Procesando millones de datos en milisegundos...</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-3 mt-4">
+                      {finyInsights.map((insight, idx) => (
+                        <div key={idx} className="flex gap-3 items-start group p-3 rounded-2xl bg-white/5 border border-transparent hover:border-[var(--brand-cyan)]/20 transition-all hover:bg-white/10">
+                          <div className="w-1.5 h-1.5 rounded-full bg-[var(--brand-cyan)] mt-2 flex-shrink-0 group-hover:scale-150 transition-transform shadow-[0_0_8px_rgba(2,234,255,0.8)]" />
+                          <p className="text-sm sm:text-[14px] text-white/90 leading-relaxed flex-1">
+                            {insight}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           </div>
