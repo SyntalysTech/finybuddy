@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import Image from "next/image";
 import ReactMarkdown from "react-markdown";
 import { createClient } from "@/lib/supabase/client";
@@ -87,7 +87,7 @@ function ChatPageContent() {
     callStatusRef.current = callStatus;
   }, [callStatus]);
 
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
 
   // Load conversations list
   const loadConversations = useCallback(async (uid: string) => {
@@ -113,7 +113,7 @@ function ChatPageContent() {
       .order("created_at", { ascending: true });
 
     if (data) {
-      setMessages(data.filter(m => m.role !== "system") as Message[]);
+      setMessages(data.filter((m: any) => m.role !== "system") as Message[]);
     }
     setCurrentConversationId(conversationId);
     setShowHistory(false);
@@ -148,7 +148,7 @@ function ChatPageContent() {
 
     if (data) {
       setCurrentConversationId(data.id);
-      setMessages([]);
+      // setMessages([]) REMOVIDO: No borramos los mensajes porque sendMessage ya puso el mensaje del usuario
       await loadConversations(userId);
       return data.id;
     }
@@ -235,25 +235,37 @@ function ChatPageContent() {
   const sendMessage = async (text: string) => {
     if (!text.trim() || loading || !userId) return;
 
+    const uId = userId;
     const userMessage: Message = { role: "user", content: text.trim() };
 
     // Immediately show user message and loading state - no delay!
     setInput("");
     setLoading(true);
-    setMessages(prev => [...prev, userMessage]);
+    setMessages(prev => [...prev, userMessage, { role: "assistant", content: "" }]);
 
     // Create conversation if needed (in background, user already sees their message)
     let convId = currentConversationId;
     if (!convId) {
-      convId = await createNewConversation();
-      if (!convId) {
+      // Creamos la conversación pero NO bloqueamos ni reseteamos la UI
+      const { data: newConv } = await supabase
+        .from("ai_conversations")
+        .insert({ user_id: uId, title: text.trim().slice(0, 50) })
+        .select()
+        .single();
+
+      if (newConv) {
+        convId = newConv.id;
+        setCurrentConversationId(convId);
+        loadConversations(uId); // Recargamos lista lateral en background
+      } else {
         setLoading(false);
+        setMessages(prev => prev.slice(0, -1)); // Quitamos el placeholder
         return;
       }
     }
 
     // Save user message (in background)
-    saveMessage(convId, "user", text.trim());
+    if (convId) saveMessage(convId, "user", text.trim());
 
     try {
       const response = await fetch("/api/chat", {
@@ -264,7 +276,7 @@ function ChatPageContent() {
             role: m.role,
             content: m.content,
           })),
-          userId,
+          userId: uId,
         }),
       });
 
@@ -279,8 +291,6 @@ function ChatPageContent() {
       let buffer = "";
 
       if (reader) {
-        let hasStartedAssistantMessage = false;
-
         while (true) {
           const { done, value } = await reader.read();
           if (done) break;
@@ -302,16 +312,12 @@ function ChatPageContent() {
                 fullContent += delta;
                 const snapshot = fullContent;
 
-                if (!hasStartedAssistantMessage) {
-                  setMessages(prev => [...prev, { role: "assistant", content: snapshot }]);
-                  hasStartedAssistantMessage = true;
-                } else {
-                  setMessages(prev => {
-                    const updated = [...prev];
-                    updated[updated.length - 1] = { role: "assistant", content: snapshot };
-                    return updated;
-                  });
-                }
+                // Actualizamos el último mensaje (que ya es el del asistente)
+                setMessages(prev => {
+                  const updated = [...prev];
+                  updated[updated.length - 1] = { role: "assistant", content: snapshot };
+                  return updated;
+                });
               }
             } catch {
               // skip malformed chunks
@@ -337,7 +343,7 @@ function ChatPageContent() {
       }
 
       // Save assistant message
-      await saveMessage(convId, "assistant", fullContent);
+      if (convId) await saveMessage(convId, "assistant", fullContent);
 
       // If in call mode, speak the response
       if (isCallModeRef.current) {
@@ -345,7 +351,7 @@ function ChatPageContent() {
       }
 
       // Reload conversations list to update titles
-      await loadConversations(userId);
+      await loadConversations(uId);
     } catch (error) {
       console.error("Chat error:", error);
       const errorMessage = "Lo siento, ha ocurrido un error. Por favor, inténtalo de nuevo.";
@@ -353,7 +359,7 @@ function ChatPageContent() {
         role: "assistant",
         content: errorMessage,
       }]);
-      await saveMessage(convId, "assistant", errorMessage);
+      if (convId) await saveMessage(convId, "assistant", errorMessage);
       if (isCallModeRef.current) speakResponse(errorMessage);
     } finally {
       setLoading(false);
@@ -791,7 +797,7 @@ function ChatPageContent() {
 
         {/* Messages area - ocupa todo el espacio disponible */}
         <div className="flex-1 overflow-y-auto">
-          {messages.length === 0 ? (
+          {messages.length === 0 && !loading ? (
             // Welcome screen - premium layout
             <div className="h-full flex flex-col items-center justify-center px-4 max-w-4xl mx-auto overflow-y-auto">
               <div className="w-24 h-24 sm:w-32 sm:h-32 relative mb-8 animate-float">
@@ -842,51 +848,54 @@ function ChatPageContent() {
             // Chat messages - full width con padding adaptativo
             <div className="px-4 pb-32 max-w-5xl mx-auto w-full pt-6">
               <div className="space-y-6">
-                {messages.map((message, index) => (
-                  <div
-                    key={index}
-                    className={`flex gap-3 sm:gap-4 ${message.role === "user" ? "flex-row-reverse" : ""} ${
-                      // Solo animamos la entrada de un mensaje nuevo, no durante el streaming
-                      index === messages.length - 1 && !loading ? "animate-in fade-in slide-in-from-bottom-2 duration-500" : ""
-                      }`}
-                  >
-                    {/* Avatar - Mascot Only Mode */}
-                    <div className="shrink-0 pt-1">
-                      <div className={`w-10 h-10 sm:w-12 sm:h-12 relative flex items-center justify-center`}>
-                        {message.role === "user" ? (
-                          <div className="w-full h-full rounded-2xl overflow-hidden border-2 border-[var(--brand-purple)] bg-[var(--background-secondary)] p-1">
-                            {userAvatar ? <Image src={userAvatar} alt="Profile" fill className="object-cover" /> : <User className="w-full h-full text-[var(--brand-purple)]" />}
-                          </div>
-                        ) : (
-                          <div className="w-full h-full relative animate-float-slow">
-                            <Image src="/assets/finy-mascota-minimalista.png" alt="Finy" fill className="object-contain drop-shadow-lg" />
-                          </div>
-                        )}
+                {messages.map((message, index) => {
+                  if (message.role === "assistant" && !message.content) return null;
+                  return (
+                    <div
+                      key={index}
+                      className={`flex gap-3 sm:gap-4 ${message.role === "user" ? "flex-row-reverse" : ""} ${
+                        // Solo animamos la entrada de un mensaje nuevo, no durante el streaming
+                        index === messages.length - 1 && !loading ? "animate-in fade-in slide-in-from-bottom-2 duration-500" : ""
+                        }`}
+                    >
+                      {/* Avatar - Mascot Only Mode */}
+                      <div className="shrink-0 pt-1">
+                        <div className={`w-10 h-10 sm:w-12 sm:h-12 relative flex items-center justify-center`}>
+                          {message.role === "user" ? (
+                            <div className="w-full h-full rounded-2xl overflow-hidden border-2 border-[var(--brand-purple)] bg-[var(--background-secondary)] p-1">
+                              {userAvatar ? <Image src={userAvatar} alt="Profile" fill className="object-cover" /> : <User className="w-full h-full text-[var(--brand-purple)]" />}
+                            </div>
+                          ) : (
+                            <div className="w-full h-full relative animate-float-slow">
+                              <Image src="/assets/finy-mascota-minimalista.png" alt="Finy" fill className="object-contain drop-shadow-lg" />
+                            </div>
+                          )}
+                        </div>
                       </div>
-                    </div>
 
-                    {/* Message content refined */}
-                    <div className={`flex flex-col ${message.role === "user" ? "items-end" : "items-start"} max-w-[85%] sm:max-w-[80%]`}>
-                      <div
-                        className={`px-4 py-3 rounded-2xl shadow-sm ${message.role === "user"
-                          ? "bg-[var(--brand-purple)] text-white rounded-tr-none"
-                          : "bg-[var(--background-secondary)] dark:bg-slate-800 border border-[var(--border)] rounded-tl-none backdrop-blur-sm"
-                          }`}
-                      >
-                        {message.role === "user" ? (
-                          <p className="text-sm font-medium leading-relaxed">{message.content}</p>
-                        ) : (
-                          <div className="text-sm leading-relaxed prose prose-sm dark:prose-invert max-w-none [&_p]:mb-2 [&_p:last-child]:mb-0 [&_strong]:text-[var(--brand-cyan)] [&_strong]:font-bold [&_ul]:list-disc [&_ul]:pl-4 [&_ul]:my-2 [&_li]:my-1">
-                            <ReactMarkdown>{message.content}</ReactMarkdown>
-                          </div>
-                        )}
+                      {/* Message content refined */}
+                      <div className={`flex flex-col ${message.role === "user" ? "items-end" : "items-start"} max-w-[85%] sm:max-w-[80%]`}>
+                        <div
+                          className={`px-4 py-3 rounded-2xl shadow-sm ${message.role === "user"
+                            ? "bg-[var(--brand-purple)] text-white rounded-tr-none"
+                            : "bg-[var(--background-secondary)] dark:bg-slate-800 border border-[var(--border)] rounded-tl-none backdrop-blur-sm"
+                            }`}
+                        >
+                          {message.role === "user" ? (
+                            <p className="text-sm font-medium leading-relaxed">{message.content}</p>
+                          ) : (
+                            <div className="text-sm leading-relaxed prose prose-sm dark:prose-invert max-w-none [&_p]:mb-2 [&_p:last-child]:mb-0 [&_strong]:text-[var(--brand-cyan)] [&_strong]:font-bold [&_ul]:list-disc [&_ul]:pl-4 [&_ul]:my-2 [&_li]:my-1">
+                              <ReactMarkdown>{message.content}</ReactMarkdown>
+                            </div>
+                          )}
+                        </div>
+                        <span className="text-[10px] text-[var(--brand-gray)]/50 mt-1 font-bold uppercase tracking-widest px-1">
+                          {message.role === "user" ? "Tú" : "FinyBot • Analista"}
+                        </span>
                       </div>
-                      <span className="text-[10px] text-[var(--brand-gray)]/50 mt-1 font-bold uppercase tracking-widest px-1">
-                        {message.role === "user" ? "Tú" : "FinyBot • Analista"}
-                      </span>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
 
               {/* Loading indicator - Mascot Only animate-bounce */}
@@ -915,7 +924,8 @@ function ChatPageContent() {
 
               <div ref={messagesEndRef} />
             </div>
-          )}
+          )
+          }
         </div>
 
         <div className="fixed bottom-0 left-0 right-0 lg:left-auto lg:w-[calc(100%-288px)] p-4 sm:p-6 bg-gradient-to-t from-[var(--background)] via-[var(--background)]/95 to-transparent z-10">
