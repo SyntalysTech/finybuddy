@@ -263,9 +263,6 @@ function ChatPageContent() {
         throw new Error("Failed to get response");
       }
 
-      // Add empty assistant message that we'll stream into
-      setMessages(prev => [...prev, { role: "assistant", content: "" }]);
-
       // Read the SSE stream from OpenAI
       const reader = response.body?.getReader();
       const decoder = new TextDecoder();
@@ -273,6 +270,9 @@ function ChatPageContent() {
       let buffer = "";
 
       if (reader) {
+        // Add an initial empty assistant message to avoid "emptying" the chat
+        setMessages(prev => [...prev, { role: "assistant", content: "..." }]);
+
         while (true) {
           const { done, value } = await reader.read();
           if (done) break;
@@ -291,11 +291,21 @@ function ChatPageContent() {
               const parsed = JSON.parse(data);
               const delta = parsed.choices?.[0]?.delta?.content;
               if (delta) {
-                fullContent += delta;
+                if (fullContent === "") {
+                  fullContent = delta;
+                } else {
+                  fullContent += delta;
+                }
+
                 const snapshot = fullContent;
                 setMessages(prev => {
                   const updated = [...prev];
-                  updated[updated.length - 1] = { role: "assistant", content: snapshot };
+                  const lastMessage = updated[updated.length - 1];
+                  if (lastMessage && lastMessage.role === "assistant") {
+                    updated[updated.length - 1] = { role: "assistant", content: snapshot };
+                  } else {
+                    updated.push({ role: "assistant", content: snapshot });
+                  }
                   return updated;
                 });
               }
@@ -833,14 +843,16 @@ function ChatPageContent() {
                     key={index}
                     className={`flex gap-3 sm:gap-4 animate-in fade-in slide-in-from-bottom-2 duration-500 ${message.role === "user" ? "flex-row-reverse" : ""}`}
                   >
-                    {/* Avatar with status indicator */}
-                    <div className="shrink-0">
-                      <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full overflow-hidden border-2 relative ${message.role === "user" ? "border-[var(--brand-purple)] bg-[var(--brand-purple)]" : "border-[var(--brand-cyan)] bg-[var(--background-secondary)]"}`}>
+                    {/* Avatar - Mascot Only Mode */}
+                    <div className="shrink-0 pt-1">
+                      <div className={`w-10 h-10 sm:w-12 sm:h-12 relative flex items-center justify-center`}>
                         {message.role === "user" ? (
-                          userAvatar ? <Image src={userAvatar} alt="Profile" fill className="object-cover" /> : <div className="w-full h-full flex items-center justify-center"><User className="w-5 h-5 text-white" /></div>
+                          <div className="w-full h-full rounded-2xl overflow-hidden border-2 border-[var(--brand-purple)] bg-[var(--background-secondary)] p-1">
+                            {userAvatar ? <Image src={userAvatar} alt="Profile" fill className="object-cover" /> : <User className="w-full h-full text-[var(--brand-purple)]" />}
+                          </div>
                         ) : (
-                          <div className="w-full h-full bg-[var(--background-secondary)] flex items-center justify-center">
-                            <Image src="/assets/finy-mascota-minimalista.png" alt="Finy" fill className="object-contain p-1.5" />
+                          <div className="w-full h-full relative animate-float-slow">
+                            <Image src="/assets/finy-mascota-minimalista.png" alt="Finy" fill className="object-contain drop-shadow-lg" />
                           </div>
                         )}
                       </div>
@@ -870,16 +882,15 @@ function ChatPageContent() {
                 ))}
               </div>
 
-              {/* Loading indicator - hide once streaming starts */}
+              {/* Loading indicator - Mascot Only animate-bounce */}
               {loading && !(messages.length > 0 && messages[messages.length - 1]?.role === "assistant" && messages[messages.length - 1]?.content) && (
-                <div className="flex gap-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
-                  <div className="shrink-0">
-                    <div className="w-10 h-10 rounded-full border-2 border-[var(--brand-cyan)] bg-[var(--background-secondary)] relative overflow-hidden">
-                      <div className="absolute inset-0 bg-[var(--brand-cyan)]/10 animate-pulse" />
-                      <Image src="/assets/finy-mascota-minimalista.png" alt="Finy" fill className="object-contain p-1.5 relative z-10" />
+                <div className="flex gap-4 animate-in fade-in slide-in-from-bottom-2 duration-300 mb-8">
+                  <div className="shrink-0 pt-1">
+                    <div className="w-10 h-10 sm:w-12 sm:h-12 relative animate-bounce">
+                      <Image src="/assets/finy-mascota-minimalista.png" alt="Finy" fill className="object-contain drop-shadow-md" />
                     </div>
                   </div>
-                  <div className="px-5 py-3 rounded-2xl rounded-tl-none bg-[var(--background-secondary)] border border-[var(--border)] shadow-sm max-w-sm">
+                  <div className="px-5 py-3 rounded-2xl rounded-tl-none bg-[var(--background-secondary)] border border-[var(--border)] shadow-sm max-w-[200px]">
                     <div className="flex flex-col gap-2">
                       <div className="flex gap-1.5 items-center">
                         <span className="w-1.5 h-1.5 rounded-full bg-[var(--brand-purple)] animate-bounce" style={{ animationDelay: "0ms" }} />
@@ -944,7 +955,7 @@ function ChatPageContent() {
                   onKeyDown={handleKeyDown}
                   placeholder={isRecording ? "Te escucho..." : isTranscribing ? "Procesando voz..." : "¿Qué quieres lograr hoy?"}
                   rows={1}
-                  className="flex-1 bg-transparent border-none focus:ring-0 text-sm sm:text-base font-medium text-[var(--foreground)] placeholder:text-[var(--brand-gray)]/40 resize-none min-h-[24px] max-h-[120px] py-1"
+                  className="flex-1 bg-transparent border-none focus:ring-0 text-sm sm:text-base font-bold text-slate-900 dark:text-white placeholder:text-slate-400 resize-none min-h-[24px] max-h-[120px] py-1"
                   disabled={loading || isRecording}
                 />
 
