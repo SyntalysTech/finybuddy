@@ -447,20 +447,24 @@ function AhorroPageContent() {
         ) : filteredGoals.length === 0 ? (
           <div className="card p-12 text-center">
             <PiggyBank className="w-16 h-16 text-[var(--brand-gray)] mx-auto mb-4" />
-            <h3 className="text-lg font-semibold mb-2">No tienes metas de ahorro</h3>
-            <p className="text-[var(--brand-gray)] mb-6">
-              Crea tu primera meta para empezar a ahorrar
+            <h3 className="text-lg font-semibold mb-2">
+              {goals.length === 0
+                ? "No tienes metas de ahorro"
+                : filter === "active"
+                  ? "No tienes metas activas"
+                  : filter === "paused"
+                    ? "No tienes metas pausadas"
+                    : filter === "completed"
+                      ? "No tienes metas completadas"
+                      : "No hay metas que mostrar"
+              }
+            </h3>
+            <p className="text-[var(--brand-gray)]">
+              {goals.length === 0
+                ? "Crea tu primera meta para empezar a ahorrar"
+                : "Usa el botón superior para añadir una nueva si la necesitas"
+              }
             </p>
-            <button
-              onClick={() => {
-                setEditingGoal(null);
-                setShowGoalModal(true);
-              }}
-              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl gradient-brand text-white font-medium hover:opacity-90 transition-opacity"
-            >
-              <Plus className="w-5 h-5" />
-              Crear meta de ahorro
-            </button>
           </div>
         ) : (
           <div className="space-y-4">
