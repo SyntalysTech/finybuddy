@@ -681,17 +681,6 @@ export default function DashboardPage() {
                 <p className="text-xl sm:text-2xl font-bold text-[var(--success)] animate-count truncate">
                   {loading ? "..." : formatCurrency(monthlySummary?.total_income || 0)}
                 </p>
-                {!loading && budgetSummary && budgetSummary.total_budgeted_income > 0 && (
-                  <p className={`text-xs mt-1 ${(monthlySummary?.total_income || 0) >= budgetSummary.total_budgeted_income
-                    ? "text-[var(--success)]"
-                    : "text-[var(--warning)]"
-                    }`}>
-                    {(monthlySummary?.total_income || 0) >= budgetSummary.total_budgeted_income
-                      ? `+${formatCurrency((monthlySummary?.total_income || 0) - budgetSummary.total_budgeted_income)} vs previsión`
-                      : `-${formatCurrency(budgetSummary.total_budgeted_income - (monthlySummary?.total_income || 0))} vs previsión`
-                    }
-                  </p>
-                )}
               </div>
               <div className="p-2 sm:p-3 rounded-lg sm:rounded-xl bg-[var(--success)]/10 hover-scale flex-shrink-0 ml-2">
                 <TrendingUp className="w-5 h-5 sm:w-6 sm:h-6 text-[var(--success)]" />
@@ -707,17 +696,6 @@ export default function DashboardPage() {
                 <p className="text-xl sm:text-2xl font-bold text-[var(--danger)] animate-count truncate">
                   {loading ? "..." : formatCurrency(monthlySummary?.total_expenses || 0)}
                 </p>
-                {!loading && budgetSummary && budgetSummary.total_budgeted_expenses > 0 && (
-                  <p className={`text-xs mt-1 ${(monthlySummary?.total_expenses || 0) > budgetSummary.total_budgeted_expenses
-                    ? "text-[var(--danger)]"
-                    : "text-[var(--success)]"
-                    }`}>
-                    {(monthlySummary?.total_expenses || 0) > budgetSummary.total_budgeted_expenses
-                      ? `+${formatCurrency((monthlySummary?.total_expenses || 0) - budgetSummary.total_budgeted_expenses)} vs previsión`
-                      : `-${formatCurrency(budgetSummary.total_budgeted_expenses - (monthlySummary?.total_expenses || 0))} vs previsión`
-                    }
-                  </p>
-                )}
               </div>
               <div className="p-2 sm:p-3 rounded-lg sm:rounded-xl bg-[var(--danger)]/10 hover-scale flex-shrink-0 ml-2">
                 <TrendingDown className="w-5 h-5 sm:w-6 sm:h-6 text-[var(--danger)]" />
@@ -733,17 +711,6 @@ export default function DashboardPage() {
                 <p className="text-xl sm:text-2xl font-bold text-[var(--brand-cyan)] animate-count truncate">
                   {loading ? "..." : formatCurrency(monthlySummary?.total_savings || 0)}
                 </p>
-                {!loading && budgetSummary && budgetSummary.total_budgeted_savings > 0 && (
-                  <p className={`text-xs mt-1 ${(monthlySummary?.total_savings || 0) >= budgetSummary.total_budgeted_savings
-                    ? "text-[var(--success)]"
-                    : "text-[var(--warning)]"
-                    }`}>
-                    {(monthlySummary?.total_savings || 0) >= budgetSummary.total_budgeted_savings
-                      ? `+${formatCurrency((monthlySummary?.total_savings || 0) - budgetSummary.total_budgeted_savings)} vs previsión`
-                      : `-${formatCurrency(budgetSummary.total_budgeted_savings - (monthlySummary?.total_savings || 0))} vs previsión`
-                    }
-                  </p>
-                )}
               </div>
               <div className="p-2 sm:p-3 rounded-lg sm:rounded-xl bg-[var(--brand-cyan)]/10 animate-piggy flex-shrink-0 ml-2">
                 <PiggyBank className="w-5 h-5 sm:w-6 sm:h-6 text-[var(--brand-cyan)]" />
