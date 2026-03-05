@@ -1186,7 +1186,10 @@ function PrevisionPageContent() {
                   onClick={() => toggleSection('needs')}
                 >
                   <div className="flex items-center justify-between">
-                    <h3 className="font-semibold">Necesidades previstas</h3>
+                    <h3 className="font-semibold flex items-center gap-2">
+                      <TrendingDown className="w-5 h-5 text-[var(--danger)]" />
+                      Necesidades previstas
+                    </h3>
                     <div className="flex items-center gap-3">
                       <div className="text-right">
                         <span className="text-lg font-bold">{formatCurrency(needsTotal)}</span>
@@ -1219,7 +1222,10 @@ function PrevisionPageContent() {
                   onClick={() => toggleSection('wants')}
                 >
                   <div className="flex items-center justify-between">
-                    <h3 className="font-semibold">Deseos previstos</h3>
+                    <h3 className="font-semibold flex items-center gap-2">
+                      <TrendingDown className="w-5 h-5 text-[var(--danger)]" />
+                      Deseos previstos
+                    </h3>
                     <div className="flex items-center gap-3">
                       <div className="text-right">
                         <span className="text-lg font-bold">{formatCurrency(wantsTotal)}</span>
