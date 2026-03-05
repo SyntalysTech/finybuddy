@@ -21,6 +21,7 @@ import {
   Zap,
   Bot,
   Receipt,
+  Gamepad2,
 } from "lucide-react";
 import { useProfile } from "@/hooks/useProfile";
 import { createClient } from "@/lib/supabase/client";
@@ -570,7 +571,7 @@ export default function DashboardPage() {
   const currentTotal = displayData.reduce((acc, curr) => acc + curr.value, 0);
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const PieWithProps = Pie as React.ElementType<any>;
+  const PieWithProps = Pie as any;
 
   // Renderizador simplificado para hover
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -1088,7 +1089,28 @@ export default function DashboardPage() {
           </div>
         </div>
 
-
+        {/* Banner Metarverso 3D */}
+        <Link href="/finyverse" className="block w-full mb-6 rounded-2xl bg-gradient-to-r from-[var(--brand-purple)] via-[var(--brand-cyan)] to-[var(--brand-purple)] p-[1px] group hover:shadow-[0_0_20px_rgba(2,234,255,0.4)] transition-all animate-slide-in-up md:hover:scale-[1.01] duration-500 overflow-hidden relative">
+          <div className="bg-[var(--background)]/90 backdrop-blur-xl p-4 sm:p-5 rounded-[15px] flex items-center justify-between relative z-10">
+            <div className="absolute inset-0 bg-gradient-to-r from-[var(--brand-purple)]/10 to-[var(--brand-cyan)]/10 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000" />
+            <div className="flex items-center gap-4 relative">
+              <div className="w-12 h-12 flex-shrink-0 rounded-xl bg-gradient-to-br from-[var(--brand-purple)] to-[var(--brand-cyan)] flex items-center justify-center animate-pulse shadow-lg shadow-[var(--brand-cyan)]/30">
+                <Gamepad2 className="w-6 h-6 text-white drop-shadow-md" />
+              </div>
+              <div className="min-w-0 pr-2">
+                <h3 className="text-sm sm:text-lg font-black text-white uppercase tracking-tighter mb-0.5 group-hover:text-[var(--brand-cyan)] transition-colors">
+                  FinyVerse 3D <span className="text-[10px] sm:text-xs ml-2 bg-[var(--brand-cyan)]/20 text-[var(--brand-cyan)] px-2 py-0.5 rounded-full uppercase border border-[var(--brand-cyan)]/30">Beta</span>
+                </h3>
+                <p className="text-[10px] sm:text-xs text-[var(--brand-gray)] line-clamp-2 md:line-clamp-none leading-relaxed">
+                  Adéntrate en tu ciudad financiera holográfica y camina entre tus gastos, metas y métricas en un entorno tridimensional impulsado por Three.js.
+                </p>
+              </div>
+            </div>
+            <div className="hidden sm:flex flex-shrink-0 ml-4 px-4 py-2.5 rounded-xl bg-white/10 text-xs font-bold text-white group-hover:bg-white transition-all transform group-hover:text-black">
+              Explorar Ahora <ChevronRight className="w-4 h-4 ml-1 inline-block opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all" />
+            </div>
+          </div>
+        </Link>
 
         {/* Recientes y Stats */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
