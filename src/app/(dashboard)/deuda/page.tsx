@@ -1469,7 +1469,7 @@ function PaymentModal({
             </div>
             <div className="h-2 bg-[var(--border)] rounded-full overflow-hidden">
               <div
-                className="h-full rounded-full bg-[var(--success)]"
+                className="h-full rounded-full bg-[var(--danger)]"
                 style={{
                   width: `${Math.min(((debt.original_amount - debt.current_balance) / debt.original_amount) * 100, 100)}%`,
                 }}
@@ -1510,7 +1510,7 @@ function PaymentModal({
               <button
                 type="button"
                 onClick={() => setAmount(debt.current_balance.toString())}
-                className="text-xs text-[var(--success)] hover:underline"
+                className="text-xs text-[var(--danger)] hover:underline"
               >
                 Liquidar deuda ({new Intl.NumberFormat("es-ES", { style: "currency", currency: "EUR" }).format(debt.current_balance)})
               </button>
