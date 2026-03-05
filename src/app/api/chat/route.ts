@@ -42,8 +42,11 @@ interface FinancialContext {
     originalAmount: number;
     currentBalance: number;
     interestRate: number;
+    monthlyPayment: number;
     progress: number;
     status: string;
+    creditor: string | null;
+    debtType: string;
   }[];
   recentOperations: {
     id: string;
@@ -150,9 +153,12 @@ async function getFinancialContext(userId: string): Promise<FinancialContext> {
       name: debt.name,
       originalAmount: debt.original_amount,
       currentBalance: Math.max(0, currentBalance),
-      interestRate: debt.interest_rate || 0,
+      interestRate: Number(debt.interest_rate) || 0,
+      monthlyPayment: Number(debt.monthly_payment) || 0,
       progress: debt.original_amount > 0 ? Math.round((totalPaid / debt.original_amount) * 100) : 0,
       status: debt.status,
+      creditor: debt.creditor,
+      debtType: debt.debt_type,
     };
   });
 
@@ -265,10 +271,10 @@ ${context.savingsGoals.length > 0
       ? context.savingsGoals.map(g => `${g.name}: ${g.current.toLocaleString("es-ES")}/${g.target.toLocaleString("es-ES")} (${g.progress}%)`).join(" | ")
       : "Sin metas activas"}
 
-DEUDAS:
+DEUDAS CONFIGURADAS (Gestor de deudas):
 ${context.debts.length > 0
-      ? context.debts.map(d => `${d.name}: debe ${d.currentBalance.toLocaleString("es-ES")} de ${d.originalAmount.toLocaleString("es-ES")} (${d.progress}% pagado)`).join(" | ")
-      : "Sin deudas"}
+      ? context.debts.map(d => `- ${d.name}: Acreedor: ${d.creditor || 'No especificado'} | Total: ${d.originalAmount}€ | Pendiente: ${d.currentBalance}€ | Interes: ${d.interestRate}% | Cuota mensual: ${d.monthlyPayment}€ | Tipo: ${d.debtType} | Progreso: ${d.progress}% pagado | Estado: ${d.status}`).join("\n")
+      : "Sin deudas configuradas en el gestor."}
 
 ULTIMAS OPERACIONES (con ID):
 ${context.recentOperations.slice(0, 8).map(op => `[ID:${op.id}] ${op.date}: ${op.concept} ${op.type === "expense" ? "-" : "+"}${op.amount}`).join(" | ")}
@@ -379,7 +385,8 @@ INGRESO EXTRAORDINARIO:
 6. Si preguntan por inversiones/cripto/bolsa: "Ahi no soy experto. Mi rollo es ayudarte con el dia a dia. Para inversiones, mejor un especialista!"
 7. Termina con energia: "Cualquier cosa aqui estoy!", "Seguimos dandole!", "A por ello!"
 8. PROACTIVIDAD CONTEXTUAL: Cuando veas patrones de los nuevos clusters (flujo de caja, estacionalidad, anomalias en ingresos), mencionalos naturalmente en tus respuestas. No esperes a que el usuario pregunte.
-9. CATEGORIZACIÓN OBLIGATORIA: NUNCA registres una operación como "Sin categoría" o con ID nulo. Si no estás seguro de la categoría, elige la más lógica basándote en el concepto o pregunta al usuario antes de proceder. Todas las operaciones DEBEN tener una categoría válida de la lista proporcionada.`;
+9. CATEGORIZACIÓN OBLIGATORIA: NUNCA registres una operación como "Sin categoría" o con ID nulo. Si no estás seguro de la categoría, elige la más lógica basándote en el concepto o pregunta al usuario antes de proceder. Todas las operaciones DEBEN tener una categoría válida de la lista proporcionada.
+10. INDEPENDENCIA DE DATOS Y PRECISIÓN EN DEUDAS: El "Gestor de Deudas" y las "Metas de Ahorro" son módulos de configuración independientes de las operaciones diarias. Cuando el usuario pregunte por sus deudas, lee con absoluta precisión los campos: Tasa de Interés, Cuota Mensual y Acreedor. NO inventes estos datos ni los mezcles entre diferentes deudas. Si una deuda tiene un 5% de interés, dilo claramente. Si tiene una cuota de 150€, identifícala como tal.`;
 }
 
 // Define the tools (functions) that the AI can use
@@ -503,7 +510,15 @@ const tools = [
           },
           interest_rate: {
             type: "number",
-            description: "Tasa de interes anual en porcentaje. Usar 0 si no tiene intereses."
+            description: "Tasa de interes anual en porcentaje (ej: 5.5). Usar 0 si no tiene intereses."
+          },
+          monthly_payment: {
+            type: "number",
+            description: "La cuota mensual o pago mensual fijo de la deuda en euros."
+          },
+          creditor: {
+            type: "string",
+            description: "Entidad o persona a la que se le debe el dinero (ej: 'BBVA', 'Cofidis', 'Mi padre')."
           },
           due_date: {
             type: "string",
@@ -735,6 +750,8 @@ async function executeCreateDebt(
     name: string;
     initial_amount: number;
     interest_rate?: number;
+    monthly_payment?: number;
+    creditor?: string;
     due_date?: string;
   }
 ) {
@@ -748,6 +765,8 @@ async function executeCreateDebt(
       original_amount: args.initial_amount,
       current_balance: args.initial_amount,
       interest_rate: args.interest_rate || 0,
+      monthly_payment: args.monthly_payment || 0,
+      creditor: args.creditor || null,
       due_date: args.due_date || null,
       status: "active",
     })
