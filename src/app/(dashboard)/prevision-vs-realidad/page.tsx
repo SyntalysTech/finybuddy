@@ -140,7 +140,7 @@ function PrevisionVsRealidadPageContent() {
     // Aggregate operations by category (excluding savings type for category breakdown)
     const actualByCategory: Record<string, number> = {};
     operationsData?.forEach(op => {
-      if (op.category_id && op.type !== "savings") {
+      if (op.category_id) {
         actualByCategory[op.category_id] = (actualByCategory[op.category_id] || 0) + op.amount;
       }
     });
@@ -177,7 +177,7 @@ function PrevisionVsRealidadPageContent() {
 
     // Add categories with actual spending but no budget
     for (const categoryId of Object.keys(actualByCategory)) {
-      const op = operationsData?.find(o => o.category_id === categoryId && o.type !== "savings");
+      const op = operationsData?.find(o => o.category_id === categoryId);
       if (op?.category) {
         const cat = (Array.isArray(op.category) ? op.category[0] : op.category) as Category;
         comparisonData.push({
@@ -244,7 +244,7 @@ function PrevisionVsRealidadPageContent() {
   // Calculate by segment
   const needsData = expenseData.filter(d => d.segment === "needs");
   const wantsData = expenseData.filter(d => d.segment === "wants");
-  const savingsSegmentData = expenseData.filter(d => d.segment === "savings");
+  const savingsSegmentData = data.filter(d => d.type === "savings");
 
   const needsBudgeted = needsData.reduce((sum, d) => sum + d.budgeted, 0);
   const needsActual = needsData.reduce((sum, d) => sum + d.actual, 0);
@@ -387,8 +387,8 @@ function PrevisionVsRealidadPageContent() {
         <div className="w-24 text-right flex items-center justify-end gap-1">
           {varianceIcon}
           <span className={`font-medium ${item.difference >= 0
-              ? (isExpense ? "text-[var(--success)]" : "text-[var(--danger)]")
-              : (isExpense ? "text-[var(--danger)]" : "text-[var(--success)]")
+            ? (isExpense ? "text-[var(--success)]" : "text-[var(--danger)]")
+            : (isExpense ? "text-[var(--danger)]" : "text-[var(--success)]")
             }`}>
             {formatCurrency(Math.abs(item.difference))}
           </span>
@@ -658,7 +658,7 @@ function PrevisionVsRealidadPageContent() {
             )}
 
             {/* Ahorro Total y por Segmentos */}
-            {savingsSegmentData.length > 0 && (
+            {(savingsSegmentData.length > 0 || budgetedSavings > 0 || actualSavings > 0) && (
               <div className="card overflow-hidden">
                 <button
                   onClick={() => togglePanel('savingsTotal')}
@@ -675,17 +675,17 @@ function PrevisionVsRealidadPageContent() {
                       )}
                     </h3>
                     <div className="text-right text-sm">
-                      <span className="font-bold text-[var(--brand-cyan)]">{formatCurrency(savingsSegmentActual)}</span>
-                      <span className="text-[var(--brand-gray)]"> / {formatCurrency(savingsSegmentBudgeted)}</span>
+                      <span className="font-bold text-[var(--brand-cyan)]">{formatCurrency(actualSavings)}</span>
+                      <span className="text-[var(--brand-gray)]"> / {formatCurrency(budgetedSavings)}</span>
                       <span className="ml-2 font-medium">
-                        ({savingsSegmentBudgeted > 0 ? Math.min(Math.round((savingsSegmentActual / savingsSegmentBudgeted) * 100), 999) : savingsSegmentActual > 0 ? 100 : 0}%)
+                        ({budgetedSavings > 0 ? Math.min(Math.round((actualSavings / budgetedSavings) * 100), 999) : actualSavings > 0 ? 100 : 0}%)
                       </span>
                     </div>
                   </div>
                   <div className="h-2 bg-[var(--border)] rounded-full overflow-hidden">
                     <div
-                      className={`h-full rounded-full transition-all ${savingsSegmentActual >= savingsSegmentBudgeted ? "bg-[var(--success)]" : "bg-[var(--brand-cyan)]"}`}
-                      style={{ width: `${savingsSegmentBudgeted > 0 ? Math.min((savingsSegmentActual / savingsSegmentBudgeted) * 100, 100) : savingsSegmentActual > 0 ? 100 : 0}%` }}
+                      className={`h-full rounded-full transition-all ${actualSavings >= budgetedSavings ? "bg-[var(--success)]" : "bg-[var(--warning)]"}`}
+                      style={{ width: `${budgetedSavings > 0 ? Math.min((actualSavings / budgetedSavings) * 100, 100) : actualSavings > 0 ? 100 : 0}%` }}
                     />
                   </div>
                 </button>
