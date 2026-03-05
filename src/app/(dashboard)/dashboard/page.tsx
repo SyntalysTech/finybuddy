@@ -377,21 +377,24 @@ export default function DashboardPage() {
         // Si es gasto, se agrupa por categoría y segmento (necesidades/deseos)
         else if (op.type === "expense") {
           if (!cat) return;
-          // Normalizar segmento para evitar fallos si viene null o con nombres distintos
-          let segment = cat.segment?.toLowerCase();
+          // Normalizar segmento para evitar fallos (trim y lowercase)
+          let segment = (cat.segment || "needs").trim().toLowerCase();
           if (segment !== "needs" && segment !== "wants" && segment !== "savings") {
-            segment = "needs"; // Default a necesidades si no hay segmento
+            segment = "needs"; // Default de seguridad
           }
 
           if (!merged[cat.id]) {
-            // Asignar color coherente con el segmento si la categoría no tiene uno
-            const defaultColor = segment === "needs" ? "#2EEB8F" : segment === "wants" ? "#8B4DFF" : "#02EAFF";
+            // Asignar el color base según el segmento para garantizar coherencia
+            const segmentColor = segment === "needs" ? "#2EEB8F" : (segment === "wants" ? "#8B4DFF" : "#02EAFF");
+
             merged[cat.id] = {
               id: cat.id,
               name: cat.name,
-              color: cat.color || defaultColor,
+              // Forzamos el color del segmento si no hay uno muy específico, 
+              // para evitar el error del "morado" en necesidades.
+              color: cat.color || segmentColor,
               amount: 0,
-              segment
+              segment: segment as "needs" | "wants" | "savings"
             };
           }
           merged[cat.id].amount += op.amount;
@@ -509,18 +512,24 @@ export default function DashboardPage() {
       .map((c, idx, arr) => {
         // Si estamos en drill-down, forzamos una coherencia cromática para que sea "el mejor gráfico"
         // Mantenemos el color de la DB si existe, si no, generamos variaciones del color base del segmento
-        const baseColor = selectedSegment === "needs" ? "#2EEB8F" : selectedSegment === "wants" ? "#8B4DFF" : "#02EAFF";
+        const baseColor = selectedSegment === "needs" ? "#2EEB8F" : (selectedSegment === "wants" ? "#8B4DFF" : "#02EAFF");
 
-        // Solo variamos el color si no tiene uno específico o para asegurar el "wow" factor
-        // Generamos una variación de opacidad/luminosidad basada en el índice para que se vea premium
-        const opacity = 1 - (idx / Math.max(arr.length, 1)) * 0.5;
+        // Generamos una variación elegante del color base (gradiente visual)
+        // Esto soluciona que aparezcan categorías "moradas" dentro de Necesidades (Verde)
+        const step = 0.4 / Math.max(arr.length, 1);
+        const opacityVal = 1 - (idx * step);
+        const opacityHex = Math.round(opacityVal * 255).toString(16).padStart(2, '0');
+
         return {
           name: c.name,
           value: c.amount,
-          color: c.color || baseColor, // Mantenemos el color original o el base
+          // Si la categoría tiene un color propio y es del mismo "tono" lo respetamos, 
+          // si no, forzamos un matiz del color del segmento para que sea Pura Delicia Visual.
+          color: selectedSegment === "needs" && !c.color?.startsWith('#2E') ? `${baseColor}${opacityHex}` :
+            selectedSegment === "wants" && !c.color?.startsWith('#8B') ? `${baseColor}${opacityHex}` :
+              c.color || baseColor,
           segment: c.segment,
           isSub: true,
-          // Añadimos una propiedad extra para efectos visuales si fuera necesario
           glowColor: baseColor
         };
       })
