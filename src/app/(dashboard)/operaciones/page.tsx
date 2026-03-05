@@ -21,6 +21,9 @@ import {
   ChevronRight,
   ChevronsLeft,
   ChevronsRight,
+  MousePointer2,
+  CheckSquare,
+  Square,
 } from "lucide-react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
@@ -66,6 +69,9 @@ export default function OperacionesPage() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deletingOperationId, setDeletingOperationId] = useState<string | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
+  const [isSelectionMode, setIsSelectionMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [showBulkDeleteModal, setShowBulkDeleteModal] = useState(false);
 
   // Totales calculados del rango de fechas completo (no de la lista paginada)
   const [monthTotals, setMonthTotals] = useState({ income: 0, expense: 0, savings: 0 });
@@ -212,6 +218,30 @@ export default function OperacionesPage() {
     }
     setShowDeleteModal(false);
     setDeletingOperationId(null);
+  };
+
+  const toggleSelectOperation = (id: string) => {
+    setSelectedIds(prev =>
+      prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
+    );
+  };
+
+  const handleConfirmBulkDelete = async () => {
+    if (selectedIds.length === 0) return;
+
+    setDeleteLoading(true);
+    const { error } = await supabase
+      .from("operations")
+      .delete()
+      .in("id", selectedIds);
+    setDeleteLoading(false);
+
+    if (!error) {
+      fetchOperations();
+      setSelectedIds([]);
+      setIsSelectionMode(false);
+    }
+    setShowBulkDeleteModal(false);
   };
 
   const handleNewOperation = () => {
@@ -377,6 +407,54 @@ export default function OperacionesPage() {
               </select>
             </div>
 
+            {/* Acciones masivas */}
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => {
+                  setIsSelectionMode(!isSelectionMode);
+                  if (isSelectionMode) setSelectedIds([]);
+                }}
+                className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${isSelectionMode
+                  ? "bg-[var(--brand-purple)] text-white"
+                  : "bg-[var(--background-secondary)] border border-[var(--border)] text-[var(--brand-gray)]"
+                  }`}
+                title={isSelectionMode ? "Cancelar selección" : "Seleccionar varios"}
+              >
+                <MousePointer2 className="w-4 h-4" />
+                <span className="hidden sm:inline">{isSelectionMode ? "Cancelar" : "Seleccionar"}</span>
+              </button>
+
+              {isSelectionMode && (
+                <button
+                  onClick={() => {
+                    const allVisibleIds = operations.map(op => op.id);
+                    const allSelected = allVisibleIds.every(id => selectedIds.includes(id));
+                    if (allSelected) {
+                      setSelectedIds(prev => prev.filter(id => !allVisibleIds.includes(id)));
+                    } else {
+                      setSelectedIds(prev => Array.from(new Set([...prev, ...allVisibleIds])));
+                    }
+                  }}
+                  className="flex items-center gap-2 px-3 py-2 bg-[var(--background-secondary)] border border-[var(--border)] rounded-lg text-sm font-medium text-[var(--brand-gray)] hover:border-[var(--brand-purple)] transition-colors"
+                >
+                  <CheckSquare className="w-4 h-4" />
+                  <span className="hidden sm:inline">
+                    {operations.length > 0 && operations.every(op => selectedIds.includes(op.id)) ? "Desmarcar todo" : "Seleccionar todo"}
+                  </span>
+                </button>
+              )}
+
+              {isSelectionMode && selectedIds.length > 0 && (
+                <button
+                  onClick={() => setShowBulkDeleteModal(true)}
+                  className="flex items-center gap-2 px-3 py-2 bg-[var(--danger)] text-white rounded-lg text-sm font-medium hover:opacity-90 transition-opacity"
+                >
+                  <Trash2 className="w-4 h-4" />
+                  <span>Borrar ({selectedIds.length})</span>
+                </button>
+              )}
+            </div>
+
             {/* Contador */}
             <div className="ml-auto text-sm text-[var(--brand-gray)]">
               {totalCount} operaciones en total
@@ -416,8 +494,19 @@ export default function OperacionesPage() {
                 return (
                   <div
                     key={operation.id}
-                    className="flex items-center gap-2 sm:gap-4 p-2 sm:p-4 hover:bg-[var(--background-secondary)] transition-colors"
+                    className={`flex items-center gap-2 sm:gap-4 p-2 sm:p-4 hover:bg-[var(--background-secondary)] transition-colors ${isSelectionMode && selectedIds.includes(operation.id) ? "bg-[var(--brand-purple)]/5" : ""
+                      } ${isSelectionMode ? "cursor-pointer" : ""}`}
+                    onClick={() => isSelectionMode && toggleSelectOperation(operation.id)}
                   >
+                    {isSelectionMode && (
+                      <div className="shrink-0 mr-1">
+                        {selectedIds.includes(operation.id) ? (
+                          <CheckSquare className="w-5 h-5 text-[var(--brand-purple)] fill-[var(--brand-purple)]/10" />
+                        ) : (
+                          <Square className="w-5 h-5 text-[var(--brand-gray)]" />
+                        )}
+                      </div>
+                    )}
                     {/* Icono tipo */}
                     <div className={`p-1.5 sm:p-2 rounded-lg ${config.bg} shrink-0`}>
                       <Icon className={`w-4 h-4 sm:w-5 sm:h-5 ${config.color}`} />
@@ -453,20 +542,35 @@ export default function OperacionesPage() {
 
                     {/* Botones de acción */}
                     <div className="flex items-center shrink-0">
-                      <button
-                        onClick={() => handleEdit(operation)}
-                        className="p-1.5 sm:p-2 rounded-lg hover:bg-[var(--background-secondary)] transition-colors"
-                        title="Editar"
-                      >
-                        <Edit2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[var(--brand-gray)]" />
-                      </button>
-                      <button
-                        onClick={() => handleDeleteClick(operation.id)}
-                        className="p-1.5 sm:p-2 rounded-lg hover:bg-[var(--danger)]/10 transition-colors"
-                        title="Eliminar"
-                      >
-                        <Trash2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[var(--danger)]" />
-                      </button>
+                      {!isSelectionMode && (
+                        <>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleEdit(operation);
+                            }}
+                            className="p-1.5 sm:p-2 rounded-lg hover:bg-[var(--background-secondary)] transition-colors"
+                            title="Editar"
+                          >
+                            <Edit2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[var(--brand-gray)]" />
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDeleteClick(operation.id);
+                            }}
+                            className="p-1.5 sm:p-2 rounded-lg hover:bg-[var(--danger)]/10 transition-colors"
+                            title="Eliminar"
+                          >
+                            <Trash2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[var(--danger)]" />
+                          </button>
+                        </>
+                      )}
+                      {isSelectionMode && (
+                        <div className="p-1.5 sm:p-2 opacity-0">
+                          <Trash2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                        </div>
+                      )}
                     </div>
                   </div>
                 );
@@ -508,11 +612,10 @@ export default function OperacionesPage() {
                     <button
                       key={page}
                       onClick={() => goToPage(page as number)}
-                      className={`w-7 h-7 sm:w-8 sm:h-8 rounded-lg text-xs sm:text-sm font-medium transition-colors ${
-                        currentPage === page
-                          ? "bg-[var(--brand-cyan)] text-white"
-                          : "hover:bg-[var(--background-secondary)]"
-                      }`}
+                      className={`w-7 h-7 sm:w-8 sm:h-8 rounded-lg text-xs sm:text-sm font-medium transition-colors ${currentPage === page
+                        ? "bg-[var(--brand-cyan)] text-white"
+                        : "hover:bg-[var(--background-secondary)]"
+                        }`}
                     >
                       {page}
                     </button>
@@ -564,6 +667,16 @@ export default function OperacionesPage() {
         onConfirm={handleDeleteConfirm}
         title="¿Eliminar operación?"
         message="Esta acción no se puede deshacer. La operación será eliminada permanentemente."
+        loading={deleteLoading}
+      />
+
+      {/* Modal de confirmación para borrado masivo */}
+      <DeleteConfirmModal
+        isOpen={showBulkDeleteModal}
+        onClose={() => setShowBulkDeleteModal(false)}
+        onConfirm={handleConfirmBulkDelete}
+        title={`¿Eliminar ${selectedIds.length} operaciones?`}
+        message={`Estás a punto de eliminar ${selectedIds.length} operaciones de forma permanente. Esta acción no se puede deshacer.`}
         loading={deleteLoading}
       />
     </>
