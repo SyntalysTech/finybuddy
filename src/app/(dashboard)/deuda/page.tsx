@@ -486,20 +486,24 @@ function DeudaPageContent() {
         ) : filteredDebts.length === 0 ? (
           <div className="card p-12 text-center">
             <CreditCard className="w-16 h-16 text-[var(--brand-gray)] mx-auto mb-4" />
-            <h3 className="text-lg font-semibold mb-2">No tienes deudas registradas</h3>
-            <p className="text-[var(--brand-gray)] mb-6">
-              Añade tus deudas para llevar un control de tus pagos
+            <h3 className="text-lg font-semibold mb-2">
+              {debts.length === 0
+                ? "No tienes deudas registradas"
+                : filter === "active"
+                  ? "No tienes deudas activas"
+                  : filter === "paused"
+                    ? "No tienes deudas pausadas"
+                    : filter === "paid"
+                      ? "No tienes deudas pagadas"
+                      : "No hay deudas que mostrar"
+              }
+            </h3>
+            <p className="text-[var(--brand-gray)]">
+              {debts.length === 0
+                ? "Añade tus deudas para llevar un control de tus pagos"
+                : "Usa el botón superior para añadir una nueva si la necesitas"
+              }
             </p>
-            <button
-              onClick={() => {
-                setEditingDebt(null);
-                setShowDebtModal(true);
-              }}
-              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl gradient-brand text-white font-medium hover:opacity-90 transition-opacity"
-            >
-              <Plus className="w-5 h-5" />
-              Añadir deuda
-            </button>
           </div>
         ) : (
           <div className="space-y-4">
