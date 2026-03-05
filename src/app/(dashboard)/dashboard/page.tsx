@@ -1009,7 +1009,7 @@ export default function DashboardPage() {
           <div className="flex flex-col gap-4 sm:gap-6">
 
             {/* AI Audit Panel */}
-            <div className="glass-brand p-5 sm:p-6 rounded-xl sm:rounded-2xl animate-slide-in-right relative overflow-hidden flex-1 border border-white/10 dark:border-white/5 shadow-2xl">
+            <div className="glass-brand p-5 sm:p-6 rounded-xl sm:rounded-2xl animate-slide-in-right relative overflow-hidden flex-1 shadow-2xl">
               {/* Subtle gradient glow in background */}
               <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-bl from-[var(--brand-cyan)]/10 to-transparent rounded-full blur-3xl pointer-events-none" />
 
@@ -1034,10 +1034,10 @@ export default function DashboardPage() {
 
                 {/* Content Element */}
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between mb-3 border-b border-white/10 pb-3">
+                  <div className="flex items-center justify-between mb-3 border-b border-[var(--border)] pb-3">
                     <div className="flex items-center gap-2">
                       <Sparkles className="w-5 h-5 text-[var(--brand-cyan)]" />
-                      <h3 className="text-lg sm:text-xl font-bold text-white">
+                      <h3 className="text-lg sm:text-xl font-bold text-[var(--foreground)]">
                         Análisis de Finy AI
                       </h3>
                     </div>
@@ -1069,14 +1069,14 @@ export default function DashboardPage() {
                   {loading ? (
                     <div className="flex items-center gap-3 py-4">
                       <div className="w-4 h-4 rounded-full border-2 border-[var(--brand-cyan)] border-t-transparent animate-spin" />
-                      <p className="text-sm text-white/80">Procesando millones de datos en milisegundos...</p>
+                      <p className="text-sm text-[var(--foreground)] opacity-80">Procesando millones de datos en milisegundos...</p>
                     </div>
                   ) : (
                     <div className="space-y-3 mt-4">
                       {finyInsights.map((insight, idx) => (
-                        <div key={idx} className="flex gap-3 items-start group p-3 rounded-2xl bg-white/5 border border-transparent hover:border-[var(--brand-cyan)]/20 transition-all hover:bg-white/10">
+                        <div key={idx} className="flex gap-3 items-start group p-3 rounded-2xl bg-[var(--foreground)]/5 border border-transparent hover:border-[var(--brand-cyan)]/20 transition-all hover:bg-[var(--foreground)]/10">
                           <div className="w-1.5 h-1.5 rounded-full bg-[var(--brand-cyan)] mt-2 flex-shrink-0 group-hover:scale-150 transition-transform shadow-[0_0_8px_rgba(2,234,255,0.8)]" />
-                          <p className="text-sm sm:text-[14px] text-white/90 leading-relaxed flex-1">
+                          <p className="text-sm sm:text-[14px] text-[var(--foreground)] opacity-90 leading-relaxed flex-1">
                             {insight}
                           </p>
                         </div>
@@ -1098,7 +1098,7 @@ export default function DashboardPage() {
                 <Gamepad2 className="w-6 h-6 text-white drop-shadow-md" />
               </div>
               <div className="min-w-0 pr-2">
-                <h3 className="text-sm sm:text-lg font-black text-white uppercase tracking-tighter mb-0.5 group-hover:text-[var(--brand-cyan)] transition-colors">
+                <h3 className="text-sm sm:text-lg font-black text-[var(--foreground)] uppercase tracking-tighter mb-0.5 group-hover:text-[var(--brand-cyan)] transition-colors">
                   FinyVerse 3D <span className="text-[10px] sm:text-xs ml-2 bg-[var(--brand-cyan)]/20 text-[var(--brand-cyan)] px-2 py-0.5 rounded-full uppercase border border-[var(--brand-cyan)]/30">Beta</span>
                 </h3>
                 <p className="text-[10px] sm:text-xs text-[var(--brand-gray)] line-clamp-2 md:line-clamp-none leading-relaxed">
@@ -1106,7 +1106,7 @@ export default function DashboardPage() {
                 </p>
               </div>
             </div>
-            <div className="hidden sm:flex flex-shrink-0 ml-4 px-4 py-2.5 rounded-xl bg-white/10 text-xs font-bold text-white group-hover:bg-white transition-all transform group-hover:text-black">
+            <div className="hidden sm:flex flex-shrink-0 ml-4 px-4 py-2.5 rounded-xl bg-[var(--foreground)]/10 text-xs font-bold text-[var(--foreground)] group-hover:bg-[var(--foreground)] transition-all transform group-hover:text-[var(--background)]">
               Explorar Ahora <ChevronRight className="w-4 h-4 ml-1 inline-block opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all" />
             </div>
           </div>
