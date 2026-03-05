@@ -939,7 +939,10 @@ function PrevisionPageContent() {
             </div>
           ) : (
             <>
-              <span className={`font-semibold ${budget.category?.type === "income" ? "text-[var(--success)]" : ""}`}>
+              <span className={`font-semibold ${budget.category?.type === "income" ? "text-[var(--success)]" :
+                  budget.category?.type === "savings" ? "text-[var(--brand-cyan)]" :
+                    "text-[var(--danger)]"
+                }`}>
                 {formatCurrency(budget.amount)}
               </span>
               <button
@@ -1306,7 +1309,7 @@ function PrevisionPageContent() {
                     </h3>
                     <div className="flex items-center gap-3">
                       <div className="text-right">
-                        <span className="text-lg font-bold">{formatCurrency(needsTotal)}</span>
+                        <span className="text-lg font-bold text-[var(--danger)]">{formatCurrency(needsTotal)}</span>
                       </div>
                       {expandedSections.needs ? (
                         <ChevronUp className="w-5 h-5 text-[var(--brand-gray)]" />
@@ -1342,7 +1345,7 @@ function PrevisionPageContent() {
                     </h3>
                     <div className="flex items-center gap-3">
                       <div className="text-right">
-                        <span className="text-lg font-bold">{formatCurrency(wantsTotal)}</span>
+                        <span className="text-lg font-bold text-[var(--danger)]">{formatCurrency(wantsTotal)}</span>
                       </div>
                       {expandedSections.wants ? (
                         <ChevronUp className="w-5 h-5 text-[var(--brand-gray)]" />
