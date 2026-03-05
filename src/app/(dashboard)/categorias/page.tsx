@@ -23,6 +23,12 @@ import {
   LayoutGrid,
   List,
   TableProperties,
+  ChevronDown,
+  ChevronUp,
+  User2,
+  Lock,
+  // Iconos para categorías
+  Home, Building2, Sofa, Bed, Droplets, Zap, Utensils, Pizza, Coffee, Car, Bus, Plane, ShoppingBag, Shirt, Smartphone, Laptop, Gamepad2, Stethoscope, Pill, GraduationCap, Briefcase, Wallet, CreditCard, Banknote, Palmtree, Music, Camera, Heart, Gift, Baby, Dog, Cat, Hammer, Wrench, Lightbulb, Users, Dumbbell, Theater, Brush, Guitar, Package, Radio, Trash
 } from "lucide-react";
 import DeleteConfirmModal from "@/components/operations/DeleteConfirmModal";
 import FinyInfoPanel from "@/components/ui/FinyInfoPanel";
@@ -52,29 +58,30 @@ const SEGMENTS = [
 ];
 
 const ICON_OPTIONS = [
-  // Hogar y vivienda
-  "🏠", "🏡", "🏢", "🛋️", "🛏️", "🚿", "🧹", "🧺", "💡", "🔑",
-  // Comida y bebida
-  "🍽️", "🍕", "🍔", "🥗", "🍜", "🍣", "🥐", "☕", "🍺", "🍷",
-  // Transporte
-  "🚗", "🚌", "🚇", "🚲", "✈️", "⛽", "🚕", "🛵", "🚂", "⛵",
-  // Compras y moda
-  "🛒", "🛍️", "👕", "👗", "👟", "👜", "💄", "💍", "🕶️", "👔",
-  // Tecnología y entretenimiento
-  "📱", "💻", "🎮", "🎬", "🎵", "📺", "🎧", "📷", "🖥️", "⌚",
-  // Salud y bienestar
-  "💊", "🏥", "🏋️", "🧘", "💇", "🦷", "👁️", "💉", "🩺", "🧴",
-  // Educación y trabajo
-  "📚", "🎓", "💼", "📝", "🖊️", "📊", "💡", "🗂️", "📌", "🎯",
-  // Finanzas
-  "💰", "💳", "🏦", "📈", "📉", "💵", "🪙", "💎", "🧾", "📑",
-  // Ocio y viajes
-  "🏖️", "⛷️", "🎪", "🎡", "🏕️", "🗺️", "🎢", "🎭", "🎨", "🎸",
-  // Familia y mascotas
-  "👶", "👨‍👩‍👧", "🐕", "🐈", "🎁", "🎂", "💐", "🧸", "👪", "❤️",
-  // Servicios y otros
-  "📦", "🔧", "🔌", "📡", "🗑️", "♻️", "📬", "🏷️", "⚡", "💧"
+  "Home", "Building2", "Sofa", "Bed", "Droplets", "Zap", "Utensils", "Pizza", "Coffee", "Car",
+  "Bus", "Plane", "ShoppingBag", "Shirt", "Smartphone", "Laptop", "Gamepad2", "Stethoscope", "Pill", "GraduationCap",
+  "Briefcase", "Wallet", "CreditCard", "Banknote", "PiggyBank", "Palmtree", "Music", "Camera", "Heart", "Gift",
+  "Baby", "Dog", "Cat", "Hammer", "Wrench", "Lightbulb", "Users", "Dumbbell", "Theater", "Brush",
+  "Guitar", "Package", "Radio", "Trash"
 ];
+
+const CategoryIcon = ({ name, color, className }: { name: string; color?: string; className?: string }) => {
+  const icons: any = {
+    Home, Building2, Sofa, Bed, Droplets, Zap, Utensils, Pizza, Coffee, Car,
+    Bus, Plane, ShoppingBag, Shirt, Smartphone, Laptop, Gamepad2, Stethoscope, Pill, GraduationCap,
+    Briefcase, Wallet, CreditCard, Banknote, PiggyBank, Palmtree, Music, Camera, Heart, Gift,
+    Baby, Dog, Cat, Hammer, Wrench, Lightbulb, Users, Dumbbell, Theater, Brush,
+    Guitar, Package, Radio, Trash
+  };
+
+  // Detectar si es emoji (compatibilidad)
+  const isEmoji = /[\u1000-\uFFFF]/.test(name) || name.length <= 2;
+  if (isEmoji) return <span className={className}>{name}</span>;
+
+  const IconComp = icons[name];
+  if (!IconComp) return <Tag className={className} style={{ color }} />;
+  return <IconComp className={className} style={{ color }} />;
+};
 
 const COLOR_OPTIONS = [
   "#02EAFF", "#9945FF", "#14F195", "#F97316", "#EF4444",
@@ -103,6 +110,12 @@ export default function CategoriasPage() {
   const [financialRule, setFinancialRule] = useState<FinancialRule>({ needs: 50, wants: 30, savings: 20 });
   const [showDefaultModal, setShowDefaultModal] = useState(false);
   const [isProcessingDefault, setIsProcessingDefault] = useState(false);
+  const [showOnlyMine, setShowOnlyMine] = useState(true);
+  const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
+    income: true,
+    expense: true,
+    savings: true
+  });
 
   const supabase = createClient();
 
@@ -184,6 +197,13 @@ export default function CategoriasPage() {
     }
   };
 
+  const toggleSection = (section: string) => {
+    setExpandedSections(prev => ({
+      ...prev,
+      [section]: !prev[section]
+    }));
+  };
+
   const handleDeleteCategory = async () => {
     if (!deletingCategory) return;
 
@@ -255,6 +275,8 @@ export default function CategoriasPage() {
     if (!showInactive && !cat.is_active) return false;
     // Search filter
     if (searchQuery && !cat.name.toLowerCase().includes(searchQuery.toLowerCase())) return false;
+    // Show only user categories filter
+    if (showOnlyMine && cat.is_default) return false;
     return true;
   }).sort((a, b) => {
     // Ordenar gastos por segmento (necesidades -> deseos)
@@ -298,10 +320,10 @@ export default function CategoriasPage() {
         <div className="flex items-center gap-2 sm:gap-3">
           {/* Icon */}
           <div
-            className="w-9 h-9 sm:w-12 sm:h-12 rounded-lg sm:rounded-xl flex items-center justify-center text-lg sm:text-2xl shrink-0"
+            className="w-9 h-9 sm:w-12 sm:h-12 rounded-lg sm:rounded-xl flex items-center justify-center shrink-0"
             style={{ backgroundColor: `${category.color}30` }}
           >
-            {category.icon}
+            <CategoryIcon name={category.icon} color={category.color} className="w-5 h-5 sm:w-7 sm:h-7" />
           </div>
 
           {/* Content */}
@@ -395,10 +417,10 @@ export default function CategoriasPage() {
           }`}
       >
         <div
-          className="w-7 h-7 sm:w-9 sm:h-9 rounded-lg flex items-center justify-center text-sm sm:text-lg shrink-0"
+          className="w-7 h-7 sm:w-9 sm:h-9 rounded-lg flex items-center justify-center shrink-0"
           style={{ backgroundColor: `${category.color}30` }}
         >
-          {category.icon}
+          <CategoryIcon name={category.icon} color={category.color} className="w-4 h-4 sm:w-5 sm:h-5" />
         </div>
         <h3 className="text-xs sm:text-sm font-medium truncate flex-1 min-w-0">{category.name}</h3>
         <TypeIcon className={`w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0 ${typeInfo.color}`} />
@@ -456,7 +478,7 @@ export default function CategoriasPage() {
                   <tr key={category.id} className={`border-b border-[var(--border)] last:border-b-0 hover:bg-[var(--background-secondary)]/50 transition-colors ${!category.is_active ? "opacity-60" : ""}`}>
                     <td className="px-2 sm:px-4 py-2 sm:py-3">
                       <div className="flex items-center gap-2">
-                        <span className="text-sm sm:text-base">{category.icon}</span>
+                        <CategoryIcon name={category.icon} color={category.color} className="w-4 h-4 sm:w-5 sm:h-5" />
                         <span className="font-medium truncate max-w-[100px] sm:max-w-none">{category.name}</span>
                         {category.is_default && (
                           <span className="text-[10px] px-1 py-0.5 rounded bg-[var(--brand-purple)]/10 text-[var(--brand-purple)] hidden sm:inline">Def</span>
@@ -508,52 +530,44 @@ export default function CategoriasPage() {
     );
   };
 
-  const renderCategories = (cats: Category[], groupTitle?: string, groupIcon?: React.ReactNode) => {
-    if (cats.length === 0) return null;
+  const renderCategories = (cats: Category[], type: "income" | "expense" | "savings", groupTitle: string, groupIcon: React.ReactNode) => {
+    if (cats.length === 0 && showOnlyMine) return null;
 
-    if (viewMode === "table") {
-      return (
-        <div>
-          {groupTitle && (
-            <div className="flex items-center gap-2 mb-2 sm:mb-3">
-              {groupIcon}
-              <h2 className="text-sm sm:text-base font-semibold">{groupTitle}</h2>
-              <span className="text-xs sm:text-sm text-[var(--brand-gray)]">({cats.length})</span>
-            </div>
-          )}
-          {renderCategoryTable(cats)}
-        </div>
-      );
-    }
+    const isExpanded = expandedSections[type];
 
-    if (viewMode === "list") {
-      return (
-        <div className="card overflow-hidden">
-          {groupTitle && (
-            <div className="flex items-center gap-2 px-3 sm:px-4 py-2 sm:py-3 border-b border-[var(--border)] bg-[var(--background-secondary)]">
-              {groupIcon}
-              <h2 className="text-sm sm:text-base font-semibold">{groupTitle}</h2>
-              <span className="text-xs sm:text-sm text-[var(--brand-gray)]">({cats.length})</span>
-            </div>
-          )}
-          {cats.map(renderCategoryListItem)}
-        </div>
-      );
-    }
-
-    // Cards view (default)
     return (
-      <div className="card p-3 sm:p-5">
-        {groupTitle && (
-          <div className="flex items-center gap-2 mb-3 sm:mb-4">
-            {groupIcon}
-            <h2 className="text-sm sm:text-base font-semibold">{groupTitle}</h2>
-            <span className="text-xs sm:text-sm text-[var(--brand-gray)]">({cats.length})</span>
+      <div className="space-y-3">
+        <button
+          onClick={() => toggleSection(type)}
+          className="w-full flex items-center justify-between p-3 sm:px-4 bg-[var(--background-secondary)]/50 hover:bg-[var(--background-secondary)] rounded-xl border border-[var(--border)] transition-all group"
+        >
+          <div className="flex items-center gap-3">
+            <div className={`p-2 rounded-lg bg-[var(--background)] border border-[var(--border)] group-hover:border-[var(--brand-purple)] transition-colors`}>
+              {groupIcon}
+            </div>
+            <div className="text-left">
+              <h2 className="text-sm sm:text-base font-bold">{groupTitle}</h2>
+              <p className="text-[10px] sm:text-xs text-[var(--brand-gray)]">{cats.length} categorías {type === 'expense' ? 'de gasto' : type === 'income' ? 'de ingreso' : 'de ahorro'}</p>
+            </div>
+          </div>
+          {isExpanded ? <ChevronUp className="w-5 h-5 text-[var(--brand-gray)]" /> : <ChevronDown className="w-5 h-5 text-[var(--brand-gray)]" />}
+        </button>
+
+        {isExpanded && (
+          <div className="animate-fade-in">
+            {viewMode === "table" ? (
+              renderCategoryTable(cats)
+            ) : viewMode === "list" ? (
+              <div className="card overflow-hidden">
+                {cats.map(renderCategoryListItem)}
+              </div>
+            ) : (
+              <div className="grid gap-2 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+                {cats.map(renderCategoryCard)}
+              </div>
+            )}
           </div>
         )}
-        <div className="grid gap-2 sm:gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-          {cats.map(renderCategoryCard)}
-        </div>
       </div>
     );
   };
@@ -675,6 +689,25 @@ export default function CategoriasPage() {
                 {tab.label}
               </button>
             ))}
+
+            <div className="ml-auto flex items-center gap-3">
+              {/* Show only mine toggle */}
+              <label className="flex items-center gap-2 px-3 py-1.5 sm:py-2 bg-[var(--background-secondary)] border border-[var(--border)] rounded-xl cursor-pointer hover:border-[var(--brand-purple)] transition-all">
+                <input
+                  type="checkbox"
+                  checked={showOnlyMine}
+                  onChange={(e) => setShowOnlyMine(e.target.checked)}
+                  className="hidden"
+                />
+                <div className={`w-8 h-4 rounded-full relative transition-colors ${showOnlyMine ? 'bg-[var(--brand-purple)]' : 'bg-gray-400'}`}>
+                  <div className={`absolute top-0.5 w-3 h-3 bg-white rounded-full transition-all ${showOnlyMine ? 'left-4.5' : 'left-0.5'}`} />
+                </div>
+                <span className="text-xs font-semibold whitespace-nowrap flex items-center gap-1.5">
+                  {showOnlyMine ? <Lock className="w-3 h-3" /> : <User2 className="w-3 h-3" />}
+                  Solo mis categorías
+                </span>
+              </label>
+            </div>
           </div>
 
           {/* Search, Segment Toggle, View Toggle & Inactive Toggle */}
@@ -757,31 +790,33 @@ export default function CategoriasPage() {
             <p className="mt-3 text-[var(--brand-gray)]">Cargando categorías...</p>
           </div>
         ) : filteredCategories.length === 0 ? (
-          <div className="card p-12 text-center">
-            <Tag className="w-16 h-16 text-[var(--brand-gray)] mx-auto mb-4" />
-            <h3 className="text-lg font-semibold mb-2">No hay categorías</h3>
-            <p className="text-[var(--brand-gray)] mb-6">
-              {searchQuery ? "No se encontraron categorías con ese nombre" : "Crea tu primera categoría personalizada"}
-            </p>
-            {!searchQuery && (
-              <button
-                onClick={() => {
-                  setEditingCategory(null);
-                  setShowCategoryModal(true);
-                }}
-                className="inline-flex items-center gap-2 px-6 py-3 rounded-xl gradient-brand text-white font-medium hover:opacity-90 transition-opacity"
-              >
-                <Plus className="w-5 h-5" />
-                Crear categoría
-              </button>
-            )}
+          <div className="flex items-center justify-center p-12 bg-[var(--background)] rounded-2xl border-2 border-dashed border-[var(--border)]">
+            <div className="text-center">
+              <Tag className="w-16 h-16 text-[var(--brand-gray)] mx-auto mb-4 opacity-20" />
+              <h3 className="text-lg font-bold mb-2">No se encontraron categorías</h3>
+              <p className="text-[var(--brand-gray)] max-w-xs mx-auto mb-6">
+                {searchQuery
+                  ? "No hay resultados para tu búsqueda actual."
+                  : showOnlyMine
+                    ? "Aún no has creado categorías propias. Desactiva el filtro superior para ver las predeterminadas."
+                    : "Crea tu primera categoría para empezar a organizar tus finanzas."}
+              </p>
+              {showOnlyMine && (
+                <button
+                  onClick={() => setShowOnlyMine(false)}
+                  className="px-6 py-2 rounded-xl bg-[var(--background-secondary)] border border-[var(--border)] font-bold hover:bg-[var(--border)] transition-colors"
+                >
+                  Ver categorías predeterminadas
+                </button>
+              )}
+            </div>
           </div>
         ) : filter === "all" ? (
           // Grouped view
           <div className="space-y-4 sm:space-y-6">
-            {renderCategories(groupedCategories.income, "Ingresos", <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 text-[var(--success)]" />)}
-            {renderCategories(groupedCategories.expense, "Gastos", <TrendingDown className="w-4 h-4 sm:w-5 sm:h-5 text-[var(--danger)]" />)}
-            {renderCategories(groupedCategories.savings, "Ahorro", <PiggyBank className="w-4 h-4 sm:w-5 sm:h-5 text-[var(--brand-cyan)]" />)}
+            {renderCategories(groupedCategories.income, "income", "Ingresos", <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 text-[var(--success)]" />)}
+            {renderCategories(groupedCategories.expense, "expense", "Gastos", <TrendingDown className="w-4 h-4 sm:w-5 sm:h-5 text-[var(--danger)]" />)}
+            {renderCategories(groupedCategories.savings, "savings", "Ahorro", <PiggyBank className="w-4 h-4 sm:w-5 sm:h-5 text-[var(--brand-cyan)]" />)}
           </div>
         ) : (
           // Flat view when filtered
@@ -1059,18 +1094,18 @@ function CategoryModal({
           {/* Icon */}
           <div>
             <label className="block text-sm font-medium mb-2">Icono</label>
-            <div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto p-2 bg-[var(--background-secondary)] rounded-xl">
+            <div className="grid grid-cols-6 sm:grid-cols-8 gap-2 p-3 bg-[var(--background-secondary)] rounded-xl max-h-48 overflow-y-auto">
               {ICON_OPTIONS.map((i) => (
                 <button
                   key={i}
                   type="button"
                   onClick={() => setIcon(i)}
-                  className={`w-10 h-10 rounded-lg flex items-center justify-center text-xl border-2 transition-all ${icon === i
-                    ? "border-[var(--brand-purple)] bg-[var(--brand-purple)]/10"
-                    : "border-transparent hover:border-[var(--border)]"
+                  className={`w-10 h-10 rounded-lg flex items-center justify-center border-2 transition-all ${icon === i
+                    ? "border-[var(--brand-purple)] bg-[var(--brand-purple)]/20"
+                    : "border-transparent hover:border-[var(--border)] bg-[var(--background)]"
                     }`}
                 >
-                  {i}
+                  <CategoryIcon name={i} className="w-5 h-5" />
                 </button>
               ))}
             </div>
@@ -1135,10 +1170,10 @@ function CategoryModal({
             <label className="block text-sm font-medium mb-2">Vista previa</label>
             <div className="p-4 rounded-xl bg-[var(--background-secondary)] flex items-center gap-3">
               <div
-                className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl"
+                className="w-12 h-12 rounded-xl flex items-center justify-center"
                 style={{ backgroundColor: `${color}20` }}
               >
-                {icon}
+                <CategoryIcon name={icon} color={color} className="w-7 h-7" />
               </div>
               <div>
                 <p className="font-medium">{name || "Nombre de categoría"}</p>
