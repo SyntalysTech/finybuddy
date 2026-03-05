@@ -16,6 +16,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Calendar,
+  Shield,
 } from "lucide-react";
 import { useProfile } from "@/hooks/useProfile";
 import { createClient } from "@/lib/supabase/client";
@@ -471,9 +472,9 @@ export default function DashboardPage() {
 
   // Helper variables para el super gráfico
   const innerData = [
-    { name: "Necesidades", value: monthlySummary?.needs_total || 0, color: "#ef4444", segment: "needs" },
-    { name: "Deseos", value: monthlySummary?.wants_total || 0, color: "#f59e0b", segment: "wants" },
-    { name: "Ahorro", value: monthlySummary?.total_savings || 0, color: "#06b6d4", segment: "savings" },
+    { name: "Necesidades", value: monthlySummary?.needs_total || 0, color: "#2EEB8F", segment: "needs" },
+    { name: "Deseos", value: monthlySummary?.wants_total || 0, color: "#8B4DFF", segment: "wants" },
+    { name: "Ahorro", value: monthlySummary?.total_savings || 0, color: "#02EAFF", segment: "savings" },
   ].filter(item => item.value > 0);
 
   const totalDistAmount = innerData.reduce((acc, curr) => acc + curr.value, 0);
@@ -668,8 +669,22 @@ export default function DashboardPage() {
             <h3 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4">Evolución mensual (últimos 6 meses)</h3>
             <div className="h-48 sm:h-64">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={barData} margin={{ top: 5, right: 5, left: -15, bottom: 5 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+                <BarChart data={barData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id="colorIngresos" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#10b981" stopOpacity={0.8} />
+                      <stop offset="95%" stopColor="#10b981" stopOpacity={0.1} />
+                    </linearGradient>
+                    <linearGradient id="colorGastos" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#ef4444" stopOpacity={0.8} />
+                      <stop offset="95%" stopColor="#ef4444" stopOpacity={0.1} />
+                    </linearGradient>
+                    <linearGradient id="colorAhorro" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#06b6d4" stopOpacity={0.8} />
+                      <stop offset="95%" stopColor="#06b6d4" stopOpacity={0.1} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" opacity={0.5} />
                   <XAxis
                     dataKey="name"
                     stroke="var(--brand-gray)"
@@ -712,9 +727,9 @@ export default function DashboardPage() {
                       </div>
                     )}
                   />
-                  <Bar dataKey="Ingresos" fill="#10b981" radius={[4, 4, 0, 0]} />
-                  <Bar dataKey="Gastos" fill="#ef4444" radius={[4, 4, 0, 0]} />
-                  <Bar dataKey="Ahorro" fill="#06b6d4" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="Ingresos" fill="url(#colorIngresos)" radius={[6, 6, 0, 0]} barSize={20} />
+                  <Bar dataKey="Gastos" fill="url(#colorGastos)" radius={[6, 6, 0, 0]} barSize={20} />
+                  <Bar dataKey="Ahorro" fill="url(#colorAhorro)" radius={[6, 6, 0, 0]} barSize={20} />
                 </BarChart>
               </ResponsiveContainer>
             </div>
@@ -735,37 +750,40 @@ export default function DashboardPage() {
 
                   {/* Etiqueta central flotante (absoluta) */}
                   <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none z-10">
-                    <div className={`bg-[var(--background)]/90 backdrop-blur-md px-6 py-4 rounded-full shadow-lg border border-[var(--border)] flex flex-col items-center justify-center text-center transition-all duration-300 min-w-[140px] pointer-events-auto ${selectedSegment ? 'cursor-pointer hover:bg-[var(--background)]' : ''}`}
+                    <div className={`bg-[var(--background)]/95 backdrop-blur-xl px-7 py-5 rounded-full shadow-2xl border border-[var(--border)] flex flex-col items-center justify-center text-center transition-all duration-500 min-w-[160px] pointer-events-auto ${selectedSegment ? 'cursor-pointer hover:scale-105 active:scale-95 group' : ''}`}
                       onClick={() => { if (selectedSegment) { setSelectedSegment(null); setActiveIndex(null); } }}>
                       {activeIndex !== null && displayData[activeIndex] ? (
-                        <>
-                          <p className="text-[10px] sm:text-xs font-semibold text-[var(--brand-gray)] uppercase tracking-wider mb-1 px-2 line-clamp-1">{displayData[activeIndex].name}</p>
-                          <p className="text-lg sm:text-xl font-bold" style={{ color: displayData[activeIndex].color }}>
+                        <div className="animate-in fade-in zoom-in duration-300">
+                          <p className="text-[10px] sm:text-xs font-bold text-[var(--brand-gray)] uppercase tracking-[0.15em] mb-1 px-2 line-clamp-1 translate-y-[-2px]">{displayData[activeIndex].name}</p>
+                          <p className="text-xl sm:text-2xl font-black tabular-nums tracking-tight" style={{ color: displayData[activeIndex].color }}>
                             {formatCurrency(displayData[activeIndex].value)}
                           </p>
-                          <p className="text-[10px] sm:text-xs font-semibold px-2 py-0.5 mt-1 rounded-full bg-[var(--background-secondary)]" style={{ color: displayData[activeIndex].color }}>
-                            {Math.round((displayData[activeIndex].value / currentTotal) * 100)}% {selectedSegment ? 'de la categoría' : 'del total'}
-                          </p>
-                        </>
+                          <div className="mt-1.5 flex items-center justify-center gap-1.5">
+                            <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ backgroundColor: displayData[activeIndex].color }} />
+                            <p className="text-[10px] sm:text-xs font-bold px-2 py-0.5 rounded-full bg-[var(--background-secondary)]" style={{ color: displayData[activeIndex].color }}>
+                              {Math.round((displayData[activeIndex].value / currentTotal) * 100)}% {selectedSegment ? 'categoría' : 'total'}
+                            </p>
+                          </div>
+                        </div>
                       ) : selectedSegment ? (
-                        <>
-                          <p className="text-[10px] sm:text-xs font-bold text-[var(--brand-cyan)] uppercase tracking-wider mb-1 px-2 flex items-center justify-center gap-1 group-hover:text-[var(--foreground)] transition-colors">
-                            <ChevronLeft className="w-3 h-3" /> VOLVER
-                          </p>
-                          <p className="text-lg sm:text-xl font-bold text-[var(--foreground)]">
+                        <div className="animate-in fade-in slide-in-from-bottom-2 duration-300 flex flex-col items-center">
+                          <div className="mb-1.5 p-1 rounded-full bg-[var(--brand-cyan)]/10 text-[var(--brand-cyan)] group-hover:bg-[var(--brand-cyan)] group-hover:text-white transition-all duration-300">
+                            <ChevronLeft className="w-4 h-4" />
+                          </div>
+                          <p className="text-xl sm:text-2xl font-black text-[var(--foreground)] tracking-tight">
                             {formatCurrency(currentTotal)}
                           </p>
-                          <p className="text-[10px] sm:text-xs text-[var(--brand-gray)] mt-1 font-medium capitalize">
+                          <p className="text-[10px] text-[var(--brand-gray)] font-bold uppercase tracking-wider mt-0.5">
                             Total {selectedSegment === "needs" ? "Necesidades" : selectedSegment === "wants" ? "Deseos" : "Ahorro"}
                           </p>
-                        </>
+                        </div>
                       ) : (
-                        <>
-                          <p className="text-xs sm:text-sm font-semibold text-[var(--brand-gray)] uppercase tracking-wider mb-1">Total Movido</p>
-                          <p className="text-xl sm:text-2xl font-bold text-[var(--foreground)]">
+                        <div className="animate-in fade-in duration-500 flex flex-col items-center">
+                          <p className="text-[10px] sm:text-xs font-bold text-[var(--brand-gray)] uppercase tracking-[0.2em] mb-1.5">Distribución</p>
+                          <p className="text-2xl sm:text-3xl font-black text-[var(--foreground)] tracking-tighter">
                             {formatCurrency(currentTotal)}
                           </p>
-                        </>
+                        </div>
                       )}
                     </div>
                   </div>
@@ -845,30 +863,57 @@ export default function DashboardPage() {
                   ))}
                 </div>
 
-                {/* Detalle Categorías (Se muestra al hacer click) */}
-                <div className="mt-4 pt-4 border-t border-[var(--border)] w-full">
-                  <h4 className="text-sm font-semibold mb-3 text-center text-[var(--brand-gray)]">
-                    {selectedSegment
-                      ? `Detalle de ${selectedSegment === "needs" ? "Necesidades" : selectedSegment === "wants" ? "Deseos" : "Ahorro"}`
-                      : "Haz clic en el gráfico para ver el detalle"}
-                  </h4>
-                  {selectedSegment && (
-                    <div className="space-y-2 max-h-40 overflow-y-auto pr-1 flex flex-col items-center custom-scrollbar animate-fade-in">
+                {/* Detalle Categorías (Se muestra al hacer click) - REDISEÑO PREMIUM */}
+                <div className="mt-8 pt-6 border-t border-[var(--border)] w-full">
+                  <div className="flex items-center justify-between mb-5">
+                    <h4 className="text-xs sm:text-sm font-bold uppercase tracking-[0.1em] text-[var(--brand-gray)]">
+                      {selectedSegment
+                        ? `Desglose: ${selectedSegment === "needs" ? "Necesidades" : selectedSegment === "wants" ? "Deseos" : "Ahorro"}`
+                        : "Detalles por categorías"}
+                    </h4>
+                    {selectedSegment && (
+                      <button
+                        onClick={() => { setSelectedSegment(null); setActiveIndex(null); }}
+                        className="text-[10px] font-bold text-[var(--brand-cyan)] hover:opacity-70 transition-all flex items-center gap-1 bg-[var(--brand-cyan)]/5 px-2 py-1 rounded-lg"
+                      >
+                        <ChevronLeft className="w-3 h-3" /> VOLVER
+                      </button>
+                    )}
+                  </div>
+
+                  {selectedSegment ? (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-64 overflow-y-auto pr-1 custom-scrollbar animate-in fade-in slide-in-from-bottom-4 duration-500">
                       {categoryDistribution
                         .filter(c => c.segment === selectedSegment)
+                        .sort((a, b) => b.amount - a.amount)
                         .map(c => (
-                          <div key={c.id} className="flex items-center justify-between text-sm p-3 rounded-xl bg-gradient-to-r from-[var(--background-secondary)]/50 to-[var(--background-secondary)] w-full w-full border border-transparent hover:border-[var(--border)] transition-all duration-300 shadow-sm relative overflow-hidden group">
-                            <div className="absolute left-0 top-0 bottom-0 w-1 opacity-80 group-hover:opacity-100 transition-opacity" style={{ backgroundColor: c.color }}></div>
-                            <div className="flex items-center gap-3 pl-2">
-                              <span className="w-2.5 h-2.5 rounded-full shadow-[0_0_8px_rgba(255,255,255,0.2)]" style={{ backgroundColor: c.color }} />
-                              <span className="font-medium truncate max-w-[140px] text-[var(--foreground)]">{c.name}</span>
+                          <div key={c.id} className="flex items-center justify-between p-3.5 rounded-2xl bg-[var(--background-secondary)] border border-[var(--border)]/50 hover:border-[var(--brand-cyan)]/30 transition-all duration-300 group hover:shadow-md">
+                            <div className="flex items-center gap-3">
+                              <div className="w-2 h-8 rounded-full opacity-60 group-hover:opacity-100 transition-all" style={{ backgroundColor: c.color }}></div>
+                              <div className="flex flex-col">
+                                <span className="text-xs font-bold text-[var(--foreground)] line-clamp-1">{c.name}</span>
+                                <span className="text-[10px] font-medium text-[var(--brand-gray)]">{Math.round((c.amount / currentTotal) * 100)}% del total</span>
+                              </div>
                             </div>
-                            <span className="font-bold tabular-nums" style={{ color: c.color }}>{formatCurrency(c.amount)}</span>
+                            <span className="font-black text-sm tabular-nums" style={{ color: c.color }}>{formatCurrency(c.amount)}</span>
                           </div>
                         ))}
-                      {categoryDistribution.filter(c => c.segment === selectedSegment).length === 0 && (
-                        <p className="text-xs text-[var(--brand-gray)]">No hay operaciones específicas categorizadas aquí todavía.</p>
-                      )}
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      {innerData.map(macro => (
+                        <div
+                          key={macro.segment}
+                          onClick={() => setSelectedSegment(macro.segment as any)}
+                          className="p-4 rounded-2xl bg-[var(--background-secondary)] border border-transparent hover:border-[var(--brand-cyan)]/30 cursor-pointer transition-all duration-300 flex flex-col items-center text-center group active:scale-95"
+                        >
+                          <div className="w-10 h-10 rounded-2xl flex items-center justify-center mb-3 transition-transform group-hover:scale-110" style={{ backgroundColor: `${macro.color}15`, color: macro.color }}>
+                            {macro.segment === 'needs' ? <Shield className="w-5 h-5" /> : macro.segment === 'wants' ? <Sparkles className="w-5 h-5" /> : <Wallet className="w-5 h-5" />}
+                          </div>
+                          <span className="text-[10px] font-bold text-[var(--brand-gray)] uppercase tracking-wider mb-1">{macro.name}</span>
+                          <span className="text-base font-black text-[var(--foreground)]">{formatCurrency(macro.value)}</span>
+                        </div>
+                      ))}
                     </div>
                   )}
                 </div>
@@ -958,9 +1003,9 @@ export default function DashboardPage() {
                     <p className="text-xs sm:text-sm text-[var(--brand-gray)]">progreso total</p>
                   </div>
                 </div>
-                <div className="h-2 sm:h-2.5 rounded-full overflow-hidden bg-[#0284C7]/20">
+                <div className="h-2 sm:h-2.5 rounded-full overflow-hidden bg-[var(--background-secondary)] shadow-inner">
                   <div
-                    className="h-full rounded-full bg-gradient-to-r from-[#0369A1] via-[#0284C7] to-[#02EAFF]"
+                    className="h-full rounded-full bg-gradient-to-r from-[var(--brand-purple)] via-[var(--brand-cyan)] to-[var(--brand-cyan)] animate-shimmer"
                     style={{ width: `${Math.min(savingsSummary.overall_progress, 100)}%` }}
                   />
                 </div>
@@ -1009,9 +1054,9 @@ export default function DashboardPage() {
                     <p className="text-xs sm:text-sm text-[var(--brand-gray)]">pagado</p>
                   </div>
                 </div>
-                <div className="progress-bar h-1.5 sm:h-2 overflow-hidden">
+                <div className="progress-bar h-1.5 sm:h-2 overflow-hidden bg-[var(--background-secondary)] shadow-inner">
                   <div
-                    className="progress-bar-fill bg-gradient-to-r from-[var(--warning)] to-[var(--success)]"
+                    className="progress-bar-fill bg-gradient-to-r from-[#FF4D4D] via-[#F59E0B] to-[#10B981]"
                     style={{ width: `${Math.min(debtsSummary.overall_progress, 100)}%` }}
                   />
                 </div>
