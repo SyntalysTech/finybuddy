@@ -431,62 +431,73 @@ export default function DashboardPage() {
 
   // Finy interpretation based on financial data - Tono cercano y educativo
   const getFinyMessage = () => {
-    if (!monthlySummary) return null;
-
-    const { total_income, total_expenses, total_savings, needs_total, wants_total, savings_total } = monthlySummary;
-    const balance = total_income - total_expenses - total_savings;
+    if (!monthlySummary) return ["Cargando análisis..."];
+    const { total_income, total_expenses, needs_total, wants_total, total_savings: savings_total } = monthlySummary;
     const ruleNeeds = profile?.rule_needs_percent ?? 50;
     const ruleWants = profile?.rule_wants_percent ?? 30;
     const ruleSavings = profile?.rule_savings_percent ?? 20;
 
     const messages: string[] = [];
 
-    // Analyze income vs expenses
-    if (balance < 0) {
-      messages.push(`Este mes los gastos superan a los ingresos en ${formatCurrency(Math.abs(balance))}. Conviene revisar dónde puedes ajustar.`);
-    } else if (balance > total_income * 0.3) {
-      messages.push(`Tienes ${formatCurrency(balance)} de margen este mes. Buen momento para destinar parte al ahorro.`);
-    } else if (balance > 0) {
-      messages.push(`Balance positivo de ${formatCurrency(balance)}. Vas por buen camino.`);
+    // Cálculos avanzados para el analista
+    const daysInMonth = new Date(selectedYear, selectedMonth, 0).getDate();
+    const currentDay = selectedDate.getMonth() === new Date().getMonth() && selectedDate.getFullYear() === new Date().getFullYear()
+      ? new Date().getDate()
+      : daysInMonth;
+
+    const remainingDays = daysInMonth - currentDay;
+    const balance = total_income - total_expenses;
+    const avgDailyExpense = total_expenses / (currentDay || 1);
+    const projectedExpenses = avgDailyExpense * daysInMonth;
+    const projectedBalance = total_income - projectedExpenses;
+
+    // 1. Proyección de fin de mes
+    if (total_income > 0 && total_expenses > 0) {
+      if (projectedBalance > 0) {
+        messages.push(`Proyectas terminar el mes con un excedente de ${formatCurrency(projectedBalance)}.`);
+      } else {
+        messages.push(`¡Alerta! Con este ritmo de gasto podrías terminar el mes con ${formatCurrency(Math.abs(projectedBalance))} en negativo.`);
+      }
     }
 
-    // Analyze rule compliance
+    // 2. Margen de maniobra
+    const dailyMargin = balance > 0 ? balance / (remainingDays || 1) : 0;
+    if (dailyMargin > 0 && remainingDays > 0) {
+      messages.push(`Cuentas con un margen diario de ${formatCurrency(dailyMargin)} para mantenerte en positivo hasta fin de mes.`);
+    }
+
+    // 3. Análisis de Reglas (50/30/20)
     if (total_income > 0) {
-      const needsActualPercent = (needs_total / total_income) * 100;
-      const wantsActualPercent = (wants_total / total_income) * 100;
-      const savingsActualPercent = (savings_total / total_income) * 100;
+      const needsPercent = (needs_total / total_income) * 100;
+      const wantsPercent = (wants_total / total_income) * 100;
+      const savingsPercent = (savings_total / total_income) * 100;
 
-      if (needsActualPercent > ruleNeeds * 1.2) {
-        const excess = Math.round(needsActualPercent - ruleNeeds);
-        messages.push(`Las necesidades están un ${excess}% por encima del objetivo. Revisa si hay algún gasto recortable.`);
+      if (needsPercent > ruleNeeds + 5) {
+        messages.push(`Tus Necesidades (${Math.round(needsPercent)}%) superan el objetivo del ${ruleNeeds}%. Evalúa gastos fijos.`);
       }
-      if (wantsActualPercent > ruleWants * 1.2) {
-        const excess = Math.round(wantsActualPercent - ruleWants);
-        messages.push(`Los deseos superan el objetivo en un ${excess}%. Puede ser buena idea moderar los siguientes días.`);
+      if (wantsPercent > ruleWants + 5) {
+        messages.push(`Tus Deseos están en el ${Math.round(wantsPercent)}%. Intenta priorizar el ahorro los próximos días.`);
       }
-      if (savingsActualPercent < ruleSavings * 0.5 && total_income > 0) {
-        messages.push("El ahorro va por debajo de lo esperado. Cualquier aportación, por pequeña que sea, suma.");
-      } else if (savingsActualPercent >= ruleSavings) {
-        messages.push("Ahorro bien cubierto este mes. Buen trabajo.");
+      if (savingsPercent >= ruleSavings) {
+        messages.push(`¡Enhorabuena! Has alcanzado tu objetivo de ahorro del ${ruleSavings}% de tus ingresos.`);
+      } else if (savingsPercent < ruleSavings * 0.5) {
+        messages.push(`El ahorro actual (${Math.round(savingsPercent)}%) es bajo. Intenta destinar un extra si recibes algún ingreso.`);
       }
     }
 
-    // Check savings goals
-    if (savingsSummary && savingsSummary.active_goals > 0) {
-      if (savingsSummary.overall_progress >= 90 && savingsSummary.overall_progress < 100) {
-        messages.push(`Metas de ahorro al ${savingsSummary.overall_progress}%. Ya casi lo consigues.`);
-      } else if (savingsSummary.overall_progress < 30) {
-        messages.push("Las metas de ahorro avanzan despacio. Puedes revisarlas cuando quieras.");
-      }
+    // 4. Metas y Deudas
+    if (savingsSummary && savingsSummary.active_goals > 0 && savingsSummary.overall_progress < 100) {
+      messages.push(`Tus metas de ahorro están al ${Math.round(savingsSummary.overall_progress)}%. Estás a un paso de tus objetivos.`);
     }
 
-    // Check debts
-    if (debtsSummary && debtsSummary.active_debts > 0) {
-      if (debtsSummary.overall_progress >= 80) {
-        messages.push(`Deudas al ${debtsSummary.overall_progress}% pagadas. Ya casi las eliminas.`);
-      } else if (debtsSummary.overall_progress < 20) {
-        messages.push("Las deudas avanzan despacio. Priorizar los pagos puede reducir el coste total en intereses.");
-      }
+    if (debtsSummary && debtsSummary.active_debts > 0 && debtsSummary.overall_progress < 100) {
+      messages.push(`Llevas liquidado el ${Math.round(debtsSummary.overall_progress)}% de tus deudas. ¡Sigue así!`);
+    }
+
+    // 5. Libertad Financiera (Cojín generado este mes)
+    const daysOfFreedom = balance > 0 ? Math.floor(balance / (avgDailyExpense || 1)) : 0;
+    if (daysOfFreedom > 0) {
+      messages.push(`Has generado ${daysOfFreedom} días de libertad financiera extra con la gestión de este mes.`);
     }
 
     return messages.length > 0 ? messages : ["Todo controlado por ahora. Sigue así."];
@@ -988,130 +999,6 @@ export default function DashboardPage() {
 
           {/* Finy Intelligence Column */}
           <div className="flex flex-col gap-4 sm:gap-6">
-            {/* SURPRESA: Finy Time Machine / Predictive Analysis */}
-            <div className="group relative card-glass p-5 sm:p-7 overflow-hidden animate-slide-in-right stagger-2 border border-white/10 dark:border-white/5 shadow-2xl">
-              {/* Background interactive particles decoration */}
-              <div className="absolute top-0 right-0 -mr-16 -mt-16 w-64 h-64 bg-gradient-to-br from-[var(--brand-purple)]/20 via-[var(--brand-cyan)]/10 to-transparent rounded-full blur-3xl group-hover:scale-125 transition-transform duration-1000" />
-
-              <div className="relative z-10">
-                <div className="flex items-center justify-between mb-6">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-[var(--brand-cyan)] to-[var(--brand-purple)] flex items-center justify-center shadow-lg shadow-cyan-500/30 group-hover:rotate-6 transition-transform">
-                      <Rocket className="w-5 h-5 text-white animate-pulse" />
-                    </div>
-                    <div>
-                      <h3 className="text-sm sm:text-base font-black tracking-tight uppercase">Finy Predictor Premium</h3>
-                      <div className="flex items-center gap-1.5">
-                        <span className="w-1.5 h-1.5 rounded-full bg-[var(--brand-cyan)] animate-pulse" />
-                        <span className="text-[9px] font-bold text-[var(--brand-cyan)] uppercase tracking-widest">Motor AI Activo</span>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="px-3 py-1 rounded-full bg-white/5 border border-white/10 text-[10px] font-black text-[var(--brand-gray)] uppercase tracking-widest">v2.4</div>
-                </div>
-
-                <div className="space-y-5">
-                  <div className="p-4 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-xl relative group/box overflow-hidden hover:border-[var(--brand-cyan)]/30 transition-colors">
-                    <div className="absolute inset-0 bg-gradient-to-r from-[var(--brand-cyan)]/5 to-transparent opacity-0 group-hover/box:opacity-100 transition-opacity" />
-                    <p className="text-[10px] text-[var(--brand-gray)] uppercase font-black tracking-widest mb-2">Proyección Fin de Mes</p>
-                    <div className="flex items-end justify-between relative z-10">
-                      <div>
-                        <p className="text-3xl sm:text-4xl font-black text-[var(--foreground)] tracking-tighter tabular-nums drop-shadow-md">
-                          {loading ? "..." : formatCurrency(
-                            (monthlySummary?.total_income || 0) - ((monthlySummary?.total_expenses || 0) / (Math.max(1, new Date().getDate()))) * new Date(selectedYear, selectedMonth, 0).getDate()
-                          )}
-                        </p>
-                        <div className="flex items-center gap-2 mt-2">
-                          <TrendingDown className="w-3.5 h-3.5 text-[var(--danger)]" />
-                          <p className="text-[10px] font-bold text-[var(--brand-gray)] uppercase tracking-tighter">Cálculo basado en ritmo real</p>
-                        </div>
-                      </div>
-                      {(monthlySummary?.total_income || 0) > 0 && (
-                        <div className="relative group/health">
-                          <svg className="w-14 h-14 sm:w-16 sm:h-16 transform -rotate-90 drop-shadow-[0_0_8px_rgba(2,234,255,0.2)]">
-                            <circle cx="32" cy="32" r="28" stroke="currentColor" strokeWidth="5" fill="transparent" className="text-slate-200 dark:text-white/5" />
-                            <circle
-                              cx="32" cy="32" r="28" stroke="url(#healthGradient)" strokeWidth="5" fill="transparent"
-                              strokeDasharray={175.9}
-                              strokeDashoffset={175.9 - (175.9 * Math.max(0, Math.min(100, Math.round(((monthlySummary?.total_income || 0) - (monthlySummary?.total_expenses || 0)) / (monthlySummary?.total_income || 1) * 100)))) / 100}
-                              className="transition-all duration-1000 ease-out"
-                              strokeLinecap="round"
-                            />
-                            <defs>
-                              <linearGradient id="healthGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                                <stop offset="0%" stopColor="#02EAFF" />
-                                <stop offset="100%" stopColor="#7739FE" />
-                              </linearGradient>
-                            </defs>
-                          </svg>
-                          <div className="absolute inset-0 flex flex-col items-center justify-center">
-                            <span className="text-xs font-black text-[var(--foreground)] tracking-tighter">
-                              {Math.max(0, Math.round(((monthlySummary?.total_income || 0) - (monthlySummary?.total_expenses || 0)) / (monthlySummary?.total_income || 1) * 100))}%
-                            </span>
-                            <span className="text-[7px] font-bold text-[var(--brand-gray)] uppercase leading-none">Salud</span>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="p-4 rounded-2xl bg-[var(--success)]/5 border border-[var(--success)]/10 hover:border-[var(--success)]/40 transition-all group/stat relative overflow-hidden">
-                      <div className="absolute -top-1 -right-1 p-2 opacity-10 group-hover/stat:scale-125 group-hover/stat:rotate-12 transition-all">
-                        <TrendingUp className="w-8 h-8 text-[var(--success)]" />
-                      </div>
-                      <p className="text-[10px] text-[var(--success)] font-black uppercase tracking-tighter mb-1 relative z-10">Margen diario</p>
-                      <p className="text-xl font-bold text-[var(--foreground)] tabular-nums relative z-10">
-                        {formatCurrency(Math.max(0, ((monthlySummary?.total_income || 0) - (monthlySummary?.total_expenses || 0)) / 30))}
-                      </p>
-                    </div>
-                    <div className="p-4 rounded-2xl bg-[var(--brand-purple)]/5 border border-[var(--brand-purple)]/10 hover:border-[var(--brand-purple)]/40 transition-all group/stat relative overflow-hidden">
-                      <div className="absolute -top-1 -right-1 p-2 opacity-10 group-hover/stat:scale-125 group-hover/stat:rotate-12 transition-all">
-                        <Sparkles className="w-8 h-8 text-[var(--brand-purple)]" />
-                      </div>
-                      <p className="text-[10px] text-[var(--brand-purple)] font-black uppercase tracking-tighter mb-1 relative z-10">Libertad extra</p>
-                      <p className="text-xl font-bold text-[var(--foreground)] relative z-10">+{Math.max(0, Math.floor(((monthlySummary?.total_income || 0) - (monthlySummary?.total_expenses || 0)) / ((monthlySummary?.total_expenses || 1) / 30)))} días</p>
-                    </div>
-                  </div>
-
-                  <button
-                    onClick={() => {
-                      setIsScanning(true);
-                      setScanProgress(0);
-                      const interval = setInterval(() => {
-                        setScanProgress(prev => {
-                          if (prev >= 100) {
-                            clearInterval(interval);
-                            setTimeout(() => setIsScanning(false), 800);
-                            return 100;
-                          }
-                          return prev + 5;
-                        });
-                      }, 40);
-                    }}
-                    disabled={isScanning}
-                    className="w-full py-4 rounded-xl bg-gradient-to-r from-[var(--brand-cyan)] via-[var(--brand-cyan)] to-[var(--brand-purple)] text-white text-[11px] font-black uppercase tracking-[0.3em] shadow-xl shadow-cyan-500/30 hover:shadow-cyan-500/50 hover:scale-[1.02] active:scale-[0.98] transition-all group overflow-hidden relative"
-                  >
-                    <span className="relative z-10 flex items-center justify-center gap-3">
-                      {isScanning ? (
-                        <>
-                          <div className="w-4 h-4 rounded-full border-2 border-white/30 border-t-white animate-spin" />
-                          Escaneando Cartera {scanProgress}%
-                        </>
-                      ) : (
-                        <>
-                          <Zap className="w-4 h-4 animate-bounce-subtle" /> Deep Scan de Cartera
-                        </>
-                      )}
-                    </span>
-                    {isScanning && (
-                      <div className="absolute inset-0 bg-white/20 animate-pulse" />
-                    )}
-                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent translate-x-[-100%] group-hover:animate-sweep"></div>
-                  </button>
-                </div>
-              </div>
-            </div>
 
             {/* Finy AI Analyst Panel - Con Viñetas Ultra-Premium */}
             <div className="glass-brand rounded-2xl p-6 sm:p-8 animate-slide-in-right relative overflow-hidden flex-1 border border-white/10 dark:border-white/5 shadow-2xl">
