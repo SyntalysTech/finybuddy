@@ -386,20 +386,18 @@ function PrevisionVsRealidadPageContent() {
         {/* Variance */}
         <div className="w-24 text-right flex items-center justify-end gap-1">
           {varianceIcon}
-          <span className={`font-medium ${
-            item.difference >= 0
+          <span className={`font-medium ${item.difference >= 0
               ? (isExpense ? "text-[var(--success)]" : "text-[var(--danger)]")
               : (isExpense ? "text-[var(--danger)]" : "text-[var(--success)]")
-          }`}>
+            }`}>
             {formatCurrency(Math.abs(item.difference))}
           </span>
         </div>
 
         {/* Percentage */}
         <div className="w-16 text-right">
-          <span className={`text-sm font-semibold ${
-            item.percentage > 100 && isExpense ? "text-[var(--danger)]" : ""
-          }`}>
+          <span className={`text-sm font-semibold ${item.percentage > 100 && isExpense ? "text-[var(--danger)]" : ""
+            }`}>
             {Math.round(item.percentage)}%
           </span>
         </div>
@@ -659,23 +657,25 @@ function PrevisionVsRealidadPageContent() {
               </div>
             )}
 
+            {/* Ahorro Total y por Segmentos */}
             {savingsSegmentData.length > 0 && (
               <div className="card overflow-hidden">
                 <button
-                  onClick={() => togglePanel('savingsSegment')}
-                  className="w-full px-6 py-4 border-b border-[var(--border)] bg-[var(--brand-purple)]/5 hover:bg-[var(--brand-purple)]/10 transition-colors"
+                  onClick={() => togglePanel('savingsTotal')}
+                  className="w-full px-6 py-4 border-b border-[var(--border)] bg-[var(--brand-cyan)]/5 hover:bg-[var(--brand-cyan)]/10 transition-colors"
                 >
                   <div className="flex items-center justify-between mb-2">
                     <h3 className="font-semibold flex items-center gap-2">
-                      Ahorro planificado por categoría
-                      {expandedPanels.savingsSegment ? (
+                      <PiggyBank className="w-5 h-5 text-[var(--brand-cyan)]" />
+                      Ahorro total del mes
+                      {expandedPanels.savingsTotal ? (
                         <ChevronUp className="w-4 h-4 text-[var(--brand-gray)]" />
                       ) : (
                         <ChevronDown className="w-4 h-4 text-[var(--brand-gray)]" />
                       )}
                     </h3>
                     <div className="text-right text-sm">
-                      <span className="font-bold text-[var(--brand-purple)]">{formatCurrency(savingsSegmentActual)}</span>
+                      <span className="font-bold text-[var(--brand-cyan)]">{formatCurrency(savingsSegmentActual)}</span>
                       <span className="text-[var(--brand-gray)]"> / {formatCurrency(savingsSegmentBudgeted)}</span>
                       <span className="ml-2 font-medium">
                         ({savingsSegmentBudgeted > 0 ? Math.min(Math.round((savingsSegmentActual / savingsSegmentBudgeted) * 100), 999) : savingsSegmentActual > 0 ? 100 : 0}%)
@@ -684,63 +684,14 @@ function PrevisionVsRealidadPageContent() {
                   </div>
                   <div className="h-2 bg-[var(--border)] rounded-full overflow-hidden">
                     <div
-                      className={`h-full rounded-full transition-all ${savingsSegmentActual >= savingsSegmentBudgeted ? "bg-[var(--success)]" : "bg-[var(--brand-purple)]"}`}
+                      className={`h-full rounded-full transition-all ${savingsSegmentActual >= savingsSegmentBudgeted ? "bg-[var(--success)]" : "bg-[var(--brand-cyan)]"}`}
                       style={{ width: `${savingsSegmentBudgeted > 0 ? Math.min((savingsSegmentActual / savingsSegmentBudgeted) * 100, 100) : savingsSegmentActual > 0 ? 100 : 0}%` }}
                     />
                   </div>
                 </button>
-                {expandedPanels.savingsSegment && (
+                {expandedPanels.savingsTotal && (
                   <div className="divide-y divide-[var(--border)]">
                     {savingsSegmentData.map(renderComparisonRow)}
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Ahorro Global: Previsto vs Real */}
-            {(budgetedSavings > 0 || actualSavings > 0) && (
-              <div className="card overflow-hidden">
-                <button
-                  onClick={() => togglePanel('savingsTotal')}
-                  className="w-full px-6 py-4 border-b border-[var(--border)] bg-[var(--brand-cyan)]/5 hover:bg-[var(--brand-cyan)]/10 transition-colors"
-                >
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="flex items-center gap-2">
-                      <PiggyBank className="w-5 h-5 text-[var(--brand-cyan)]" />
-                      <h3 className="font-semibold">Ahorro total del mes</h3>
-                      {expandedPanels.savingsTotal ? (
-                        <ChevronUp className="w-4 h-4 text-[var(--brand-gray)]" />
-                      ) : (
-                        <ChevronDown className="w-4 h-4 text-[var(--brand-gray)]" />
-                      )}
-                    </div>
-                    <div className="text-right text-sm">
-                      <span className="font-bold text-[var(--brand-cyan)]">{formatCurrency(actualSavings)}</span>
-                      <span className="text-[var(--brand-gray)]"> / {formatCurrency(budgetedSavings)}</span>
-                      <span className="ml-2 font-medium">
-                        ({budgetedSavings > 0 ? Math.min(Math.round((actualSavings / budgetedSavings) * 100), 999) : actualSavings > 0 ? 100 : 0}%)
-                      </span>
-                    </div>
-                  </div>
-                  <div className="h-2 bg-[var(--border)] rounded-full overflow-hidden">
-                    <div
-                      className={`h-full rounded-full transition-all ${actualSavings >= budgetedSavings ? "bg-[var(--success)]" : "bg-[var(--brand-cyan)]"}`}
-                      style={{ width: `${budgetedSavings > 0 ? Math.min((actualSavings / budgetedSavings) * 100, 100) : actualSavings > 0 ? 100 : 0}%` }}
-                    />
-                  </div>
-                </button>
-                {expandedPanels.savingsTotal && (
-                  <div className="p-4">
-                    {/* Message */}
-                    <p className={`text-sm text-center ${actualSavings >= budgetedSavings ? "text-[var(--success)]" : "text-[var(--brand-gray)]"}`}>
-                      {budgetedSavings === 0 && actualSavings === 0
-                        ? "No hay datos de ahorro para este mes"
-                        : budgetedSavings === 0
-                          ? `Has ahorrado ${formatCurrency(actualSavings)} sin previsión`
-                          : actualSavings >= budgetedSavings
-                            ? "Has alcanzado o superado tu meta de ahorro"
-                            : `Te faltan ${formatCurrency(budgetedSavings - actualSavings)} para alcanzar tu objetivo`}
-                    </p>
                   </div>
                 )}
               </div>
