@@ -108,8 +108,8 @@ export default function FinyInfoPanel({
           {dynamicMessages && dynamicMessages.length > 0 && (
             <div className="space-y-1.5 px-0.5">
               {dynamicMessages.map((message, index) => (
-                <p key={index} className="text-xs sm:text-sm text-[var(--foreground)]/90 flex items-start gap-2 px-2 py-1.5 rounded-lg hover:bg-[var(--brand-cyan)]/10 transition-all duration-200 cursor-default group/item">
-                  <span className="text-[var(--brand-cyan)] mt-0.5 shrink-0 text-base leading-none opacity-60 group-hover/item:scale-125 transition-transform">&#x2022;</span>
+                <p key={index} className="text-xs sm:text-sm text-[var(--foreground)]/90 flex items-start gap-2 px-2 py-1.5 rounded-lg bg-[var(--brand-cyan)]/10 transition-all duration-200 cursor-default">
+                  <span className="text-[var(--brand-cyan)] mt-0.5 shrink-0 text-base leading-none opacity-80 scale-110">&#x2022;</span>
                   <span>{message}</span>
                 </p>
               ))}
