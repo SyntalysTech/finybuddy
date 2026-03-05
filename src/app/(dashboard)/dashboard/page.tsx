@@ -684,7 +684,7 @@ export default function DashboardPage() {
               />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm sm:text-base font-bold text-white mb-0.5 leading-normal">
+              <p className="text-sm sm:text-base font-bold text-[var(--foreground)] mb-0.5 leading-normal">
                 {loading ? "Analizando tus datos..." : contextualPhrase}
               </p>
               <p className="text-[10px] sm:text-xs text-[var(--brand-gray)] italic line-clamp-2 leading-relaxed opacity-90">
