@@ -259,16 +259,17 @@ const generateFinyInsights = (
   }
 
   // 3. Insight de Distribución Estratégica
-  const totalCategorized = summary.needs_total + summary.wants_total + summary.total_savings;
-  if (totalCategorized > 0) {
-    const needsPct = Math.round((summary.needs_total / totalCategorized) * 100);
-    const wantsPct = Math.round((summary.wants_total / totalCategorized) * 100);
+  const baseTotal = summary.total_income > 0 ? summary.total_income : (summary.needs_total + summary.wants_total + summary.total_savings);
+
+  if (baseTotal > 0 && summary.needs_total + summary.wants_total > 0) {
+    const needsPct = Math.round((summary.needs_total / baseTotal) * 100);
+    const wantsPct = Math.round((summary.wants_total / baseTotal) * 100);
     if (needsPct > ruleNeeds + 10) {
-      insights.push(`Revisando tu gráfico de distribución, tus "Necesidades" consumen el ${needsPct}% de tus salidas. Estás algo por encima del ${ruleNeeds}% ideal fijado para ti. Cuidado con la inflación de estilo de vida fijo.`);
+      insights.push(`Revisando tu gráfico de distribución, tus "Necesidades" consumen el ${needsPct}% de tus ingresos totales. Estás algo por encima del ${ruleNeeds}% ideal fijado para ti. Cuidado con la inflación de estilo de vida fijo.`);
     } else if (wantsPct > ruleWants + 10) {
-      insights.push(`Tus "Deseos" representan ahora mismo el ${wantsPct}% de la distribución del mes. Intenta ajustar este porcentaje hacia tu meta personal del ${ruleWants}% para blindar tu planificación mensual.`);
-    } else if (wantsPct > 0 || needsPct > 0) {
-      insights.push(`¡Excelente equilibrio! Tienes una distribución muy sana entre tus necesidades (${needsPct}%) y deseos (${wantsPct}%). Estás demostrando un perfil ahorrador ejemplar.`);
+      insights.push(`Tus "Deseos" representan ahora mismo el ${wantsPct}% de tus ingresos del mes. Intenta ajustar este porcentaje hacia tu meta personal del ${ruleWants}% para blindar tu planificación mensual.`);
+    } else {
+      insights.push(`¡Excelente equilibrio! Tienes una distribución muy sana de tus ingresos (Necesidades: ${needsPct}%, Deseos: ${wantsPct}%). Estás demostrando un perfil ahorrador ejemplar.`);
     }
   }
 
