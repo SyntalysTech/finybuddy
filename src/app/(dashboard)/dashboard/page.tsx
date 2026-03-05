@@ -17,6 +17,8 @@ import {
   ChevronRight,
   Calendar,
   Shield,
+  Rocket,
+  Zap,
 } from "lucide-react";
 import { useProfile } from "@/hooks/useProfile";
 import { createClient } from "@/lib/supabase/client";
@@ -976,48 +978,115 @@ export default function DashboardPage() {
             )}
           </div>
 
-          {/* Finy Interpretation Panel */}
-          <div className="glass-brand rounded-xl sm:rounded-2xl p-4 sm:p-6 animate-slide-in-right relative overflow-hidden">
-            {/* Subtle decorative gradient */}
-            <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-[var(--brand-cyan)]/5 to-transparent rounded-bl-full pointer-events-none" />
 
-            <div className="flex items-center gap-2.5 sm:gap-3 mb-3 sm:mb-4 relative">
-              <div className="animate-bounce-subtle flex-shrink-0">
-                <Image
-                  src="/assets/finy-mascota-minimalista.png"
-                  alt="Finy"
-                  width={40}
-                  height={40}
-                  className="rounded-xl w-10 h-10 sm:w-12 sm:h-12 object-contain"
-                />
-              </div>
-              <div className="min-w-0">
-                <div className="flex items-center gap-1.5">
-                  <h3 className="text-sm sm:text-base font-bold text-[var(--brand-cyan)]">Finy</h3>
-                  <Sparkles className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[var(--brand-cyan)] opacity-60 animate-sparkle" />
+
+          {/* SURPRESA: Finy Time Machine / Predictive Analysis */}
+          <div className="group relative card-glass p-4 sm:p-6 overflow-hidden animate-slide-in-right stagger-2">
+            {/* Background interactive particles decoration */}
+            <div className="absolute top-0 right-0 -mr-16 -mt-16 w-64 h-64 bg-gradient-to-br from-[var(--brand-purple)]/10 via-[var(--brand-cyan)]/5 to-transparent rounded-full blur-3xl group-hover:scale-110 transition-transform duration-700" />
+
+            <div className="relative z-10">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-[var(--brand-cyan)] to-[var(--brand-purple)] flex items-center justify-center shadow-lg shadow-cyan-500/20">
+                    <Rocket className="w-4 h-4 text-white animate-pulse" />
+                  </div>
+                  <h3 className="text-sm sm:text-base font-bold tracking-tight">Finy Predictor <span className="text-[10px] text-white/40 font-mono ml-1">AI 1.0</span></h3>
                 </div>
-                <p className="text-[10px] sm:text-xs text-[var(--brand-gray)]">Tu asistente financiero</p>
+                <div className="px-2 py-0.5 rounded-full bg-[var(--brand-cyan)]/10 text-[var(--brand-cyan)] text-[10px] font-black uppercase tracking-widest animate-pulse">En Tiempo Real</div>
+              </div>
+
+              <div className="space-y-4">
+                <div className="p-3 rounded-2xl bg-white/5 border border-white/5 backdrop-blur-sm">
+                  <p className="text-[10px] text-[var(--brand-gray)] uppercase font-bold tracking-widest mb-1">Proyección Fin de Mes</p>
+                  <div className="flex items-end justify-between">
+                    <div>
+                      <p className="text-xl sm:text-2xl font-black text-[var(--foreground)] tracking-tighter tabular-nums">
+                        {loading ? "..." : formatCurrency(
+                          (monthlySummary?.total_income || 0) - ((monthlySummary?.total_expenses || 0) / (new Date().getDate() || 1)) * new Date(selectedYear, selectedMonth, 0).getDate()
+                        )}
+                      </p>
+                      <p className="text-[10px] text-[var(--brand-gray)] flex items-center gap-1 mt-0.5">
+                        <TrendingDown className="w-3 h-3 text-[var(--danger)]" /> Basado en tu ritmo actual
+                      </p>
+                    </div>
+                    {(monthlySummary?.total_income || 0) > 0 && (
+                      <div className="flex flex-col items-center">
+                        <div className="w-10 h-10 rounded-full border-2 border-dashed border-[var(--brand-cyan)]/30 flex items-center justify-center relative">
+                          <span className="text-[10px] font-black text-[var(--brand-cyan)]">
+                            {Math.max(0, Math.round(((monthlySummary?.total_income || 0) - (monthlySummary?.total_expenses || 0)) / (monthlySummary?.total_income || 1) * 100))}%
+                          </span>
+                          <div className="absolute inset-0 rounded-full border-2 border-[var(--brand-cyan)] border-t-transparent animate-spin-slow"></div>
+                        </div>
+                        <span className="text-[8px] font-bold text-[var(--brand-gray)] mt-1 uppercase">Salud</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="p-3 rounded-2xl bg-[var(--success)]/5 border border-[var(--success)]/10 hover:bg-[var(--success)]/10 transition-colors">
+                    <p className="text-[10px] text-[var(--success)] font-black uppercase tracking-tighter mb-1">Margen diario</p>
+                    <p className="text-base font-bold text-[var(--foreground)] tabular-nums">
+                      {formatCurrency(Math.max(0, ((monthlySummary?.total_income || 0) - (monthlySummary?.total_expenses || 0)) / 30))}
+                    </p>
+                  </div>
+                  <div className="p-3 rounded-2xl bg-[var(--brand-purple)]/5 border border-[var(--brand-purple)]/10 hover:bg-[var(--brand-purple)]/10 transition-colors">
+                    <p className="text-[10px] text-[var(--brand-purple)] font-black uppercase tracking-tighter mb-1">Libertad</p>
+                    <p className="text-base font-bold text-[var(--foreground)]">+15 días</p>
+                  </div>
+                </div>
+
+                <button className="w-full py-2.5 rounded-xl bg-gradient-to-r from-[var(--brand-cyan)] to-[var(--brand-purple)] text-white text-xs font-black uppercase tracking-[0.2em] shadow-lg shadow-cyan-500/20 hover:scale-[1.02] active:scale-[0.98] transition-all group overflow-hidden relative">
+                  <span className="relative z-10 flex items-center justify-center gap-2">
+                    <Zap className="w-4 h-4 animate-bounce-subtle" /> Deep Scan de Cartera
+                  </span>
+                  <div className="absolute inset-0 bg-white/20 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700 skew-x-12"></div>
+                </button>
               </div>
             </div>
-            <div className="space-y-2 sm:space-y-2.5 relative">
-              {loading ? (
-                <div className="flex items-center gap-2 py-2">
-                  <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-[var(--brand-cyan)] animate-typing-dot"></span>
-                  <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-[var(--brand-cyan)] animate-typing-dot"></span>
-                  <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-[var(--brand-cyan)] animate-typing-dot"></span>
-                  <span className="text-xs sm:text-sm text-[var(--brand-gray)] ml-1">Analizando...</span>
+            {/* Finy Interpretation Panel */}
+            <div className="glass-brand rounded-xl sm:rounded-2xl p-4 sm:p-6 animate-slide-in-right relative overflow-hidden flex-1 mt-4 sm:mt-6">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-[var(--brand-cyan)]/5 to-transparent rounded-bl-full pointer-events-none" />
+              <div className="flex items-center gap-2.5 sm:gap-3 mb-3 sm:mb-4 relative">
+                <div className="animate-bounce-subtle flex-shrink-0">
+                  <Image
+                    src="/assets/finy-mascota-minimalista.png"
+                    alt="Finy"
+                    width={40}
+                    height={40}
+                    className="rounded-xl w-10 h-10 sm:w-12 sm:h-12 object-contain"
+                  />
                 </div>
-              ) : (
-                getFinyMessage()?.map((message, index) => (
-                  <div key={index} className={`flex items-start gap-2 animate-slide-in-left stagger-${Math.min(index + 1, 3)}`}>
-                    <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-[var(--brand-cyan)] mt-1.5 sm:mt-1 flex-shrink-0 animate-pulse" />
-                    <p className="text-xs sm:text-sm text-[var(--foreground)] leading-relaxed">{message}</p>
+                <div className="min-w-0">
+                  <div className="flex items-center gap-1.5">
+                    <h3 className="text-sm sm:text-base font-bold text-[var(--brand-cyan)]">Finy AI</h3>
+                    <Sparkles className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[var(--brand-cyan)] opacity-60 animate-sparkle" />
                   </div>
-                ))
-              )}
+                  <p className="text-[10px] sm:text-xs text-[var(--brand-gray)]">Tu asistente financiero v1.5</p>
+                </div>
+              </div>
+              <div className="space-y-2 sm:space-y-2.5 relative">
+                {loading ? (
+                  <div className="flex items-center gap-2 py-2">
+                    <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-[var(--brand-cyan)] animate-typing-dot"></span>
+                    <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-[var(--brand-cyan)] animate-typing-dot"></span>
+                    <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-[var(--brand-cyan)] animate-typing-dot"></span>
+                    <span className="text-xs sm:text-sm text-[var(--brand-gray)] ml-1">Analizando...</span>
+                  </div>
+                ) : (
+                  getFinyMessage()?.map((message, index) => (
+                    <div key={index} className={`flex items-start gap-2 animate-slide-in-left stagger-${Math.min(index + 1, 3)}`}>
+                      <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-[var(--brand-cyan)] mt-1.5 sm:mt-1 flex-shrink-0 animate-pulse" />
+                      <p className="text-xs sm:text-sm text-[var(--foreground)] leading-relaxed">{message}</p>
+                    </div>
+                  ))
+                )}
+              </div>
             </div>
           </div>
         </div>
+
 
         {/* Quick Stats Row */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
@@ -1051,9 +1120,9 @@ export default function DashboardPage() {
                     <p className="text-xs sm:text-sm text-[var(--brand-gray)]">progreso total</p>
                   </div>
                 </div>
-                <div className="h-2 sm:h-2.5 rounded-full overflow-hidden bg-[var(--background-secondary)] shadow-inner">
+                <div className="h-2 sm:h-2.5 rounded-full overflow-hidden bg-slate-200/50 dark:bg-white/5 shadow-inner border border-black/5 dark:border-white/5">
                   <div
-                    className="h-full rounded-full bg-gradient-to-r from-[var(--brand-purple)] via-[var(--brand-cyan)] to-[var(--brand-cyan)] animate-shimmer"
+                    className="h-full rounded-full bg-gradient-to-r from-[var(--brand-cyan)] via-[var(--brand-cyan)] to-[var(--brand-purple)] animate-shimmer shadow-[0_0_12px_-2px_rgba(2,234,255,0.6)]"
                     style={{ width: `${Math.min(savingsSummary.overall_progress, 100)}%` }}
                   />
                 </div>
@@ -1102,7 +1171,7 @@ export default function DashboardPage() {
                     <p className="text-xs sm:text-sm text-[var(--brand-gray)]">pagado</p>
                   </div>
                 </div>
-                <div className="progress-bar h-1.5 sm:h-2 overflow-hidden bg-[var(--background-secondary)] shadow-inner">
+                <div className="progress-bar h-1.5 sm:h-2 overflow-hidden bg-slate-200/50 dark:bg-white/5 shadow-inner border border-black/5 dark:border-white/5">
                   <div
                     className="progress-bar-fill bg-gradient-to-r from-[#FF4D4D] via-[#F59E0B] to-[#10B981]"
                     style={{ width: `${Math.min(debtsSummary.overall_progress, 100)}%` }}
