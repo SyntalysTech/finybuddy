@@ -323,7 +323,7 @@ function ChatPageContent() {
       await saveMessage(convId, "assistant", fullContent);
 
       // If in call mode, speak the response
-      if (isCallMode) {
+      if (isCallModeRef.current) {
         speakResponse(fullContent);
       }
 
@@ -337,10 +337,14 @@ function ChatPageContent() {
         content: errorMessage,
       }]);
       await saveMessage(convId, "assistant", errorMessage);
-      if (isCallMode) speakResponse(errorMessage);
+      if (isCallModeRef.current) speakResponse(errorMessage);
     } finally {
       setLoading(false);
-      if (isCallMode) setCallStatus("idle");
+      // Solo resetear el status a idle si NO estamos en modo llamada, 
+      // porque en modo llamada speakResponse se encarga de cambiar a speaking -> listening
+      if (!isCallModeRef.current) {
+        setCallStatus("idle");
+      }
     }
   };
 
