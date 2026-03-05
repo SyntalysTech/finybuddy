@@ -112,10 +112,11 @@ export default function Sidebar() {
   const NavContent = () => (
     <>
       {/* Logo */}
-      <div className="h-16 px-4 border-b border-[var(--sidebar-border)] flex items-center relative">
-        <Link href="/dashboard" className="flex items-center overflow-hidden" onClick={handleNavClick}>
+      <div className={`h-16 ${collapsed && !isMobile ? "px-0 justify-center" : "px-4"} border-b border-[var(--sidebar-border)] flex items-center relative transition-all duration-300`}>
+        <Link href="/dashboard" className="flex items-center justify-center overflow-hidden w-full" onClick={handleNavClick}>
+          {/* Finy Logo Extendido */}
           <div
-            className={`transition-all duration-300 ease-in-out ${collapsed && !isMobile ? "w-0 opacity-0" : "w-[140px] opacity-100"
+            className={`transition-all duration-300 ease-in-out flex items-center justify-center ${collapsed && !isMobile ? "w-0 opacity-0 hidden" : "w-[140px] opacity-100"
               }`}
           >
             <Image
@@ -123,7 +124,20 @@ export default function Sidebar() {
               alt="FinyBuddy"
               width={140}
               height={32}
-              className="object-contain"
+              className="object-contain flex-shrink-0"
+            />
+          </div>
+          {/* Finy Mascota Colapsado */}
+          <div
+            className={`transition-all duration-300 ease-in-out flex items-center justify-center ${collapsed && !isMobile ? "w-10 opacity-100" : "w-0 opacity-0 hidden"
+              }`}
+          >
+            <Image
+              src="/assets/finy-mascota-minimalista.png"
+              alt="FinyBuddy"
+              width={34}
+              height={34}
+              className="object-contain flex-shrink-0 drop-shadow-[0_0_8px_rgba(2,234,255,0.4)]"
             />
           </div>
         </Link>
@@ -159,7 +173,7 @@ export default function Sidebar() {
                   <Link
                     href={item.href}
                     onClick={handleNavClick}
-                    className={`relative flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-300 group overflow-hidden ${active
+                    className={`relative flex items-center ${collapsed && !isMobile ? "justify-center p-2.5" : "gap-3 px-3 py-2.5"} rounded-xl transition-all duration-300 group overflow-hidden ${active
                       ? `bg-gradient-to-r ${item.gradient} border border-white/10`
                       : "hover:bg-[var(--sidebar-hover)] hover:scale-[1.02]"
                       }`}
@@ -168,7 +182,7 @@ export default function Sidebar() {
                     {active && (
                       <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 rounded-r-full bg-gradient-to-b from-[#02EAFF] to-[#7739FE] animate-pulse" />
                     )}
-                    <div className={`p-1.5 rounded-lg transition-all duration-300 ${active ? "bg-white/10" : "group-hover:bg-white/5"
+                    <div className={`p-1.5 rounded-lg transition-all duration-300 flex-shrink-0 ${active ? "bg-white/10" : "group-hover:bg-white/5"
                       }`}>
                       <Icon
                         className={`w-5 h-5 flex-shrink-0 transition-all duration-300 ${active
@@ -179,15 +193,15 @@ export default function Sidebar() {
                     </div>
                     <span
                       className={`text-sm font-medium whitespace-nowrap transition-all duration-300 ease-in-out ${active ? "text-white font-semibold" : "group-hover:text-white"
-                        } ${collapsed && !isMobile ? "w-0 opacity-0" : "w-auto opacity-100"}`}
+                        } ${collapsed && !isMobile ? "w-0 opacity-0 hidden" : "w-auto opacity-100"}`}
                     >
                       {item.name}
                     </span>
                     {!isPro && PRO_ROUTES.includes(item.href) && !collapsed && !isMobile && (
                       <ProBadge className="ml-auto shrink-0" />
                     )}
-                    {active && (
-                      <div className="ml-auto relative flex items-center justify-center w-4 h-4 mr-1">
+                    {active && !collapsed && !isMobile && (
+                      <div className="ml-auto flex-shrink-0 relative flex items-center justify-center w-4 h-4 mr-1">
                         <div className="absolute inset-0 rounded-full bg-[var(--brand-cyan)] opacity-20 animate-ping" />
                         <div className="w-2 h-2 rounded-full bg-gradient-to-br from-[#02EAFF] to-[#7739FE] shadow-[0_0_10px_rgba(2,234,255,0.8)] z-10" />
                       </div>
@@ -223,7 +237,7 @@ export default function Sidebar() {
                   <Link
                     href={item.href}
                     onClick={handleNavClick}
-                    className={`relative flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-300 group overflow-hidden ${active
+                    className={`relative flex items-center ${collapsed && !isMobile ? "justify-center p-2.5" : "gap-3 px-3 py-2.5"} rounded-xl transition-all duration-300 group overflow-hidden ${active
                       ? `bg-gradient-to-r ${item.gradient} border border-white/10`
                       : "hover:bg-[var(--sidebar-hover)] hover:scale-[1.02]"
                       }`}
@@ -232,7 +246,7 @@ export default function Sidebar() {
                     {active && (
                       <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 rounded-r-full bg-gradient-to-b from-[#02EAFF] to-[#7739FE] animate-pulse" />
                     )}
-                    <div className={`p-1.5 rounded-lg transition-all duration-300 ${active ? "bg-white/10" : "group-hover:bg-white/5"
+                    <div className={`p-1.5 rounded-lg transition-all duration-300 flex-shrink-0 ${active ? "bg-white/10" : "group-hover:bg-white/5"
                       }`}>
                       <Icon
                         className={`w-5 h-5 flex-shrink-0 transition-all duration-300 ${active
@@ -243,14 +257,14 @@ export default function Sidebar() {
                     </div>
                     <span
                       className={`text-sm font-medium whitespace-nowrap transition-all duration-300 ease-in-out ${active ? "text-white font-semibold" : "group-hover:text-white"
-                        } ${collapsed && !isMobile ? "w-0 opacity-0" : "w-auto opacity-100"}`}
+                        } ${collapsed && !isMobile ? "w-0 opacity-0 hidden" : "w-auto opacity-100"}`}
                     >
                       {item.name}
                     </span>
                     {!isPro && PRO_ROUTES.includes(item.href) && !collapsed && !isMobile && (
                       <ProBadge className="ml-auto shrink-0" />
                     )}
-                    {active && (
+                    {active && !collapsed && !isMobile && (
                       <div
                         className={`ml-auto w-2 h-2 rounded-full bg-gradient-to-br from-[#02EAFF] to-[#7739FE] flex-shrink-0 transition-all duration-300 ease-in-out shadow-lg shadow-[#02EAFF]/30 ${collapsed && !isMobile ? "opacity-0 scale-0" : "opacity-100 scale-100 animate-pulse"
                           }`}
@@ -283,7 +297,7 @@ export default function Sidebar() {
                   <Link
                     href="/admin"
                     onClick={handleNavClick}
-                    className={`relative flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-300 group overflow-hidden ${isActive("/admin")
+                    className={`relative flex items-center ${collapsed && !isMobile ? "justify-center p-2.5" : "gap-3 px-3 py-2.5"} rounded-xl transition-all duration-300 group overflow-hidden ${isActive("/admin")
                       ? "bg-gradient-to-r from-[#F59E0B]/20 to-transparent border border-white/10"
                       : "hover:bg-[var(--sidebar-hover)] hover:scale-[1.02]"
                       }`}
@@ -292,7 +306,7 @@ export default function Sidebar() {
                     {isActive("/admin") && (
                       <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 rounded-r-full bg-gradient-to-b from-[#F59E0B] to-[#EF4444] animate-pulse" />
                     )}
-                    <div className={`p-1.5 rounded-lg transition-all duration-300 ${isActive("/admin") ? "bg-white/10" : "group-hover:bg-white/5"
+                    <div className={`p-1.5 rounded-lg transition-all duration-300 flex-shrink-0 ${isActive("/admin") ? "bg-white/10" : "group-hover:bg-white/5"
                       }`}>
                       <ShieldCheck
                         className={`w-5 h-5 flex-shrink-0 transition-all duration-300 ${isActive("/admin") ? "text-[#F59E0B] scale-110" : "text-[var(--sidebar-text)] group-hover:text-[#F59E0B] group-hover:scale-110"
@@ -301,14 +315,13 @@ export default function Sidebar() {
                     </div>
                     <span
                       className={`text-sm font-medium whitespace-nowrap transition-all duration-300 ease-in-out ${isActive("/admin") ? "text-white font-semibold" : "group-hover:text-white"
-                        } ${collapsed && !isMobile ? "w-0 opacity-0" : "w-auto opacity-100"}`}
+                        } ${collapsed && !isMobile ? "w-0 opacity-0 hidden" : "w-auto opacity-100"}`}
                     >
                       Admin
                     </span>
-                    {isActive("/admin") && (
+                    {isActive("/admin") && !collapsed && !isMobile && (
                       <div
-                        className={`ml-auto w-2 h-2 rounded-full bg-gradient-to-br from-[#F59E0B] to-[#EF4444] flex-shrink-0 transition-all duration-300 ease-in-out shadow-lg shadow-[#F59E0B]/30 ${collapsed && !isMobile ? "opacity-0 scale-0" : "opacity-100 scale-100 animate-pulse"
-                          }`}
+                        className={`ml-auto w-2 h-2 rounded-full bg-gradient-to-br from-[#F59E0B] to-[#EF4444] flex-shrink-0 transition-all duration-300 ease-in-out shadow-lg shadow-[#F59E0B]/30 opacity-100 scale-100 animate-pulse`}
                       />
                     )}
                   </Link>
@@ -325,16 +338,15 @@ export default function Sidebar() {
         {!isMobile && (
           <button
             onClick={toggle}
-            className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-[var(--sidebar-hover)] transition-colors duration-200 mb-2 overflow-hidden ${collapsed ? "justify-center" : ""
-              }`}
+            className={`w-full flex items-center ${collapsed ? "justify-center p-2.5" : "gap-2 px-3 py-2"} rounded-lg hover:bg-[var(--sidebar-hover)] transition-colors duration-200 mb-2 overflow-hidden`}
             title={collapsed ? "Expandir" : "Colapsar"}
           >
             {collapsed ? (
-              <ChevronRight className="w-5 h-5 flex-shrink-0" />
+              <ChevronRight className="w-5 h-5 flex-shrink-0 text-[var(--sidebar-text)]" />
             ) : (
               <>
-                <ChevronLeft className="w-5 h-5 flex-shrink-0" />
-                <span className="text-sm whitespace-nowrap">Colapsar</span>
+                <ChevronLeft className="w-5 h-5 flex-shrink-0 text-[var(--sidebar-text)]" />
+                <span className="text-sm whitespace-nowrap text-[var(--sidebar-text)]">Colapsar</span>
               </>
             )}
           </button>
@@ -343,13 +355,12 @@ export default function Sidebar() {
         {/* Back to website */}
         <Link
           href="/"
-          className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-[var(--sidebar-text)] hover:bg-[var(--sidebar-hover)] transition-colors duration-200 overflow-hidden ${collapsed && !isMobile ? "justify-center" : ""
-            }`}
+          className={`w-full flex items-center ${collapsed && !isMobile ? "justify-center p-2.5" : "gap-3 px-3 py-2.5"} rounded-lg text-[var(--sidebar-text)] hover:bg-[var(--sidebar-hover)] transition-colors duration-200 overflow-hidden`}
           title={collapsed && !isMobile ? "Volver a la web" : undefined}
         >
-          <Globe className="w-5 h-5 flex-shrink-0" />
+          <Globe className="w-5 h-5 flex-shrink-0 text-[var(--sidebar-text)]" />
           <span
-            className={`text-sm font-medium whitespace-nowrap transition-all duration-300 ease-in-out ${collapsed && !isMobile ? "w-0 opacity-0" : "w-auto opacity-100"
+            className={`text-sm font-medium whitespace-nowrap transition-all duration-300 ease-in-out ${collapsed && !isMobile ? "w-0 opacity-0 hidden" : "w-auto opacity-100"
               }`}
           >
             Volver a la web
@@ -360,13 +371,12 @@ export default function Sidebar() {
         <button
           onClick={handleLogout}
           disabled={isLoggingOut}
-          className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-red-400 hover:bg-red-500/10 transition-colors duration-200 disabled:opacity-50 overflow-hidden ${collapsed && !isMobile ? "justify-center" : ""
-            }`}
+          className={`w-full flex items-center mt-1 ${collapsed && !isMobile ? "justify-center p-2.5" : "gap-3 px-3 py-2.5"} rounded-lg text-red-400 hover:bg-red-500/10 transition-colors duration-200 disabled:opacity-50 overflow-hidden`}
           title={collapsed && !isMobile ? "Cerrar sesión" : undefined}
         >
           <LogOut className="w-5 h-5 flex-shrink-0" />
           <span
-            className={`text-sm font-medium whitespace-nowrap transition-all duration-300 ease-in-out ${collapsed && !isMobile ? "w-0 opacity-0" : "w-auto opacity-100"
+            className={`text-sm font-medium whitespace-nowrap transition-all duration-300 ease-in-out ${collapsed && !isMobile ? "w-0 opacity-0 hidden" : "w-auto opacity-100"
               }`}
           >
             {isLoggingOut ? "Cerrando..." : "Cerrar sesión"}
