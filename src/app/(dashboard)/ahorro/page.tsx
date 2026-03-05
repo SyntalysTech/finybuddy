@@ -428,11 +428,10 @@ function AhorroPageContent() {
             <button
               key={tab.value}
               onClick={() => setFilter(tab.value as typeof filter)}
-              className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors whitespace-nowrap ${
-                filter === tab.value
+              className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors whitespace-nowrap ${filter === tab.value
                   ? "bg-[var(--brand-purple)] text-white"
                   : "bg-[var(--background-secondary)] hover:bg-[var(--border)]"
-              }`}
+                }`}
             >
               {tab.label}
             </button>
@@ -599,11 +598,11 @@ function AhorroPageContent() {
                               {progress.toFixed(0)}%
                             </span>
                           </div>
-                          <div className="h-2 sm:h-3 bg-[var(--background-secondary)] rounded-full overflow-hidden">
+                          <div className="progress-bar h-2 sm:h-3">
                             <div
-                              className="h-full rounded-full transition-all duration-500"
+                              className="h-full rounded-full transition-all duration-800"
                               style={{
-                                width: `${progress}%`,
+                                width: `${Math.max(progress, 2)}%`,
                                 backgroundColor: goal.color,
                               }}
                             />
@@ -633,9 +632,8 @@ function AhorroPageContent() {
                             {[1, 2, 3, 4, 5].map((p) => (
                               <div
                                 key={p}
-                                className={`w-2 h-2 rounded-full ${
-                                  p <= goal.priority ? "bg-[var(--brand-cyan)]" : "bg-[var(--border)]"
-                                }`}
+                                className={`w-2 h-2 rounded-full ${p <= goal.priority ? "bg-[var(--brand-cyan)]" : "bg-[var(--border)]"
+                                  }`}
                               />
                             ))}
                             <span className="text-[var(--brand-gray)] ml-1">{PRIORITY_LABELS[goal.priority - 1]}</span>
@@ -972,7 +970,7 @@ function GoalModal({
 
   const handleConfirmReset = (e: React.MouseEvent) => {
     e.preventDefault();
-    handleSubmit({ preventDefault: () => {} } as React.FormEvent, true);
+    handleSubmit({ preventDefault: () => { } } as React.FormEvent, true);
   };
 
   if (!isOpen) return null;
@@ -1029,11 +1027,10 @@ function GoalModal({
                     key={i}
                     type="button"
                     onClick={() => setIcon(i)}
-                    className={`w-10 h-10 rounded-lg flex items-center justify-center text-xl border-2 transition-all ${
-                      icon === i
+                    className={`w-10 h-10 rounded-lg flex items-center justify-center text-xl border-2 transition-all ${icon === i
                         ? "border-[var(--brand-cyan)] bg-[var(--brand-cyan)]/10"
                         : "border-[var(--border)] hover:border-[var(--brand-gray)]"
-                    }`}
+                      }`}
                   >
                     {i}
                   </button>
@@ -1048,9 +1045,8 @@ function GoalModal({
                     key={c}
                     type="button"
                     onClick={() => setColor(c)}
-                    className={`w-10 h-10 rounded-lg border-2 transition-all relative ${
-                      color === c ? "border-white scale-110 ring-2 ring-offset-2 ring-offset-[var(--background)] ring-white" : "border-transparent hover:scale-105"
-                    }`}
+                    className={`w-10 h-10 rounded-lg border-2 transition-all relative ${color === c ? "border-white scale-110 ring-2 ring-offset-2 ring-offset-[var(--background)] ring-white" : "border-transparent hover:scale-105"
+                      }`}
                     style={{ backgroundColor: c }}
                   >
                     {color === c && (

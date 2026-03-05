@@ -1135,12 +1135,12 @@ export default function DashboardPage() {
                       <p className="text-xs sm:text-sm text-[var(--brand-gray)]">progreso total</p>
                     </div>
                   </div>
-                  <div className="h-5 sm:h-7 rounded-2xl overflow-hidden bg-cyan-50 dark:bg-cyan-950/20 shadow-inner border-2 border-[var(--brand-cyan)]/20 p-0.5 relative group/progress">
+                  <div className="h-4 sm:h-5 rounded-full overflow-hidden bg-slate-200/50 dark:bg-slate-800/50 shadow-inner border border-[var(--border)] p-0 relative group/progress">
                     <div
-                      className="h-full rounded-xl bg-gradient-to-r from-[var(--brand-cyan)] to-[var(--brand-cyan)] animate-shimmer shadow-[0_0_20px_-2px_rgba(2,234,255,0.6)] relative transition-all duration-1000 ease-out"
-                      style={{ width: `${Math.min(savingsSummary.overall_progress, 100)}%` }}
+                      className="h-full rounded-full bg-gradient-to-r from-[var(--brand-cyan)] to-[var(--brand-purple)] shadow-[0_0_15px_rgba(2,234,255,0.5)] relative transition-all duration-1000 ease-out"
+                      style={{ width: `${Math.max(Math.min(savingsSummary.overall_progress, 100), 2)}%` }}
                     >
-                      <div className="absolute inset-0 bg-gradient-to-b from-white/30 to-transparent opacity-50" />
+                      <div className="absolute inset-0 bg-gradient-to-b from-white/20 to-transparent opacity-40" />
                     </div>
                   </div>
                   <div className="flex justify-between text-xs sm:text-sm text-[var(--brand-gray)]">
@@ -1188,12 +1188,12 @@ export default function DashboardPage() {
                       <p className="text-xs sm:text-sm text-[var(--brand-gray)]">pagado</p>
                     </div>
                   </div>
-                  <div className="h-5 sm:h-7 rounded-2xl overflow-hidden bg-cyan-50 dark:bg-cyan-950/20 shadow-inner border-2 border-[var(--brand-cyan)]/20 p-0.5 relative">
+                  <div className="h-4 sm:h-5 rounded-full overflow-hidden bg-slate-200/50 dark:bg-slate-800/50 shadow-inner border border-[var(--border)] p-0 relative">
                     <div
-                      className="h-full rounded-xl bg-gradient-to-r from-[var(--brand-cyan)] to-[var(--brand-cyan)] shadow-[0_0_20px_-2px_rgba(2,234,255,0.6)] transition-all duration-1000 ease-out"
-                      style={{ width: `${Math.min(debtsSummary.overall_progress, 100)}%` }}
+                      className="h-full rounded-full bg-gradient-to-r from-[var(--success)] to-[var(--success)] shadow-[0_0_15px_rgba(46,235,143,0.4)] relative transition-all duration-1000 ease-out"
+                      style={{ width: `${Math.max(Math.min(debtsSummary.overall_progress, 100), 2)}%` }}
                     >
-                      <div className="absolute inset-0 bg-gradient-to-b from-white/30 to-transparent opacity-50" />
+                      <div className="absolute inset-0 bg-gradient-to-b from-white/20 to-transparent opacity-40" />
                     </div>
                   </div>
 

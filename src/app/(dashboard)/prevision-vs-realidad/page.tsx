@@ -553,7 +553,7 @@ function PrevisionVsRealidadPageContent() {
                       <span className="text-[var(--brand-gray)]"> / {formatCurrency(totalBudgetedIncome)}</span>
                     </div>
                   </div>
-                  <div className="h-2 bg-[var(--border)] rounded-full overflow-hidden">
+                  <div className="progress-bar h-2">
                     <div
                       className={`h-full rounded-full transition-all ${totalActualIncome >= totalBudgetedIncome ? "bg-[var(--success)]" : "bg-[var(--warning)]"}`}
                       style={{ width: `${totalBudgetedIncome > 0 ? Math.min((totalActualIncome / totalBudgetedIncome) * 100, 100) : totalActualIncome > 0 ? 100 : 0}%` }}
@@ -589,7 +589,7 @@ function PrevisionVsRealidadPageContent() {
                       <span className="text-[var(--brand-gray)]"> / {formatCurrency(needsBudgeted)}</span>
                     </div>
                   </div>
-                  <div className="h-2 bg-[var(--border)] rounded-full overflow-hidden">
+                  <div className="progress-bar h-2">
                     <div
                       className={`h-full rounded-full transition-all ${needsActual <= needsBudgeted ? "bg-[var(--success)]" : "bg-[var(--danger)]"}`}
                       style={{ width: `${needsBudgeted > 0 ? Math.min((needsActual / needsBudgeted) * 100, 100) : needsActual > 0 ? 100 : 0}%` }}
@@ -624,7 +624,7 @@ function PrevisionVsRealidadPageContent() {
                       <span className="text-[var(--brand-gray)]"> / {formatCurrency(wantsBudgeted)}</span>
                     </div>
                   </div>
-                  <div className="h-2 bg-[var(--border)] rounded-full overflow-hidden">
+                  <div className="progress-bar h-2">
                     <div
                       className={`h-full rounded-full transition-all ${wantsActual <= wantsBudgeted ? "bg-[var(--success)]" : "bg-[var(--danger)]"}`}
                       style={{ width: `${wantsBudgeted > 0 ? Math.min((wantsActual / wantsBudgeted) * 100, 100) : wantsActual > 0 ? 100 : 0}%` }}
@@ -661,7 +661,7 @@ function PrevisionVsRealidadPageContent() {
                       <span className="text-[var(--brand-gray)]"> / {formatCurrency(budgetedSavings)}</span>
                     </div>
                   </div>
-                  <div className="h-2 bg-[var(--border)] rounded-full overflow-hidden">
+                  <div className="progress-bar h-2">
                     <div
                       className={`h-full rounded-full transition-all ${actualSavings >= budgetedSavings ? "bg-[var(--success)]" : "bg-[var(--warning)]"}`}
                       style={{ width: `${budgetedSavings > 0 ? Math.min((actualSavings / budgetedSavings) * 100, 100) : actualSavings > 0 ? 100 : 0}%` }}

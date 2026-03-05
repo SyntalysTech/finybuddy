@@ -978,7 +978,7 @@ function PrevisionPageContent() {
                 </p>
 
                 {/* Progress Bar Confirmada */}
-                <div className="h-4 rounded-full overflow-hidden flex mb-6">
+                <div className="progress-bar h-4 flex mb-6">
                   <div
                     className="transition-all"
                     style={{ width: `${needsPercent}%`, background: "linear-gradient(to right, #2EEB8F, #1EEA8A)" }}
@@ -1039,7 +1039,7 @@ function PrevisionPageContent() {
                 </p>
 
                 {/* Progress Bar Pendiente */}
-                <div className="h-4 rounded-full overflow-hidden flex mb-6 bg-[var(--background-secondary)]">
+                <div className="progress-bar h-4 flex mb-6">
                   <div
                     className="transition-all opacity-50"
                     style={{ width: `${needsPercent}%`, background: "linear-gradient(to right, #2EEB8F, #1EEA8A)" }}
