@@ -69,6 +69,8 @@ function ChatPageContent() {
   const [isMuted, setIsMuted] = useState(false);
   const [callStatus, setCallStatus] = useState<"idle" | "listening" | "thinking" | "speaking">("idle");
   const [interimTranscript, setInterimTranscript] = useState("");
+  const transcriptRef = useRef("");
+  const silenceTimerRef = useRef<NodeJS.Timeout | null>(null);
   const recognitionRef = useRef<any>(null);
   const synthRef = useRef<SpeechSynthesis | null>(null);
 
@@ -371,43 +373,83 @@ function ChatPageContent() {
 
     const recognition = new SpeechRecognition();
     recognition.lang = "es-ES";
-    recognition.continuous = false;
+    recognition.continuous = true; // Changed to true for better "always listening" feel, but handled with timer
     recognition.interimResults = true;
+
+    // Reset ref and state
+    transcriptRef.current = "";
+    setInterimTranscript("");
+
+    const commitSpeech = () => {
+      const finalText = transcriptRef.current.trim();
+      if (isCallMode && finalText && callStatus === "listening") {
+        console.log("Committing speech:", finalText);
+        if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
+
+        // Stop recognition before sending to avoid double input
+        try { recognition.stop(); } catch (e) { }
+
+        setCallStatus("thinking");
+        sendMessage(finalText);
+        setInterimTranscript("");
+        transcriptRef.current = "";
+      }
+    };
 
     recognition.onstart = () => {
       setCallStatus("listening");
     };
 
     recognition.onresult = (event: any) => {
-      const transcript = Array.from(event.results)
-        .map((result: any) => result[0])
-        .map((result: any) => result.transcript)
-        .join("");
+      let currentResult = "";
+      let isFinal = false;
 
-      setInterimTranscript(transcript);
+      for (let i = event.resultIndex; i < event.results.length; ++i) {
+        currentResult += event.results[i][0].transcript;
+        if (event.results[i].isFinal) isFinal = true;
+      }
+
+      const fullTranscript = currentResult;
+      transcriptRef.current = fullTranscript;
+      setInterimTranscript(fullTranscript);
+
+      // Reset silence timer on every result
+      if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
+
+      if (fullTranscript.trim()) {
+        // Trigger commit after 1.5s of silence
+        silenceTimerRef.current = setTimeout(() => {
+          commitSpeech();
+        }, 1500);
+
+        // Or immediately if browser says it's final
+        if (isFinal) {
+          commitSpeech();
+        }
+      }
     };
 
     recognition.onend = () => {
-      if (isCallMode && interimTranscript.trim()) {
-        sendMessage(interimTranscript);
-        setInterimTranscript("");
-        setCallStatus("thinking");
-      } else if (isCallMode && !interimTranscript.trim() && callStatus === "listening") {
-        // Restart if nothing heard
-        try { recognition.start(); } catch (e) { /* ignore */ }
+      // If we are still in call mode and haven't transitioned to thinking/speaking, restart
+      if (isCallMode && callStatus === "listening") {
+        if (transcriptRef.current.trim()) {
+          commitSpeech();
+        } else {
+          try { recognition.start(); } catch (e) { }
+        }
       }
     };
 
     recognition.onerror = (event: any) => {
       console.error("Voice recognition error", event.error);
-      if (event.error === "no-speech") {
-        // Restart on silence
-        try { recognition.start(); } catch (e) { /* ignore */ }
+      if (event.error === "no-speech" && isCallMode) {
+        try { recognition.stop(); } catch (e) { }
+        // restart is handled by onend
       }
     };
 
     recognitionRef.current = recognition;
-    recognition.start();
+    try { recognition.start(); } catch (e) { }
   };
 
   const toggleCallMode = () => {
