@@ -227,30 +227,6 @@ export default function DashboardPage() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
-    // 4. Fetch additional data for synchronization (Savings Contributions & Debt Payments)
-    const startDate = `${selectedYear}-${String(selectedMonth).padStart(2, "0")}-01`;
-    const endDate = new Date(selectedYear, selectedMonth, 0).toISOString().split("T")[0];
-
-    // Fetch savings contributions for the month
-    const { data: contribsData } = await supabase
-      .from("savings_contributions")
-      .select("amount")
-      .eq("user_id", user.id)
-      .gte("contribution_date", startDate)
-      .lte("contribution_date", endDate);
-
-    const extraSavings = contribsData?.reduce((acc, c) => acc + c.amount, 0) || 0;
-
-    // Fetch debt payments for the month
-    const { data: paymentsData } = await supabase
-      .from("debt_payments")
-      .select("amount")
-      .eq("user_id", user.id)
-      .gte("payment_date", startDate)
-      .lte("payment_date", endDate);
-
-    const extraExpenses = paymentsData?.reduce((acc, p) => acc + p.amount, 0) || 0;
-
     // Fetch monthly summary using RPC function
     const { data: summaryData } = await supabase.rpc("get_monthly_summary", {
       p_user_id: user.id,
@@ -259,21 +235,14 @@ export default function DashboardPage() {
     });
 
     if (summaryData && summaryData.length > 0) {
-      const baseSummary = summaryData[0];
-      setMonthlySummary({
-        ...baseSummary,
-        total_expenses: baseSummary.total_expenses + extraExpenses,
-        total_savings: baseSummary.total_savings + extraSavings,
-        balance: baseSummary.total_income - (baseSummary.total_expenses + extraExpenses),
-        needs_total: baseSummary.needs_total + extraExpenses,
-      });
+      setMonthlySummary(summaryData[0]);
     } else {
       setMonthlySummary({
         total_income: 0,
-        total_expenses: extraExpenses,
-        total_savings: extraSavings,
-        balance: -extraExpenses,
-        needs_total: extraExpenses,
+        total_expenses: 0,
+        total_savings: 0,
+        balance: 0,
+        needs_total: 0,
         wants_total: 0,
         savings_total: 0,
       });
@@ -349,6 +318,9 @@ export default function DashboardPage() {
     }
 
     // Fetch recent operations (last 5)
+    const startDate = `${selectedYear}-${String(selectedMonth).padStart(2, "0")}-01`;
+    const endDate = new Date(selectedYear, selectedMonth, 0).toISOString().split("T")[0];
+
     const { data: operationsData } = await supabase
       .from("operations")
       .select(`
@@ -408,28 +380,12 @@ export default function DashboardPage() {
           }
 
           if (!merged[cat.id]) {
-            const finalColor = segment === "needs" ? "#2EEB8F" : (segment === "wants" ? "#8B4DFF" : (cat.color || "#02EAFF"));
+            const finalColor = segment === "needs" ? "#2EEB8F" : (segment === "wants" ? "#3B82F6" : (cat.color || "#02EAFF"));
             merged[cat.id] = { id: cat.id, name: cat.name, color: finalColor, amount: 0, segment: segment as "needs" | "wants" | "savings" };
           }
           merged[cat.id].amount += op.amount;
         }
       });
-
-      if (extraSavings !== 0) {
-        const savingsId = "savings-total";
-        if (!merged[savingsId]) {
-          merged[savingsId] = { id: savingsId, name: "Ahorro", color: "#02EAFF", amount: 0, segment: "savings" };
-        }
-        merged[savingsId].amount += extraSavings;
-      }
-
-      if (extraExpenses !== 0) {
-        const debtId = "debt-payments-summary";
-        if (!merged[debtId]) {
-          merged[debtId] = { id: debtId, name: "Pagos de Deudas", color: "#2EEB8F", amount: 0, segment: "needs" };
-        }
-        merged[debtId].amount += extraExpenses;
-      }
 
       setCategoryDistribution(Object.values(merged).filter(c => Math.abs(c.amount) > 0).sort((a, b) => b.amount - a.amount));
     }
@@ -540,7 +496,7 @@ export default function DashboardPage() {
   // Helper variables para el super gráfico
   const innerData = [
     { name: "Necesidades", value: monthlySummary?.needs_total || 0, color: "#2EEB8F", segment: "needs" },
-    { name: "Deseos", value: monthlySummary?.wants_total || 0, color: "#8B4DFF", segment: "wants" },
+    { name: "Deseos", value: monthlySummary?.wants_total || 0, color: "#3B82F6", segment: "wants" },
     { name: "Ahorro", value: monthlySummary?.total_savings || 0, color: "#02EAFF", segment: "savings" },
   ].filter(item => item.value > 0);
 
@@ -553,7 +509,7 @@ export default function DashboardPage() {
       .map((c, idx, arr) => {
         // Si estamos en drill-down, forzamos una coherencia cromática para que sea "el mejor gráfico"
         // Mantenemos el color de la DB si existe, si no, generamos variaciones del color base del segmento
-        const baseColor = selectedSegment === "needs" ? "#2EEB8F" : (selectedSegment === "wants" ? "#8B4DFF" : "#02EAFF");
+        const baseColor = selectedSegment === "needs" ? "#2EEB8F" : (selectedSegment === "wants" ? "#3B82F6" : "#02EAFF");
 
         // Generamos una variación elegante del color base (gradiente visual)
         // Esto soluciona que aparezcan categorías "moradas" dentro de Necesidades (Verde)
@@ -691,10 +647,10 @@ export default function DashboardPage() {
               />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-xs sm:text-sm font-semibold text-[var(--brand-cyan)] mb-0.5 animate-fade-in leading-tight">
+              <p className="text-sm sm:text-base font-bold text-white mb-0.5 leading-normal">
                 {loading ? "Analizando tus datos..." : contextualPhrase}
               </p>
-              <p className="text-[10px] sm:text-xs text-[var(--brand-gray)] italic line-clamp-2 leading-relaxed">
+              <p className="text-[10px] sm:text-xs text-[var(--brand-gray)] italic line-clamp-2 leading-relaxed opacity-90">
                 &ldquo;{dailyQuote}&rdquo;
               </p>
             </div>
@@ -1117,7 +1073,7 @@ export default function DashboardPage() {
                   getFinyMessage()?.map((message, index) => (
                     <div key={index} className={`group/item flex items-start gap-4 p-4 rounded-2xl bg-white/5 dark:bg-black/20 hover:bg-white/10 dark:hover:bg-black/30 border border-white/5 hover:border-[var(--brand-cyan)]/20 transition-all duration-300 animate-slide-in-left stagger-${Math.min(index + 1, 3)}`}>
                       <div className="mt-1 flex-shrink-0">
-                        <div className="w-6 h-6 rounded-lg bg-gradient-to-br from-[var(--brand-cyan)]/10 to-[var(--brand-purple)]/20 flex items-center justify-center group-hover/item:scale-110 group-hover/item:rotate-12 transition-all border border-white/5 shadow-sm">
+                        <div className="w-6 h-6 rounded-lg bg-gradient-to-br from-[var(--brand-cyan)]/10 to-[#3B82F6]/20 flex items-center justify-center group-hover/item:scale-110 group-hover/item:rotate-12 transition-all border border-white/5 shadow-sm">
                           <Zap className="w-3.5 h-3.5 text-[var(--brand-cyan)]" />
                         </div>
                       </div>
@@ -1213,7 +1169,7 @@ export default function DashboardPage() {
                   </div>
                   <div className="progress-bar h-4">
                     <div
-                      className="progress-bar-fill bg-gradient-to-r from-[var(--brand-cyan)] to-[var(--brand-purple)] shadow-[0_0_15px_rgba(2,234,255,0.4)]"
+                      className="progress-bar-fill bg-gradient-to-r from-[var(--brand-cyan)] to-[#3B82F6] shadow-[0_0_15px_rgba(2,234,255,0.4)]"
                       style={{ width: `${Math.max(Math.min(savingsSummary.overall_progress, 100), 2)}%` }}
                     />
                   </div>

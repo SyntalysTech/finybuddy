@@ -986,7 +986,7 @@ function PrevisionPageContent() {
                   />
                   <div
                     className="transition-all"
-                    style={{ width: `${wantsPercent}%`, background: "linear-gradient(to right, #8B4DFF, #8E3DFF)" }}
+                    style={{ width: `${wantsPercent}%`, background: "linear-gradient(to right, #3B82F6, #2563EB)" }}
                     title={`Deseos: ${wantsPercent}%`}
                   />
                   <div
@@ -1009,8 +1009,8 @@ function PrevisionPageContent() {
                   </div>
 
                   {/* Wants Card */}
-                  <div className="rounded-xl overflow-hidden flex flex-col h-full bg-[#F4ECFF]">
-                    <div className="px-3 py-2 sm:px-4 sm:py-3 flex justify-between items-center text-white" style={{ background: "linear-gradient(to right, #8B4DFF, #8E3DFF)" }}>
+                  <div className="rounded-xl overflow-hidden flex flex-col h-full bg-[#EBF5FF]">
+                    <div className="px-3 py-2 sm:px-4 sm:py-3 flex justify-between items-center text-white" style={{ background: "linear-gradient(to right, #3B82F6, #2563EB)" }}>
                       <span className="font-bold text-sm sm:text-base">Deseos</span>
                       <span className="font-bold text-sm sm:text-base">{wantsPercent}%</span>
                     </div>
@@ -1046,7 +1046,7 @@ function PrevisionPageContent() {
                   />
                   <div
                     className="transition-all opacity-50"
-                    style={{ width: `${wantsPercent}%`, background: "linear-gradient(to right, #8B4DFF, #8E3DFF)" }}
+                    style={{ width: `${wantsPercent}%`, background: "linear-gradient(to right, #3B82F6, #2563EB)" }}
                   />
                   <div
                     className="transition-all opacity-50"
@@ -1067,8 +1067,8 @@ function PrevisionPageContent() {
                   </div>
 
                   {/* Wants Card */}
-                  <div className="rounded-xl overflow-hidden flex flex-col h-full bg-[#F4ECFF]">
-                    <div className="px-3 py-2 sm:px-4 sm:py-3 flex justify-between items-center text-white" style={{ background: "linear-gradient(to right, #8B4DFF, #8E3DFF)" }}>
+                  <div className="rounded-xl overflow-hidden flex flex-col h-full bg-[#EBF5FF]">
+                    <div className="px-3 py-2 sm:px-4 sm:py-3 flex justify-between items-center text-white" style={{ background: "linear-gradient(to right, #3B82F6, #2563EB)" }}>
                       <span className="font-bold text-sm sm:text-base">Deseos</span>
                       <span className="font-bold text-sm sm:text-base">{wantsPercent}%</span>
                     </div>

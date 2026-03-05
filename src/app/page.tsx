@@ -142,7 +142,7 @@ function AnimatedNumber({ value, prefix = "", suffix = "" }: { value: number; pr
 
 // Interactive Finy AI Demo
 const DEMO_TX = [
-  { raw: "AMZN MKTPLACE ES", rawAmt: "34,50€", concept: "Amazon", amount: -34.50, category: "Compras online", icon: ShoppingCart, color: "#8B4DFF", type: "wants" as const },
+  { raw: "AMZN MKTPLACE ES", rawAmt: "34,50€", concept: "Amazon", amount: -34.50, category: "Compras online", icon: ShoppingCart, color: "#3B82F6", type: "wants" as const },
   { raw: "ALQUILER MENSUAL", rawAmt: "650,00€", concept: "Alquiler", amount: -650.00, category: "Vivienda", icon: Home, color: "#EF4444", type: "needs" as const },
   { raw: "UBER *TRIP ABCD", rawAmt: "8,90€", concept: "Uber", amount: -8.90, category: "Transporte", icon: Car, color: "#F59E0B", type: "needs" as const },
   { raw: "REST EL PINO", rawAmt: "24,00€", concept: "Restaurante El Pino", amount: -24.00, category: "Restaurantes", icon: Utensils, color: "#EC4899", type: "wants" as const },
@@ -225,7 +225,7 @@ function FinyAIDemo() {
 
   const distData = [
     { label: "Necesidades", value: needsTotal, pct: Math.round((needsTotal / total) * 100), color: "#2EEB8F" },
-    { label: "Deseos", value: wantsTotal, pct: Math.round((wantsTotal / total) * 100), color: "#8B4DFF" },
+    { label: "Deseos", value: wantsTotal, pct: Math.round((wantsTotal / total) * 100), color: "#3B82F6" },
     { label: "Ahorro", value: savingsTotal, pct: Math.round((savingsTotal / total) * 100), color: "#02EAFF" },
   ];
 
@@ -1258,7 +1258,7 @@ export default function HomePage() {
                       <div className="relative w-20 h-20 sm:w-24 sm:h-24 flex-shrink-0">
                         <svg viewBox="0 0 36 36" className="w-full h-full -rotate-90">
                           <circle cx="18" cy="18" r="14" fill="none" stroke="#2EEB8F" strokeWidth="4" strokeDasharray="44 88" strokeDashoffset="0" />
-                          <circle cx="18" cy="18" r="14" fill="none" stroke="#8B4DFF" strokeWidth="4" strokeDasharray="26.4 88" strokeDashoffset="-44" />
+                          <circle cx="18" cy="18" r="14" fill="none" stroke="#3B82F6" strokeWidth="4" strokeDasharray="26.4 88" strokeDashoffset="-44" />
                           <circle cx="18" cy="18" r="14" fill="none" stroke="#00E5FF" strokeWidth="4" strokeDasharray="17.6 88" strokeDashoffset="-70.4" />
                         </svg>
                       </div>
@@ -1268,7 +1268,7 @@ export default function HomePage() {
                           <span className="text-[10px] sm:text-xs text-[var(--brand-gray)]">Necesidades: 712 €</span>
                         </div>
                         <div className="flex items-center gap-1.5">
-                          <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: "#8B4DFF" }} />
+                          <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: "#3B82F6" }} />
                           <span className="text-[10px] sm:text-xs text-[var(--brand-gray)]">Deseos: 641 €</span>
                         </div>
                         <div className="flex items-center gap-1.5">
