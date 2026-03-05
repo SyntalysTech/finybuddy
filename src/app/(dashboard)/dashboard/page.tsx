@@ -837,8 +837,7 @@ export default function DashboardPage() {
                         )}
                       </div>
 
-                      {/* Círculo decorativo pulsante */}
-                      <div className="absolute inset-0 rounded-full border border-[var(--brand-cyan)]/5 animate-ping opacity-20 pointer-events-none" />
+
                     </div>
                   </div>
 
@@ -881,21 +880,7 @@ export default function DashboardPage() {
                         ))}
                       </PieWithProps>
 
-                      <Tooltip
-                        formatter={(value: number, name: string) => [formatCurrency(value), ""]}
-                        contentStyle={{
-                          backgroundColor: "var(--background-secondary)",
-                          border: "1px solid var(--border)",
-                          borderRadius: "12px",
-                          fontSize: "13px",
-                          color: "var(--foreground)",
-                          boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.3), 0 8px 10px -6px rgba(0, 0, 0, 0.1)",
-                          padding: "10px 14px",
-                          fontWeight: "600"
-                        }}
-                        itemStyle={{ color: "var(--foreground)", padding: 0 }}
-                        labelStyle={{ display: "none" }}
-                      />
+
                     </PieChart>
                   </ResponsiveContainer>
                 </div>
