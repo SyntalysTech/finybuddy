@@ -40,6 +40,8 @@ import {
   ComposedChart,
   Line,
   Cell,
+  ReferenceLine,
+  Label,
 } from "recharts";
 import { format, subMonths, addMonths } from "date-fns";
 import { es } from "date-fns/locale";
@@ -1631,14 +1633,21 @@ function PrevisionPageContent() {
                           radius={[4, 4, 0, 0]}
                           barSize={40}
                         />
-                        <Line
-                          type="monotone"
-                          dataKey="average"
+                        <ReferenceLine
+                          y={historyData[0]?.average || 0}
                           stroke="var(--danger)"
-                          strokeWidth={2}
-                          dot={false}
                           strokeDasharray="5 5"
-                        />
+                          strokeWidth={2}
+                        >
+                          <Label
+                            value="Media"
+                            position="insideBottomLeft"
+                            offset={5}
+                            fill="var(--danger)"
+                            fontSize={10}
+                            className="font-medium"
+                          />
+                        </ReferenceLine>
                       </ComposedChart>
                     </ResponsiveContainer>
                   </div>
