@@ -578,7 +578,6 @@ function PrevisionVsRealidadPageContent() {
                     <h3 className="font-semibold flex items-center gap-2">
                       <span className="w-2 h-2 rounded-full bg-[var(--success)]"></span>
                       Necesidades
-                      Necesidades
                       {expandedPanels.needs ? (
                         <ChevronUp className="w-4 h-4 text-[var(--brand-gray)]" />
                       ) : (
@@ -614,7 +613,6 @@ function PrevisionVsRealidadPageContent() {
                   <div className="flex items-center justify-between mb-2">
                     <h3 className="font-semibold flex items-center gap-2">
                       <span className="w-2 h-2 rounded-full bg-[#3B82F6]"></span>
-                      Deseos
                       Deseos
                       {expandedPanels.wants ? (
                         <ChevronUp className="w-4 h-4 text-[var(--brand-gray)]" />
@@ -652,7 +650,6 @@ function PrevisionVsRealidadPageContent() {
                   <div className="flex items-center justify-between mb-2">
                     <h3 className="font-semibold flex items-center gap-2">
                       <PiggyBank className="w-5 h-5 text-[var(--brand-cyan)]" />
-                      Ahorro
                       Ahorro
                       {expandedPanels.savingsTotal ? (
                         <ChevronUp className="w-4 h-4 text-[var(--brand-gray)]" />
