@@ -429,8 +429,8 @@ function AhorroPageContent() {
               key={tab.value}
               onClick={() => setFilter(tab.value as typeof filter)}
               className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors whitespace-nowrap ${filter === tab.value
-                  ? "bg-[var(--brand-purple)] text-white"
-                  : "bg-[var(--background-secondary)] hover:bg-[var(--border)]"
+                ? "bg-[var(--brand-purple)] text-white"
+                : "bg-[var(--background-secondary)] hover:bg-[var(--border)]"
                 }`}
             >
               {tab.label}
@@ -592,18 +592,16 @@ function AhorroPageContent() {
                               {formatCurrency(goal.current_amount)} de {formatCurrency(goal.target_amount)}
                             </span>
                             <span
-                              className="text-xs sm:text-sm font-semibold shrink-0"
-                              style={{ color: goal.color }}
+                              className="text-xs sm:text-sm font-semibold shrink-0 text-[var(--brand-cyan)]"
                             >
                               {progress.toFixed(0)}%
                             </span>
                           </div>
                           <div className="progress-bar h-2 sm:h-3">
                             <div
-                              className="h-full rounded-full transition-all duration-800"
+                              className="h-full rounded-full transition-all duration-800 bg-[var(--brand-cyan)]"
                               style={{
                                 width: `${Math.max(progress, 2)}%`,
-                                backgroundColor: goal.color,
                               }}
                             />
                           </div>
@@ -1028,8 +1026,8 @@ function GoalModal({
                     type="button"
                     onClick={() => setIcon(i)}
                     className={`w-10 h-10 rounded-lg flex items-center justify-center text-xl border-2 transition-all ${icon === i
-                        ? "border-[var(--brand-cyan)] bg-[var(--brand-cyan)]/10"
-                        : "border-[var(--border)] hover:border-[var(--brand-gray)]"
+                      ? "border-[var(--brand-cyan)] bg-[var(--brand-cyan)]/10"
+                      : "border-[var(--border)] hover:border-[var(--brand-gray)]"
                       }`}
                   >
                     {i}
@@ -1371,10 +1369,9 @@ function ContributionModal({
             </div>
             <div className="h-2 bg-[var(--border)] rounded-full overflow-hidden">
               <div
-                className="h-full rounded-full"
+                className="h-full rounded-full bg-[var(--brand-cyan)]"
                 style={{
                   width: `${Math.min((goal.current_amount / goal.target_amount) * 100, 100)}%`,
-                  backgroundColor: goal.color,
                 }}
               />
             </div>
@@ -1590,10 +1587,9 @@ function WithdrawalModal({
             </div>
             <div className="h-2 bg-[var(--border)] rounded-full overflow-hidden">
               <div
-                className="h-full rounded-full"
+                className="h-full rounded-full bg-[var(--brand-cyan)]"
                 style={{
                   width: `${Math.min((goal.current_amount / goal.target_amount) * 100, 100)}%`,
-                  backgroundColor: goal.color,
                 }}
               />
             </div>
