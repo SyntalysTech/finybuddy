@@ -173,7 +173,7 @@ export default function Sidebar() {
                   <Link
                     href={item.href}
                     onClick={handleNavClick}
-                    className={`relative flex items-center ${collapsed && !isMobile ? "justify-center p-2.5" : "gap-3 px-3 py-2.5"} rounded-xl transition-all duration-300 group overflow-hidden ${active
+                    className={`relative w-full flex items-center ${collapsed && !isMobile ? "justify-center p-2.5" : "gap-3 px-3 py-2.5"} rounded-xl transition-all duration-300 group overflow-hidden ${active
                       ? `bg-gradient-to-r ${item.gradient} border border-white/10`
                       : "hover:bg-[var(--sidebar-hover)] hover:scale-[1.02]"
                       }`}
@@ -192,8 +192,8 @@ export default function Sidebar() {
                       />
                     </div>
                     <span
-                      className={`text-sm font-medium whitespace-nowrap transition-all duration-300 ease-in-out ${active ? "text-white font-semibold" : "group-hover:text-white"
-                        } ${collapsed && !isMobile ? "w-0 opacity-0 hidden" : "w-auto opacity-100"}`}
+                      className={`text-sm font-medium whitespace-nowrap overflow-hidden transition-all duration-300 ease-in-out ${active ? "text-white font-semibold" : "group-hover:text-white"
+                        } ${collapsed && !isMobile ? "w-0 opacity-0" : "w-auto opacity-100"}`}
                     >
                       {item.name}
                     </span>
@@ -237,7 +237,7 @@ export default function Sidebar() {
                   <Link
                     href={item.href}
                     onClick={handleNavClick}
-                    className={`relative flex items-center ${collapsed && !isMobile ? "justify-center p-2.5" : "gap-3 px-3 py-2.5"} rounded-xl transition-all duration-300 group overflow-hidden ${active
+                    className={`relative w-full flex items-center ${collapsed && !isMobile ? "justify-center p-2.5" : "gap-3 px-3 py-2.5"} rounded-xl transition-all duration-300 group overflow-hidden ${active
                       ? `bg-gradient-to-r ${item.gradient} border border-white/10`
                       : "hover:bg-[var(--sidebar-hover)] hover:scale-[1.02]"
                       }`}
@@ -256,8 +256,8 @@ export default function Sidebar() {
                       />
                     </div>
                     <span
-                      className={`text-sm font-medium whitespace-nowrap transition-all duration-300 ease-in-out ${active ? "text-white font-semibold" : "group-hover:text-white"
-                        } ${collapsed && !isMobile ? "w-0 opacity-0 hidden" : "w-auto opacity-100"}`}
+                      className={`text-sm font-medium whitespace-nowrap overflow-hidden transition-all duration-300 ease-in-out ${active ? "text-white font-semibold" : "group-hover:text-white"
+                        } ${collapsed && !isMobile ? "w-0 opacity-0" : "w-auto opacity-100"}`}
                     >
                       {item.name}
                     </span>
@@ -297,7 +297,7 @@ export default function Sidebar() {
                   <Link
                     href="/admin"
                     onClick={handleNavClick}
-                    className={`relative flex items-center ${collapsed && !isMobile ? "justify-center p-2.5" : "gap-3 px-3 py-2.5"} rounded-xl transition-all duration-300 group overflow-hidden ${isActive("/admin")
+                    className={`relative w-full flex items-center ${collapsed && !isMobile ? "justify-center p-2.5" : "gap-3 px-3 py-2.5"} rounded-xl transition-all duration-300 group overflow-hidden ${isActive("/admin")
                       ? "bg-gradient-to-r from-[#F59E0B]/20 to-transparent border border-white/10"
                       : "hover:bg-[var(--sidebar-hover)] hover:scale-[1.02]"
                       }`}
@@ -314,8 +314,8 @@ export default function Sidebar() {
                       />
                     </div>
                     <span
-                      className={`text-sm font-medium whitespace-nowrap transition-all duration-300 ease-in-out ${isActive("/admin") ? "text-white font-semibold" : "group-hover:text-white"
-                        } ${collapsed && !isMobile ? "w-0 opacity-0 hidden" : "w-auto opacity-100"}`}
+                      className={`text-sm font-medium whitespace-nowrap overflow-hidden transition-all duration-300 ease-in-out ${isActive("/admin") ? "text-white font-semibold" : "group-hover:text-white"
+                        } ${collapsed && !isMobile ? "w-0 opacity-0" : "w-auto opacity-100"}`}
                     >
                       Admin
                     </span>
@@ -346,7 +346,7 @@ export default function Sidebar() {
             ) : (
               <>
                 <ChevronLeft className="w-5 h-5 flex-shrink-0 text-[var(--sidebar-text)]" />
-                <span className="text-sm whitespace-nowrap text-[var(--sidebar-text)]">Colapsar</span>
+                <span className="text-sm font-medium whitespace-nowrap overflow-hidden transition-all duration-300 ease-in-out text-[var(--sidebar-text)]">Colapsar</span>
               </>
             )}
           </button>
@@ -360,7 +360,7 @@ export default function Sidebar() {
         >
           <Globe className="w-5 h-5 flex-shrink-0 text-[var(--sidebar-text)]" />
           <span
-            className={`text-sm font-medium whitespace-nowrap transition-all duration-300 ease-in-out ${collapsed && !isMobile ? "w-0 opacity-0 hidden" : "w-auto opacity-100"
+            className={`text-sm font-medium whitespace-nowrap overflow-hidden transition-all duration-300 ease-in-out ${collapsed && !isMobile ? "w-0 opacity-0" : "w-auto opacity-100"
               }`}
           >
             Volver a la web
@@ -376,7 +376,7 @@ export default function Sidebar() {
         >
           <LogOut className="w-5 h-5 flex-shrink-0" />
           <span
-            className={`text-sm font-medium whitespace-nowrap transition-all duration-300 ease-in-out ${collapsed && !isMobile ? "w-0 opacity-0 hidden" : "w-auto opacity-100"
+            className={`text-sm font-medium whitespace-nowrap overflow-hidden transition-all duration-300 ease-in-out ${collapsed && !isMobile ? "w-0 opacity-0" : "w-auto opacity-100"
               }`}
           >
             {isLoggingOut ? "Cerrando..." : "Cerrar sesión"}
