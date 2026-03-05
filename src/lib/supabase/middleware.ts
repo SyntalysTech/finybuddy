@@ -38,7 +38,8 @@ export async function updateSession(request: NextRequest) {
   const isPublicPath = publicPaths.some(
     (path) =>
       request.nextUrl.pathname === path ||
-      request.nextUrl.pathname.startsWith("/auth/")
+      request.nextUrl.pathname.startsWith("/auth/") ||
+      request.nextUrl.pathname.startsWith("/api/")
   );
 
   // Si no hay usuario y la ruta no es pública, redirigir a login

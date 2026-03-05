@@ -71,14 +71,13 @@ function buildReminderEmailHtml(
             </div>
 
             <!-- Total -->
-            ${
-              remindersWithAmount.length > 1
-                ? `<div style="background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); border-radius: 12px; padding: 16px; text-align: center; margin-bottom: 24px;">
+            ${remindersWithAmount.length > 1
+      ? `<div style="background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); border-radius: 12px; padding: 16px; text-align: center; margin-bottom: 24px;">
                 <div style="color: rgba(255,255,255,0.8); font-size: 13px; text-transform: uppercase; letter-spacing: 1px;">Total ${dateLabel}</div>
                 <div style="color: white; font-size: 32px; font-weight: 700; margin-top: 4px;">${formatAmount(totalAmount)} €</div>
               </div>`
-                : ""
-            }
+      : ""
+    }
 
             <!-- Botón -->
             <a href="https://finybuddy.com/calendario" style="display: block; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); color: white; text-decoration: none; padding: 16px 24px; border-radius: 12px; font-weight: 600; text-align: center; font-size: 15px;">
@@ -106,7 +105,7 @@ export async function POST(request: Request) {
   // Verificar que viene de Vercel Cron
   const authHeader = request.headers.get("authorization");
   if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return NextResponse.json({ error: "Unauthorized", received: authHeader, expected: process.env.CRON_SECRET }, { status: 401 });
   }
 
   const supabase = createClient(
@@ -227,7 +226,7 @@ export async function POST(request: Request) {
 export async function GET(request: Request) {
   const authHeader = request.headers.get("authorization");
   if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return NextResponse.json({ error: "Unauthorized", received: authHeader, expected: process.env.CRON_SECRET }, { status: 401 });
   }
 
   return POST(request);
