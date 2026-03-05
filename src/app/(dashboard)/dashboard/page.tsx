@@ -157,8 +157,8 @@ const getContextualPhrase = (
 
   const { total_income, total_expenses, total_savings, balance } = summary;
 
-  // Cálculo de ahorro real (Ahorro directo + Excedente de balance)
-  const actualSavingsRate = total_income > 0 ? (balance / total_income) * 100 : 0;
+  // Cálculo de ahorro real basado exclusivamente en operaciones de ahorro
+  const actualSavingsRate = total_income > 0 ? (total_savings / total_income) * 100 : 0;
   const isExcellent = actualSavingsRate >= 30;
   const isGood = actualSavingsRate >= 20;
   const isOk = actualSavingsRate >= 10;
@@ -167,28 +167,31 @@ const getContextualPhrase = (
     return "Tu panel está listo. Empieza a registrar ingresos y gastos para ver tu análisis.";
   }
 
-  // 1. Prioridad: Alertas Críticas
+  // 1. Prioridad: Alertas Críticas (Basadas en balance/disponibilidad)
   if (balance < 0) {
-    return `¡Ojo! Este mes tus gastos superan tus ingresos por ${formatCurrency(Math.abs(balance))}. Toca revisar prioridades.`;
+    return `¡Ojo! Este mes tienes un descubierto de ${formatCurrency(Math.abs(balance))}. Toca revisar prioridades y controlar los gastos.`;
   }
 
-  // 2. Prioridad: Insights de Ahorro basados en operaciones
-  if (total_income > 0) {
+  // 2. Prioridad: Insights de Ahorro basados en operaciones reales
+  if (total_income > 0 && total_savings > 0) {
     const pctStr = Math.round(actualSavingsRate);
     if (isExcellent) {
-      return `¡Espectacular! Estás ahorrando el ${pctStr}% de lo que ganas (${formatCurrency(balance)}). Gestión de nivel experto.`;
+      return `¡Espectacular! Estás ahorrando el ${pctStr}% de lo que ganas (${formatCurrency(total_savings)}). Gestión de nivel experto.`;
     }
     if (isGood) {
-      return `Buen trabajo: llevas un ${pctStr}% de ahorro este mes. Estás por encima de la media recomendada.`;
+      return `Buen trabajo: has destinado un ${pctStr}% a ahorro (${formatCurrency(total_savings)}) este mes. ¡Sigue así!`;
     }
     if (isOk) {
-      return `Vas por buen camino: tu capacidad de ahorro este mes es del ${pctStr}%. Sigue así para consolidar tu colchón.`;
+      return `Vas por buen camino: tu ahorro trackeado es del ${pctStr}% de tus ingresos (${formatCurrency(total_savings)}).`;
     }
   }
 
-  // 3. Situación ajustada
-  if (balance > 0 && actualSavingsRate < 10) {
-    return `Margen ajustado: te queda un ${Math.round(actualSavingsRate)}% de ahorro libre. Cuidado con los gastos de última hora.`;
+  // 3. Situación ajustada o sin ahorro trackeado
+  if (total_income > 0 && total_savings === 0) {
+    if (balance > 100) {
+      return `Tienes ${formatCurrency(balance)} disponibles. Sería un buen momento para mover algo a ahorro y empezar a trackearlo.`;
+    }
+    return "Aún no he detectado operaciones de ahorro este mes. ¡Recuerda pagarte a ti mismo primero!";
   }
 
   // 4. Metas y Deudas
