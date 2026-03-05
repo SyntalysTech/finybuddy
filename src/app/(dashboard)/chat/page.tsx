@@ -799,7 +799,7 @@ function ChatPageContent() {
         <div className="flex-1 overflow-y-auto">
           {messages.length === 0 && !loading ? (
             // Welcome screen - premium layout
-            <div className="h-full flex flex-col items-center justify-center px-4 max-w-4xl mx-auto overflow-y-auto">
+            <div className="h-full flex flex-col items-center justify-center px-4 pb-32 max-w-4xl mx-auto overflow-y-auto">
               <div className="w-24 h-24 sm:w-32 sm:h-32 relative mb-8 animate-float">
                 <div className="absolute inset-0 bg-[var(--brand-purple)]/20 rounded-full blur-2xl animate-pulse" />
                 <Image
@@ -839,10 +839,6 @@ function ChatPageContent() {
                 })}
               </div>
 
-              <div className="mt-12 flex items-center gap-2 text-[var(--brand-gray)]/50 text-[10px] font-bold uppercase tracking-[0.2em]">
-                <Activity className="w-3 h-3" />
-                Conectado al motor financiero v4.0
-              </div>
             </div>
           ) : (
             // Chat messages - full width con padding adaptativo
@@ -987,9 +983,6 @@ function ChatPageContent() {
               </div>
             </form>
 
-            <p className="text-[10px] text-center text-[var(--brand-gray)]/40 mt-3 font-medium uppercase tracking-[0.2em] sm:block hidden ">
-              FinyBot v4.1 • Presiona <span className="bg-[var(--border)] px-1.5 py-0.5 rounded text-[8px] text-[var(--brand-gray)]">Enter</span> para enviar
-            </p>
           </div>
         </div>
       </div>{/* Fin contenido principal del chat */}
