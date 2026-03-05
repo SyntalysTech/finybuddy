@@ -208,9 +208,7 @@ export default function DashboardPage() {
   const [categoryDistribution, setCategoryDistribution] = useState<CategoryDistribution[]>([]);
   const [selectedSegment, setSelectedSegment] = useState<"needs" | "wants" | "savings" | null>(null);
 
-  // States para el gráfico increíble
-  const [activeInnerIndex, setActiveInnerIndex] = useState<number | null>(null);
-  const [activeOuterIndex, setActiveOuterIndex] = useState<number | null>(null);
+  const [activeIndex, setActiveIndex] = useState<number | null>(null);
 
   const supabase = createClient();
 
@@ -473,19 +471,26 @@ export default function DashboardPage() {
 
   // Helper variables para el super gráfico
   const innerData = [
-    { name: "Necesidades", value: monthlySummary?.needs_total || 0, color: "#2EEB8F", segment: "needs" },
-    { name: "Deseos", value: monthlySummary?.wants_total || 0, color: "#8B4DFF", segment: "wants" },
-    { name: "Ahorro", value: monthlySummary?.total_savings || 0, color: "#00E5FF", segment: "savings" },
+    { name: "Necesidades", value: monthlySummary?.needs_total || 0, color: "#ef4444", segment: "needs" },
+    { name: "Deseos", value: monthlySummary?.wants_total || 0, color: "#f59e0b", segment: "wants" },
+    { name: "Ahorro", value: monthlySummary?.total_savings || 0, color: "#06b6d4", segment: "savings" },
   ].filter(item => item.value > 0);
 
   const totalDistAmount = innerData.reduce((acc, curr) => acc + curr.value, 0);
 
+  // Datos activos para mostrar: Por defecto Macros, si seleccionamos uno, mostramos su detalle
+  const displayData = selectedSegment
+    ? categoryDistribution.filter(c => c.segment === selectedSegment).map(c => ({ name: c.name, value: c.amount, color: c.color, segment: c.segment, isSub: true }))
+    : innerData;
+
+  const currentTotal = displayData.reduce((acc, curr) => acc + curr.value, 0);
+
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const PieWithProps = Pie as React.ElementType<any>;
 
-  // Renderizadores de forma activa para el gráfico ultra-premium
+  // Renderizador simplificado para hover
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const renderInnerSector = (props: any) => {
+  const renderActiveShape = (props: any) => {
     const { cx, cy, innerRadius, outerRadius, startAngle, endAngle, fill } = props;
     return (
       <g>
@@ -493,41 +498,11 @@ export default function DashboardPage() {
           cx={cx}
           cy={cy}
           innerRadius={innerRadius}
-          outerRadius={outerRadius + 6}
-          startAngle={startAngle}
-          endAngle={endAngle}
-          fill={fill}
-          className="transition-all duration-300 ease-out"
-        />
-        {/* Anillo de resplandor sutil (glow) */}
-        <Sector
-          cx={cx}
-          cy={cy}
-          startAngle={startAngle}
-          endAngle={endAngle}
-          innerRadius={innerRadius - 4}
-          outerRadius={innerRadius - 2}
-          fill={fill}
-          opacity={0.5}
-        />
-      </g>
-    );
-  };
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const renderOuterSector = (props: any) => {
-    const { cx, cy, innerRadius, outerRadius, startAngle, endAngle, fill } = props;
-    return (
-      <g>
-        <Sector
-          cx={cx}
-          cy={cy}
-          innerRadius={innerRadius - 5}
           outerRadius={outerRadius + 8}
           startAngle={startAngle}
           endAngle={endAngle}
           fill={fill}
-          className="transition-all duration-300 ease-out drop-shadow-lg"
+          className="transition-all duration-300 ease-out"
         />
       </g>
     );
@@ -760,29 +735,35 @@ export default function DashboardPage() {
 
                   {/* Etiqueta central flotante (absoluta) */}
                   <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none z-10">
-                    <div className="bg-[var(--background)]/80 backdrop-blur-md px-6 py-4 rounded-full shadow-lg border border-[var(--border)] flex flex-col items-center justify-center text-center animate-fade-in transition-all duration-300 min-w-[140px]">
-                      {activeOuterIndex !== null && categoryDistribution[activeOuterIndex] ? (
+                    <div className={`bg-[var(--background)]/90 backdrop-blur-md px-6 py-4 rounded-full shadow-lg border border-[var(--border)] flex flex-col items-center justify-center text-center transition-all duration-300 min-w-[140px] pointer-events-auto ${selectedSegment ? 'cursor-pointer hover:bg-[var(--background)]' : ''}`}
+                      onClick={() => { if (selectedSegment) { setSelectedSegment(null); setActiveIndex(null); } }}>
+                      {activeIndex !== null && displayData[activeIndex] ? (
                         <>
-                          <p className="text-[10px] sm:text-xs font-semibold text-[var(--brand-gray)] uppercase tracking-wider mb-1 px-2 line-clamp-1">{categoryDistribution[activeOuterIndex].name}</p>
-                          <p className="text-lg sm:text-xl font-bold" style={{ color: categoryDistribution[activeOuterIndex].color }}>
-                            {formatCurrency(categoryDistribution[activeOuterIndex].amount)}
+                          <p className="text-[10px] sm:text-xs font-semibold text-[var(--brand-gray)] uppercase tracking-wider mb-1 px-2 line-clamp-1">{displayData[activeIndex].name}</p>
+                          <p className="text-lg sm:text-xl font-bold" style={{ color: displayData[activeIndex].color }}>
+                            {formatCurrency(displayData[activeIndex].value)}
+                          </p>
+                          <p className="text-[10px] sm:text-xs font-semibold px-2 py-0.5 mt-1 rounded-full bg-[var(--background-secondary)]" style={{ color: displayData[activeIndex].color }}>
+                            {Math.round((displayData[activeIndex].value / currentTotal) * 100)}% {selectedSegment ? 'de la categoría' : 'del total'}
                           </p>
                         </>
-                      ) : activeInnerIndex !== null && innerData[activeInnerIndex] ? (
+                      ) : selectedSegment ? (
                         <>
-                          <p className="text-xs sm:text-sm font-semibold text-[var(--brand-gray)] uppercase tracking-wider mb-1">{innerData[activeInnerIndex].name}</p>
-                          <p className="text-xl sm:text-2xl font-bold" style={{ color: innerData[activeInnerIndex].color }}>
-                            {formatCurrency(innerData[activeInnerIndex].value)}
+                          <p className="text-[10px] sm:text-xs font-bold text-[var(--brand-cyan)] uppercase tracking-wider mb-1 px-2 flex items-center justify-center gap-1 group-hover:text-[var(--foreground)] transition-colors">
+                            <ChevronLeft className="w-3 h-3" /> VOLVER
                           </p>
-                          <p className="text-[10px] sm:text-xs font-semibold px-2 py-0.5 mt-1 rounded-full bg-[var(--background-secondary)]" style={{ color: innerData[activeInnerIndex].color }}>
-                            {Math.round((innerData[activeInnerIndex].value / totalDistAmount) * 100)}% del total
+                          <p className="text-lg sm:text-xl font-bold text-[var(--foreground)]">
+                            {formatCurrency(currentTotal)}
+                          </p>
+                          <p className="text-[10px] sm:text-xs text-[var(--brand-gray)] mt-1 font-medium capitalize">
+                            Total {selectedSegment === "needs" ? "Necesidades" : selectedSegment === "wants" ? "Deseos" : "Ahorro"}
                           </p>
                         </>
                       ) : (
                         <>
                           <p className="text-xs sm:text-sm font-semibold text-[var(--brand-gray)] uppercase tracking-wider mb-1">Total Movido</p>
                           <p className="text-xl sm:text-2xl font-bold text-[var(--foreground)]">
-                            {formatCurrency(totalDistAmount)}
+                            {formatCurrency(currentTotal)}
                           </p>
                         </>
                       )}
@@ -791,80 +772,43 @@ export default function DashboardPage() {
 
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
-                      {/* Defs para filtros SVG y gradientes premium */}
                       <defs>
                         <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
                           <feDropShadow dx="0" dy="4" stdDeviation="6" floodOpacity="0.15" floodColor="currentColor" />
                         </filter>
                       </defs>
 
-                      {/* Anillo Interior (Segmentos Principales) */}
                       <PieWithProps
-                        data={innerData}
+                        data={displayData}
                         cx="50%"
                         cy="50%"
-                        innerRadius="50%"
-                        outerRadius="70%"
+                        innerRadius={selectedSegment ? "65%" : "60%"}
+                        outerRadius={selectedSegment ? "85%" : "80%"}
                         paddingAngle={3}
                         dataKey="value"
                         stroke="var(--background)"
                         strokeWidth={2}
-                        activeIndex={activeInnerIndex ?? -1}
-                        activeShape={renderInnerSector}
-                        onMouseEnter={(_: any, index: number) => setActiveInnerIndex(index)}
-                        onMouseLeave={() => setActiveInnerIndex(null)}
+                        activeIndex={activeIndex ?? -1}
+                        activeShape={renderActiveShape}
+                        onMouseEnter={(_: any, index: number) => setActiveIndex(index)}
+                        onMouseLeave={() => setActiveIndex(null)}
                         onClick={(data: any) => {
-                          if (selectedSegment === data?.payload?.segment) {
-                            setSelectedSegment(null);
-                          } else {
-                            setSelectedSegment(data?.payload?.segment || null);
+                          if (!selectedSegment && data?.payload?.segment) {
+                            setSelectedSegment(data.payload.segment);
+                            setActiveIndex(null);
                           }
                         }}
-                        style={{ cursor: "pointer", filter: "url(#shadow)" }}
+                        style={{ cursor: selectedSegment ? "default" : "pointer", filter: "url(#shadow)" }}
                       >
-                        {innerData.map((entry, index) => (
+                        {displayData.map((entry, index) => (
                           <Cell
                             key={`cell-${index}`}
                             fill={entry.color}
-                            fillOpacity={selectedSegment && selectedSegment !== entry.segment ? 0.3 : 1}
                             className="transition-all duration-300 ease-in-out"
                           />
                         ))}
                       </PieWithProps>
 
-                      {/* Anillo Exterior (Subcategorías) */}
-                      <PieWithProps
-                        data={categoryDistribution}
-                        cx="50%"
-                        cy="50%"
-                        innerRadius="74%"
-                        outerRadius="88%"
-                        dataKey="amount"
-                        paddingAngle={2}
-                        stroke="var(--background)"
-                        strokeWidth={2}
-                        activeIndex={activeOuterIndex ?? -1}
-                        activeShape={renderOuterSector}
-                        onMouseEnter={(_: any, index: number) => setActiveOuterIndex(index)}
-                        onMouseLeave={() => setActiveOuterIndex(null)}
-                        onClick={(data: any) => {
-                          if (selectedSegment === data?.payload?.payload?.segment) {
-                            setSelectedSegment(null);
-                          } else {
-                            setSelectedSegment(data?.payload?.payload?.segment || null);
-                          }
-                        }}
-                        style={{ cursor: "pointer", filter: "url(#shadow)" }}
-                      >
-                        {categoryDistribution.map((entry, index) => (
-                          <Cell
-                            key={`cell-inner-${index}`}
-                            fill={entry.color}
-                            fillOpacity={selectedSegment && selectedSegment !== entry.segment ? 0.25 : 0.9}
-                            className="hover:fill-opacity-100 transition-all duration-300 ease-in-out"
-                          />
-                        ))}
-                      </PieWithProps>
                       <Tooltip
                         formatter={(value: number, name: string) => [formatCurrency(value), ""]}
                         contentStyle={{
@@ -883,28 +827,22 @@ export default function DashboardPage() {
                     </PieChart>
                   </ResponsiveContainer>
                 </div>
+
+                {/* Leyenda y Botones Macros */}
                 <div className="flex flex-wrap justify-center gap-3 sm:gap-4 mt-2 w-full">
-                  <div
-                    onClick={() => setSelectedSegment(selectedSegment === "needs" ? null : "needs")}
-                    className={`flex items-center gap-1.5 cursor-pointer hover:opacity-80 transition-opacity ${selectedSegment && selectedSegment !== "needs" ? "opacity-30" : ""}`}
-                  >
-                    <div className="w-3 h-3 rounded-full" style={{ backgroundColor: "#2EEB8F" }}></div>
-                    <span className="text-xs text-[var(--foreground)] font-medium">Necesidades: {formatCurrency(monthlySummary?.needs_total || 0)}</span>
-                  </div>
-                  <div
-                    onClick={() => setSelectedSegment(selectedSegment === "wants" ? null : "wants")}
-                    className={`flex items-center gap-1.5 cursor-pointer hover:opacity-80 transition-opacity ${selectedSegment && selectedSegment !== "wants" ? "opacity-30" : ""}`}
-                  >
-                    <div className="w-3 h-3 rounded-full" style={{ backgroundColor: "#8B4DFF" }}></div>
-                    <span className="text-xs text-[var(--foreground)] font-medium">Deseos: {formatCurrency(monthlySummary?.wants_total || 0)}</span>
-                  </div>
-                  <div
-                    onClick={() => setSelectedSegment(selectedSegment === "savings" ? null : "savings")}
-                    className={`flex items-center gap-1.5 cursor-pointer hover:opacity-80 transition-opacity ${selectedSegment && selectedSegment !== "savings" ? "opacity-30" : ""}`}
-                  >
-                    <div className="w-3 h-3 rounded-full" style={{ backgroundColor: "#00E5FF" }}></div>
-                    <span className="text-xs text-[var(--foreground)] font-medium">Ahorro: {formatCurrency(monthlySummary?.total_savings || 0)}</span>
-                  </div>
+                  {innerData.map((macro) => (
+                    <div
+                      key={macro.segment}
+                      onClick={() => {
+                        setSelectedSegment(selectedSegment === macro.segment ? null : macro.segment as any);
+                        setActiveIndex(null);
+                      }}
+                      className={`flex items-center gap-1.5 cursor-pointer hover:opacity-80 transition-opacity ${selectedSegment && selectedSegment !== macro.segment ? "opacity-30" : ""}`}
+                    >
+                      <div className="w-3 h-3 rounded-full" style={{ backgroundColor: macro.color }}></div>
+                      <span className="text-xs text-[var(--foreground)] font-medium">{macro.name}: {formatCurrency(macro.value)}</span>
+                    </div>
+                  ))}
                 </div>
 
                 {/* Detalle Categorías (Se muestra al hacer click) */}
