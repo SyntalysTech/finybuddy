@@ -210,7 +210,9 @@ function ChatPageContent() {
 
   // Auto-scroll to bottom when messages change or loading starts
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    // Usamos 'auto' para evitar que el 'smooth' compita con el renderizado rápido de mensajes (streaming)
+    // lo cual evita los saltos y parones que reporta el usuario.
+    messagesEndRef.current?.scrollIntoView({ behavior: loading ? "smooth" : "auto" });
   }, [messages, loading]);
 
   // Auto-resize textarea
@@ -809,8 +811,8 @@ function ChatPageContent() {
                         <Icon className="w-6 h-6" />
                       </div>
                       <div className="text-left">
-                        <p className="text-xs font-black text-[var(--brand-gray)] uppercase tracking-widest mb-0.5">{prompt.label}</p>
-                        <p className="text-sm font-semibold">{prompt.text}</p>
+                        <p className="text-xs font-black text-[var(--brand-gray)] uppercase tracking-widest mb-0.5 group-hover:text-[var(--brand-purple)] transition-colors">{prompt.label}</p>
+                        <p className="text-sm font-semibold text-[var(--foreground)] group-hover:text-[var(--brand-purple)] transition-colors">{prompt.text}</p>
                       </div>
                     </button>
                   );
@@ -829,15 +831,17 @@ function ChatPageContent() {
                 {messages.map((message, index) => (
                   <div
                     key={index}
-                    className={`flex gap-3 sm:gap-4 ${message.role === "user" ? "flex-row-reverse" : ""}`}
+                    className={`flex gap-3 sm:gap-4 animate-in fade-in slide-in-from-bottom-2 duration-500 ${message.role === "user" ? "flex-row-reverse" : ""}`}
                   >
                     {/* Avatar with status indicator */}
-                    <div className="shrink-0 relative">
-                      <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full overflow-hidden border-2 ${message.role === "user" ? "border-[var(--brand-purple)] bg-[var(--brand-purple)]" : "border-[var(--brand-cyan)] bg-[var(--background-secondary)]"}`}>
+                    <div className="shrink-0">
+                      <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full overflow-hidden border-2 relative ${message.role === "user" ? "border-[var(--brand-purple)] bg-[var(--brand-purple)]" : "border-[var(--brand-cyan)] bg-[var(--background-secondary)]"}`}>
                         {message.role === "user" ? (
                           userAvatar ? <Image src={userAvatar} alt="Profile" fill className="object-cover" /> : <div className="w-full h-full flex items-center justify-center"><User className="w-5 h-5 text-white" /></div>
                         ) : (
-                          <Image src="/assets/finy-mascota-minimalista.png" alt="Finy" fill className="object-contain p-1" />
+                          <div className="w-full h-full bg-[var(--background-secondary)] flex items-center justify-center">
+                            <Image src="/assets/finy-mascota-minimalista.png" alt="Finy" fill className="object-contain p-1.5" />
+                          </div>
                         )}
                       </div>
                     </div>
@@ -847,7 +851,7 @@ function ChatPageContent() {
                       <div
                         className={`px-4 py-3 rounded-2xl shadow-sm ${message.role === "user"
                           ? "bg-[var(--brand-purple)] text-white rounded-tr-none"
-                          : "bg-[var(--background-secondary)] border border-[var(--border)] rounded-tl-none dark:bg-white/5 backdrop-blur-sm"
+                          : "bg-[var(--background-secondary)] dark:bg-slate-800 border border-[var(--border)] rounded-tl-none backdrop-blur-sm"
                           }`}
                       >
                         {message.role === "user" ? (
@@ -859,7 +863,7 @@ function ChatPageContent() {
                         )}
                       </div>
                       <span className="text-[10px] text-[var(--brand-gray)]/50 mt-1 font-bold uppercase tracking-widest px-1">
-                        {message.role === "user" ? "Enviado" : "FinyBot • Inteligencia Artificial"}
+                        {message.role === "user" ? "Tú" : "FinyBot • Analista"}
                       </span>
                     </div>
                   </div>
@@ -868,23 +872,24 @@ function ChatPageContent() {
 
               {/* Loading indicator - hide once streaming starts */}
               {loading && !(messages.length > 0 && messages[messages.length - 1]?.role === "assistant" && messages[messages.length - 1]?.content) && (
-                <div className="flex gap-4">
-                  <div className="w-10 h-10 shrink-0 relative">
-                    <div className="absolute inset-0 bg-[var(--brand-cyan)]/20 rounded-full animate-ping" />
-                    <Image src="/assets/finy-mascota-minimalista.png" alt="Finy" fill className="object-contain relative z-10 p-1" />
+                <div className="flex gap-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                  <div className="shrink-0">
+                    <div className="w-10 h-10 rounded-full border-2 border-[var(--brand-cyan)] bg-[var(--background-secondary)] relative overflow-hidden">
+                      <div className="absolute inset-0 bg-[var(--brand-cyan)]/10 animate-pulse" />
+                      <Image src="/assets/finy-mascota-minimalista.png" alt="Finy" fill className="object-contain p-1.5 relative z-10" />
+                    </div>
                   </div>
-                  <div className="px-5 py-4 rounded-2xl rounded-tl-none bg-[var(--background-secondary)] border border-[var(--border)] shadow-sm">
+                  <div className="px-5 py-3 rounded-2xl rounded-tl-none bg-[var(--background-secondary)] border border-[var(--border)] shadow-sm max-w-sm">
                     <div className="flex flex-col gap-2">
                       <div className="flex gap-1.5 items-center">
-                        <span className="w-2 h-2 rounded-full bg-[var(--brand-purple)] animate-bounce" style={{ animationDelay: "0ms" }} />
-                        <span className="w-2 h-2 rounded-full bg-[var(--brand-purple)] animate-bounce" style={{ animationDelay: "150ms" }} />
-                        <span className="w-2 h-2 rounded-full bg-[var(--brand-purple)] animate-bounce" style={{ animationDelay: "300ms" }} />
-                        <span className="text-xs font-black text-[var(--brand-purple)] uppercase tracking-widest ml-1">FinyBot está analizando...</span>
+                        <span className="w-1.5 h-1.5 rounded-full bg-[var(--brand-purple)] animate-bounce" style={{ animationDelay: "0ms" }} />
+                        <span className="w-1.5 h-1.5 rounded-full bg-[var(--brand-purple)] animate-bounce" style={{ animationDelay: "150ms" }} />
+                        <span className="w-1.5 h-1.5 rounded-full bg-[var(--brand-purple)] animate-bounce" style={{ animationDelay: "300ms" }} />
+                        <span className="text-[10px] font-black text-[var(--brand-purple)] uppercase tracking-widest ml-1">Analizando...</span>
                       </div>
-                      <div className="h-1.5 w-40 bg-[var(--background)] rounded-full overflow-hidden">
+                      <div className="h-1 w-full bg-[var(--background)] rounded-full overflow-hidden">
                         <div className="h-full bg-gradient-to-r from-[var(--brand-purple)] to-[var(--brand-cyan)] animate-progress-fast" />
                       </div>
-                      <p className="text-[10px] text-[var(--brand-gray)] opacity-60 italic">Consultando contexto financiero del usuario...</p>
                     </div>
                   </div>
                 </div>
@@ -939,7 +944,7 @@ function ChatPageContent() {
                   onKeyDown={handleKeyDown}
                   placeholder={isRecording ? "Te escucho..." : isTranscribing ? "Procesando voz..." : "¿Qué quieres lograr hoy?"}
                   rows={1}
-                  className="flex-1 bg-transparent border-none focus:ring-0 text-sm sm:text-base font-medium placeholder:text-[var(--brand-gray)]/40 resize-none min-h-[24px] max-h-[120px]"
+                  className="flex-1 bg-transparent border-none focus:ring-0 text-sm sm:text-base font-medium text-[var(--foreground)] placeholder:text-[var(--brand-gray)]/40 resize-none min-h-[24px] max-h-[120px] py-1"
                   disabled={loading || isRecording}
                 />
 
