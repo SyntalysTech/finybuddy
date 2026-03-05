@@ -10,34 +10,50 @@ import {
     Sky,
     Box,
     Sparkles,
-    Sphere
+    Sphere,
+    MeshDistortMaterial,
+    MeshWobbleMaterial,
+    Torus,
+    Circle
 } from "@react-three/drei";
 import * as THREE from "three";
 import { ArrowLeft, MousePointerClick, Loader2, Volume2, VolumeX } from "lucide-react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 
-// --- WEB SPEECH API HELPER (I.A. VOICE) ---
-const speakCinematic = (text: string, enabled: boolean) => {
-    if (!enabled || typeof window === "undefined" || !window.speechSynthesis) return;
+// --- ELEVENLABS TTS HELPER ---
+const speakCinematic = async (text: string, enabled: boolean) => {
+    if (!enabled || typeof window === "undefined") return;
 
-    window.speechSynthesis.cancel(); // Stop talking
+    try {
+        // Fallback inmediato a SpeechSynthesis para que no haya silencio mientras carga
+        const utterance = new SpeechSynthesisUtterance("Procesando...");
+        utterance.volume = 0; // Silencio
+        window.speechSynthesis.speak(utterance);
 
-    const utterance = new SpeechSynthesisUtterance(text);
-    const voices = window.speechSynthesis.getVoices();
+        const response = await fetch("/api/tts", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ text }),
+        });
 
-    // Buscar una voz en español que suene bien (Microsoft Sabina/Helena, Google español, etc.)
-    const esVoice = voices.find(v => v.lang.startsWith("es-") && v.name.toLowerCase().includes("microsoft"));
-    const altVoice = voices.find(v => v.lang.startsWith("es-"));
-    if (esVoice) utterance.voice = esVoice;
-    else if (altVoice) utterance.voice = altVoice;
-
-    // Configuración para que suene como I.A de película
-    utterance.rate = 0.9;
-    utterance.pitch = 0.3; // Más grave, menos robótico agudo
-    utterance.volume = 1;
-
-    window.speechSynthesis.speak(utterance);
+        if (response.ok) {
+            const blob = await response.blob();
+            const url = URL.createObjectURL(blob);
+            const audio = new Audio(url);
+            audio.volume = 1.0;
+            audio.play();
+        } else {
+            // Fallback a voz nativa si falla ElevenLabs
+            const nativeUtterance = new SpeechSynthesisUtterance(text);
+            nativeUtterance.lang = "es-ES";
+            nativeUtterance.rate = 0.9;
+            nativeUtterance.pitch = 0.8;
+            window.speechSynthesis.speak(nativeUtterance);
+        }
+    } catch (error) {
+        console.error("TTS Error:", error);
+    }
 };
 
 // --- HOOKS Y COMPONENTES 3D ---
@@ -98,82 +114,138 @@ const PlayerControls = () => {
     return <PointerLockControls selector="#click-to-start" />;
 };
 
-// Stand Interactivo que habla al acercarse
-const InteractiveStand = ({ position, title, amount, color, voiceText, voiceEnabled, scale = 1, icon }: any) => {
-    const { camera } = useThree();
-    const [isNear, setIsNear] = useState(false);
-    const boxRef = useRef<THREE.Mesh>(null);
-
+// Anillo tecnológico rotante
+const TechRing = ({ radius, color, speed = 1, tilt = false }: any) => {
+    const ref = useRef<THREE.Group>(null);
     useFrame((state) => {
-        const dist = camera.position.distanceTo(new THREE.Vector3(...position));
-        if (dist < 6 && !isNear) {
-            setIsNear(true);
-            speakCinematic(voiceText, voiceEnabled);
-        } else if (dist >= 6 && isNear) {
-            setIsNear(false);
-        }
-
-        if (boxRef.current) {
-            // Latido sutil
-            const pulse = 1 + Math.sin(state.clock.elapsedTime * 2) * (isNear ? 0.05 : 0.02);
-            boxRef.current.scale.set(pulse * scale, pulse * scale, pulse * scale);
+        if (ref.current) {
+            ref.current.rotation.z += 0.01 * speed;
+            ref.current.rotation.x += tilt ? 0.005 : 0;
         }
     });
 
     return (
-        <group position={position}>
-            {/* Pedestal Voxel (Minecraft style base) */}
-            <mesh position={[0, 0.5, 0]}>
-                <boxGeometry args={[3, 1, 3]} />
-                <meshStandardMaterial color="#1a1a2e" roughness={0.9} metalness={0.1} />
+        <group ref={ref} rotation={[Math.PI / 2, 0, 0]}>
+            <Torus args={[radius, 0.02, 16, 100]}>
+                <meshStandardMaterial color={color} emissive={color} emissiveIntensity={2} />
+            </Torus>
+            {/* Pequeños nodos en el anillo */}
+            <mesh position={[radius, 0, 0]}>
+                <sphereGeometry args={[0.1]} />
+                <meshStandardMaterial color={color} emissive={color} emissiveIntensity={5} />
             </mesh>
-            <mesh position={[0, 1.25, 0]}>
-                <boxGeometry args={[2, 0.5, 2]} />
-                <meshStandardMaterial color={color} roughness={0.1} metalness={0.8} emissive={color} emissiveIntensity={isNear ? 0.5 : 0.2} />
+            <mesh position={[-radius, 0, 0]}>
+                <sphereGeometry args={[0.1]} />
+                <meshStandardMaterial color={color} emissive={color} emissiveIntensity={5} />
             </mesh>
-
-            <Float speed={2} rotationIntensity={isNear ? 1.5 : 0.5} floatIntensity={1}>
-                {/* Gran Cubo Flotante */}
-                <mesh ref={boxRef} position={[0, 3.5, 0]} rotation={[Math.PI / 4, 0, Math.PI / 4]}>
-                    <boxGeometry args={[1.5, 1.5, 1.5]} />
-                    <meshPhysicalMaterial
-                        color={color}
-                        transmission={0.8}
-                        opacity={1}
-                        roughness={0.1}
-                        metalness={0.5}
-                        ior={1.5}
-                        thickness={1}
-                        emissive={color}
-                        emissiveIntensity={isNear ? 0.8 : 0.3}
-                        wireframe={!isNear}
-                    />
-                </mesh>
-            </Float>
-
-            {/* Foco de luz */}
-            <pointLight position={[0, 4, 0]} color={color} intensity={isNear ? 4 : 2} distance={15} />
-
-            {/* Data Holograma Arriba */}
-            <Text position={[0, 6, 0]} fontSize={0.6} color="#ffffff" anchorX="center" anchorY="middle" outlineWidth={0.03} outlineColor={color}>
-                {title}
-            </Text>
-            <Text position={[0, 5, 0]} fontSize={1.5} color={color} anchorX="center" anchorY="middle" fontWeight="black" fillOpacity={isNear ? 1 : 0.5}>
-                {amount}
-            </Text>
-            {icon && (
-                <Text position={[0, 3.5, 0]} fontSize={2} color="#ffffff" anchorX="center" anchorY="middle" fillOpacity={0.2}>
-                    {icon}
-                </Text>
-            )}
-
-            {/* Partículas de anillo */}
-            <Sparkles position={[0, 3.5, 0]} count={isNear ? 100 : 30} scale={4} size={3} color={color} speed={isNear ? 1.5 : 0.5} opacity={isNear ? 1 : 0.5} />
         </group>
     );
 };
 
-// Nodos flotantes (operaciones) en el cielo
+// Stand Interactivo PREMIUM (La Torre de Datos)
+const InteractiveStand = ({ position, title, amount, color, voiceText, voiceEnabled, scale = 1, icon }: any) => {
+    const { camera } = useThree();
+    const [isNear, setIsNear] = useState(false);
+    const crystalRef = useRef<THREE.Mesh>(null);
+
+    useFrame((state) => {
+        const dist = camera.position.distanceTo(new THREE.Vector3(...position));
+        if (dist < 8 && !isNear) {
+            setIsNear(true);
+            speakCinematic(voiceText, voiceEnabled);
+        } else if (dist >= 8 && isNear) {
+            setIsNear(false);
+        }
+    });
+
+    return (
+        <group position={position} scale={scale}>
+            {/* Base - Concentric Glow Rings */}
+            <group position={[0, 0.05, 0]}>
+                <Circle args={[4, 64]} rotation={[-Math.PI / 2, 0, 0]}>
+                    <meshStandardMaterial color={color} transparent opacity={0.05} />
+                </Circle>
+                <Torus args={[3.8, 0.03, 16, 100]} rotation={[Math.PI / 2, 0, 0]}>
+                    <meshStandardMaterial color={color} emissive={color} emissiveIntensity={3} transparent opacity={0.3} />
+                </Torus>
+                <Torus args={[3.2, 0.02, 16, 100]} rotation={[Math.PI / 2, 0, 0]}>
+                    <meshStandardMaterial color={color} emissive={color} emissiveIntensity={1} transparent opacity={0.2} />
+                </Torus>
+            </group>
+
+            {/* Pedestal Central - Cyber Column */}
+            <mesh position={[0, 2, 0]}>
+                <cylinderGeometry args={[0.8, 1.2, 4, 32]} />
+                <meshPhysicalMaterial
+                    color="#0a0a1a"
+                    roughness={0.1}
+                    metalness={0.9}
+                    emissive={color}
+                    emissiveIntensity={isNear ? 0.2 : 0.05}
+                />
+            </mesh>
+
+            {/* Glow Core */}
+            <mesh position={[0, 4, 0]}>
+                <cylinderGeometry args={[0.2, 0.2, 8, 16]} />
+                <meshStandardMaterial color={color} emissive={color} emissiveIntensity={isNear ? 10 : 2} transparent opacity={0.3} />
+            </mesh>
+
+            {/* The Floating Crystal (Heart) */}
+            <Float speed={3} rotationIntensity={2} floatIntensity={1.5}>
+                <mesh position={[0, 5, 0]} ref={crystalRef}>
+                    <octahedronGeometry args={[1.2]} />
+                    <MeshDistortMaterial
+                        color={color}
+                        emissive={color}
+                        emissiveIntensity={isNear ? 4 : 1}
+                        speed={2}
+                        distort={0.3}
+                        transparent
+                        opacity={0.9}
+                        metalness={1}
+                        roughness={0}
+                    />
+                </mesh>
+
+                {/* Icon inside crystal (Hologram look) */}
+                <Text position={[0, 5, 1.3]} fontSize={1} color="#ffffff" anchorX="center" anchorY="middle" fillOpacity={isNear ? 1 : 0.5}>
+                    {icon}
+                </Text>
+            </Float>
+
+            {/* Tech Orbitals */}
+            <group position={[0, 5, 0]}>
+                <TechRing radius={2.2} color={color} speed={1.5} />
+                <TechRing radius={2.8} color={color} speed={-0.8} tilt />
+                <TechRing radius={3.5} color={color} speed={0.4} />
+            </group>
+
+            {/* Data Hologram Overlay */}
+            <group position={[0, 8.5, 0]}>
+                <Float speed={5} rotationIntensity={0} floatIntensity={0.5}>
+                    <Text fontSize={0.7} color="#ffffff" anchorX="center" anchorY="middle" outlineWidth={0.05} outlineColor={color} fontWeight="black">
+                        {title.toUpperCase()}
+                    </Text>
+                    <Text position={[0, -1.2, 0]} fontSize={2} color={color} fontWeight="black" anchorX="center" anchorY="middle">
+                        {amount}
+                    </Text>
+                    {isNear && (
+                        <Text position={[0, -2.2, 0]} fontSize={0.3} color="#ffffff" fillOpacity={0.6} fontWeight="bold">
+                            ANALIZANDO FLUJO...
+                        </Text>
+                    )}
+                </Float>
+            </group>
+
+            {/* Lights */}
+            <pointLight position={[0, 5, 0]} color={color} intensity={isNear ? 15 : 5} distance={20} />
+            <Sparkles position={[0, 5, 0]} count={isNear ? 150 : 40} scale={6} size={4} color={color} speed={2} />
+        </group>
+    );
+};
+
+// Nodos flotantes (operaciones)
 const FloatingDataNode = ({ position, data, color }: { position: [number, number, number], data: any, color: string }) => {
     const ref = useRef<THREE.Group>(null);
     const timeOffset = useMemo(() => Math.random() * 100, []);
@@ -181,21 +253,21 @@ const FloatingDataNode = ({ position, data, color }: { position: [number, number
     useFrame(({ clock }) => {
         if (ref.current) {
             ref.current.position.y += Math.sin(clock.elapsedTime + timeOffset) * 0.005;
-            ref.current.rotation.y += 0.01;
+            ref.current.rotation.y += 0.02;
         }
     });
 
     return (
         <group ref={ref} position={position}>
-            <Float speed={4} rotationIntensity={1} floatIntensity={1}>
+            <Float speed={5} rotationIntensity={2} floatIntensity={1}>
                 <mesh>
-                    <octahedronGeometry args={[0.3]} />
-                    <meshPhysicalMaterial color={color} emissive={color} emissiveIntensity={0.8} wireframe thickness={2} />
+                    <dodecahedronGeometry args={[0.2]} />
+                    <meshStandardMaterial color={color} emissive={color} emissiveIntensity={3} />
                 </mesh>
-                <Text position={[0, 0.6, 0]} fontSize={0.25} color="#ffffff" anchorX="center" anchorY="middle" outlineWidth={0.01} outlineColor={color}>
-                    {data.concept.substring(0, 15)}
+                <Text position={[0, 0.5, 0]} fontSize={0.2} color="#ffffff" fontWeight="black">
+                    {data.concept.toUpperCase()}
                 </Text>
-                <Text position={[0, 0.3, 0]} fontSize={0.3} color={color} anchorX="center" anchorY="middle" fontWeight="bold">
+                <Text position={[0, 0.3, 0]} fontSize={0.25} color={color} fontWeight="black">
                     {data.type === 'income' ? '+' : '-'}{data.amount}€
                 </Text>
             </Float>
@@ -203,35 +275,56 @@ const FloatingDataNode = ({ position, data, color }: { position: [number, number
     );
 };
 
-// Suelo estilo Voxel/Neon grid
-const VoxelFloor = () => {
+// Metropolis Financiera - Ambient Buildings
+const DataMetropolis = () => {
+    const buildings = useMemo(() => {
+        return Array.from({ length: 60 }).map((_, i) => ({
+            position: [
+                (Math.random() - 0.5) * 150,
+                0,
+                -30 - Math.random() * 100
+            ] as [number, number, number],
+            scale: [2 + Math.random() * 5, 10 + Math.random() * 50, 2 + Math.random() * 5] as [number, number, number],
+            color: Math.random() > 0.5 ? "#02EAFF" : "#7739FE",
+            opacity: 0.1 + Math.random() * 0.2
+        }));
+    }, []);
+
     return (
         <group>
-            {/* Infinite flat space */}
-            <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.1, 0]}>
-                <planeGeometry args={[200, 200]} />
-                <meshStandardMaterial color="#050510" metalness={0.5} roughness={0.8} />
+            {buildings.map((b, i) => (
+                <group key={i} position={b.position}>
+                    <mesh position={[0, b.scale[1] / 2, 0]}>
+                        <boxGeometry args={b.scale} />
+                        <meshStandardMaterial color="#050510" metalness={1} roughness={0} />
+                    </mesh>
+                    {/* Glowing Edges / Windows */}
+                    <mesh position={[0, b.scale[1] / 2, 0]}>
+                        <boxGeometry args={[b.scale[0] + 0.1, b.scale[1], b.scale[2] + 0.1]} />
+                        <meshStandardMaterial color={b.color} emissive={b.color} emissiveIntensity={0.5} wireframe transparent opacity={b.opacity} />
+                    </mesh>
+                </group>
+            ))}
+        </group>
+    );
+};
+
+// Suelo estilo Cyber Grid
+const MatrixFloor = () => {
+    return (
+        <group>
+            <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.1, 0]} receiveShadow>
+                <planeGeometry args={[500, 500]} />
+                <meshStandardMaterial color="#020205" metalness={1} roughness={0.1} />
             </mesh>
-            {/* Camino de Neon principal */}
+            <gridHelper args={[500, 100, "#111122", "#050510"]} position={[0, 0.01, 0]} />
+
+            {/* Main Path Glow */}
             <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]}>
-                <planeGeometry args={[10, 80]} />
-                <meshStandardMaterial color="#0A0A15" metalness={0.8} roughness={0.2} />
+                <planeGeometry args={[12, 100]} />
+                <meshStandardMaterial color="#000000" emissive="#02EAFF" emissiveIntensity={0.05} />
             </mesh>
-            {/* Decoración Voxelizada alrededor del camino */}
-            {Array.from({ length: 40 }).map((_, i) => (
-                <mesh key={`voxel-l-${i}`} position={[-6 - Math.random() * 20, 0, -30 + Math.random() * 70]}>
-                    <boxGeometry args={[Math.random() * 2 + 1, Math.random() * 2, Math.random() * 2 + 1]} />
-                    <meshStandardMaterial color="#1a1a2a" roughness={1} />
-                </mesh>
-            ))}
-            {Array.from({ length: 40 }).map((_, i) => (
-                <mesh key={`voxel-r-${i}`} position={[6 + Math.random() * 20, 0, -30 + Math.random() * 70]}>
-                    <boxGeometry args={[Math.random() * 2 + 1, Math.random() * 2, Math.random() * 2 + 1]} />
-                    <meshStandardMaterial color="#1a1a2a" roughness={1} />
-                </mesh>
-            ))}
-            <gridHelper args={[200, 100, "#021A2F", "#080816"]} position={[0, 0.01, 0]} />
-            <gridHelper args={[10, 10, "#02EAFF", "#02EAFF"]} position={[0, 0.02, 0]} rotation={[0, 0, 0]} />
+            <gridHelper args={[12, 12, "#02EAFF", "#02EAFF"]} position={[0, 0.05, 0]} />
         </group>
     );
 };
@@ -391,10 +484,12 @@ export default function FinyVersePage() {
                         <Sky distance={450000} sunPosition={[0, -2, -10]} inclination={0.6} azimuth={0.1} turbidity={20} rayleigh={0.5} />
                         <Stars radius={150} depth={50} count={15000} factor={6} saturation={1} fade speed={1} />
 
-                        <ambientLight intensity={0.4} color="#556688" />
-                        <directionalLight position={[20, 30, 20]} intensity={1.5} color="#ffffff" castShadow />
+                        <ambientLight intensity={0.2} color="#556688" />
+                        <pointLight position={[10, 20, 10]} intensity={2} color="#02EAFF" />
+                        <directionalLight position={[20, 50, -20]} intensity={1} color="#ffffff" castShadow />
 
-                        <VoxelFloor />
+                        <MatrixFloor />
+                        <DataMetropolis />
 
                         {/* BLOQUE DINÁMICO: INGRESOS */}
                         <InteractiveStand
