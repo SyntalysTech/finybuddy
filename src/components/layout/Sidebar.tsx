@@ -44,20 +44,20 @@ interface NavItem {
 }
 
 const mainNavItems: NavItem[] = [
-  { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard, color: "text-[#02EAFF]", gradient: "from-[#02EAFF]/20 to-transparent" },
-  { name: "Previsión vs Realidad", href: "/prevision-vs-realidad", icon: ArrowLeftRight, color: "text-[#7739FE]", gradient: "from-[#7739FE]/20 to-transparent" },
+  { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard, color: "text-[#02EAFF]", gradient: "from-[#02EAFF]/20 via-[#7739FE]/15 to-transparent" },
+  { name: "Previsión vs Realidad", href: "/prevision-vs-realidad", icon: ArrowLeftRight, color: "text-[#02EAFF]", gradient: "from-[#02EAFF]/20 via-[#7739FE]/15 to-transparent" },
   { name: "FinyBot", href: "/chat", icon: Bot, color: "text-[#02EAFF]", gradient: "from-[#02EAFF]/20 via-[#7739FE]/15 to-transparent" },
-  { name: "Calendario", href: "/calendario", icon: Calendar, color: "text-[#EC4899]", gradient: "from-[#EC4899]/20 to-transparent" },
-  { name: "Ahorro", href: "/ahorro", icon: PiggyBank, color: "text-[#22C55E]", gradient: "from-[#22C55E]/20 to-transparent" },
-  { name: "Deuda", href: "/deuda", icon: CreditCard, color: "text-[#EF4444]", gradient: "from-[#EF4444]/20 to-transparent" },
-  { name: "Operaciones", href: "/operaciones", icon: Briefcase, color: "text-[#10B981]", gradient: "from-[#10B981]/20 to-transparent" },
-  { name: "Previsión", href: "/prevision", icon: Calculator, color: "text-[#F59E0B]", gradient: "from-[#F59E0B]/20 to-transparent" },
+  { name: "Calendario", href: "/calendario", icon: Calendar, color: "text-[#02EAFF]", gradient: "from-[#02EAFF]/20 via-[#7739FE]/15 to-transparent" },
+  { name: "Ahorro", href: "/ahorro", icon: PiggyBank, color: "text-[#02EAFF]", gradient: "from-[#02EAFF]/20 via-[#7739FE]/15 to-transparent" },
+  { name: "Deuda", href: "/deuda", icon: CreditCard, color: "text-[#02EAFF]", gradient: "from-[#02EAFF]/20 via-[#7739FE]/15 to-transparent" },
+  { name: "Operaciones", href: "/operaciones", icon: Briefcase, color: "text-[#02EAFF]", gradient: "from-[#02EAFF]/20 via-[#7739FE]/15 to-transparent" },
+  { name: "Previsión", href: "/prevision", icon: Calculator, color: "text-[#02EAFF]", gradient: "from-[#02EAFF]/20 via-[#7739FE]/15 to-transparent" },
 ];
 
 const settingsNavItems: NavItem[] = [
-  { name: "Mis Categorías", href: "/categorias", icon: FolderOpen, color: "text-[#8B5CF6]", gradient: "from-[#8B5CF6]/20 to-transparent" },
-  { name: "Perfil", href: "/perfil", icon: User, color: "text-[#F97316]", gradient: "from-[#F97316]/20 to-transparent" },
-  { name: "Ajustes", href: "/ajustes", icon: Settings, color: "text-[#6B7280]", gradient: "from-[#6B7280]/20 to-transparent" },
+  { name: "Mis Categorías", href: "/categorias", icon: FolderOpen, color: "text-[#F59E0B]", gradient: "from-[#F59E0B]/20 to-transparent" },
+  { name: "Perfil", href: "/perfil", icon: User, color: "text-[#F59E0B]", gradient: "from-[#F59E0B]/20 to-transparent" },
+  { name: "Ajustes", href: "/ajustes", icon: Settings, color: "text-[#F59E0B]", gradient: "from-[#F59E0B]/20 to-transparent" },
 ];
 
 export default function Sidebar() {
