@@ -65,6 +65,16 @@ interface MonthlySummary {
   savings_total: number;
 }
 
+interface CategoryDistribution {
+  id: string;
+  name: string;
+  color: string;
+  amount: number;
+  segment: "needs" | "wants" | "savings";
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  [key: string]: any;
+}
+
 interface SavingsSummary {
   total_goals: number;
   active_goals: number;
@@ -194,6 +204,8 @@ export default function DashboardPage() {
   const [monthlyEvolution, setMonthlyEvolution] = useState<MonthlyEvolution[]>([]);
   const [budgetSummary, setBudgetSummary] = useState<BudgetSummary | null>(null);
   const [loading, setLoading] = useState(true);
+  const [categoryDistribution, setCategoryDistribution] = useState<CategoryDistribution[]>([]);
+  const [selectedSegment, setSelectedSegment] = useState<"needs" | "wants" | "savings" | null>(null);
 
   const supabase = createClient();
 
@@ -323,6 +335,43 @@ export default function DashboardPage() {
         category: Array.isArray(op.category) ? op.category[0] : op.category
       }));
       setRecentOperations(formattedOperations as RecentOperation[]);
+    }
+
+    // Fetch all for category distribution
+    const { data: allOpsData } = await supabase
+      .from("operations")
+      .select(`
+        type,
+        amount,
+        category:categories(id, name, color, segment, type)
+      `)
+      .eq("user_id", user.id)
+      .gte("operation_date", startDate)
+      .lte("operation_date", endDate);
+
+    if (allOpsData) {
+      const merged: Record<string, CategoryDistribution> = {};
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      allOpsData.forEach((op: any) => {
+        const cat = Array.isArray(op.category) ? op.category[0] : op.category;
+        if (!cat) return;
+
+        // We only care about expenses and savings
+        if (op.type === "expense" || op.type === "savings") {
+          const segment = op.type === "savings" ? "savings" : (cat.segment || "needs");
+          if (!merged[cat.id]) {
+            merged[cat.id] = {
+              id: cat.id,
+              name: cat.name,
+              color: cat.color || (segment === "needs" ? "#2EEB8F" : segment === "wants" ? "#8B4DFF" : "#00E5FF"),
+              amount: 0,
+              segment
+            };
+          }
+          merged[cat.id].amount += op.amount;
+        }
+      });
+      setCategoryDistribution(Object.values(merged).filter(c => c.amount > 0).sort((a, b) => b.amount - a.amount));
     }
 
     setLoading(false);
@@ -500,11 +549,10 @@ export default function DashboardPage() {
                   {loading ? "..." : formatCurrency(monthlySummary?.total_income || 0)}
                 </p>
                 {!loading && budgetSummary && budgetSummary.total_budgeted_income > 0 && (
-                  <p className={`text-xs mt-1 ${
-                    (monthlySummary?.total_income || 0) >= budgetSummary.total_budgeted_income
-                      ? "text-[var(--success)]"
-                      : "text-[var(--warning)]"
-                  }`}>
+                  <p className={`text-xs mt-1 ${(monthlySummary?.total_income || 0) >= budgetSummary.total_budgeted_income
+                    ? "text-[var(--success)]"
+                    : "text-[var(--warning)]"
+                    }`}>
                     {(monthlySummary?.total_income || 0) >= budgetSummary.total_budgeted_income
                       ? `+${formatCurrency((monthlySummary?.total_income || 0) - budgetSummary.total_budgeted_income)} vs previsión`
                       : `-${formatCurrency(budgetSummary.total_budgeted_income - (monthlySummary?.total_income || 0))} vs previsión`
@@ -527,11 +575,10 @@ export default function DashboardPage() {
                   {loading ? "..." : formatCurrency(monthlySummary?.total_expenses || 0)}
                 </p>
                 {!loading && budgetSummary && budgetSummary.total_budgeted_expenses > 0 && (
-                  <p className={`text-xs mt-1 ${
-                    (monthlySummary?.total_expenses || 0) > budgetSummary.total_budgeted_expenses
-                      ? "text-[var(--danger)]"
-                      : "text-[var(--success)]"
-                  }`}>
+                  <p className={`text-xs mt-1 ${(monthlySummary?.total_expenses || 0) > budgetSummary.total_budgeted_expenses
+                    ? "text-[var(--danger)]"
+                    : "text-[var(--success)]"
+                    }`}>
                     {(monthlySummary?.total_expenses || 0) > budgetSummary.total_budgeted_expenses
                       ? `+${formatCurrency((monthlySummary?.total_expenses || 0) - budgetSummary.total_budgeted_expenses)} vs previsión`
                       : `-${formatCurrency(budgetSummary.total_budgeted_expenses - (monthlySummary?.total_expenses || 0))} vs previsión`
@@ -554,11 +601,10 @@ export default function DashboardPage() {
                   {loading ? "..." : formatCurrency(monthlySummary?.total_savings || 0)}
                 </p>
                 {!loading && budgetSummary && budgetSummary.total_budgeted_savings > 0 && (
-                  <p className={`text-xs mt-1 ${
-                    (monthlySummary?.total_savings || 0) >= budgetSummary.total_budgeted_savings
-                      ? "text-[var(--success)]"
-                      : "text-[var(--warning)]"
-                  }`}>
+                  <p className={`text-xs mt-1 ${(monthlySummary?.total_savings || 0) >= budgetSummary.total_budgeted_savings
+                    ? "text-[var(--success)]"
+                    : "text-[var(--warning)]"
+                    }`}>
                     {(monthlySummary?.total_savings || 0) >= budgetSummary.total_budgeted_savings
                       ? `+${formatCurrency((monthlySummary?.total_savings || 0) - budgetSummary.total_budgeted_savings)} vs previsión`
                       : `-${formatCurrency(budgetSummary.total_budgeted_savings - (monthlySummary?.total_savings || 0))} vs previsión`
@@ -590,7 +636,7 @@ export default function DashboardPage() {
                   />
                   <YAxis
                     stroke="var(--brand-gray)"
-                    tickFormatter={(value) => `${value >= 1000 ? `${(value/1000).toFixed(0)}k` : value}€`}
+                    tickFormatter={(value) => `${value >= 1000 ? `${(value / 1000).toFixed(0)}k` : value}€`}
                     tick={{ fontSize: 10 }}
                     width={45}
                   />
@@ -647,53 +693,127 @@ export default function DashboardPage() {
                     <PieChart>
                       <Pie
                         data={[
-                          { name: "Necesidades", value: monthlySummary?.needs_total || 0, color: "#2EEB8F" },
-                          { name: "Deseos", value: monthlySummary?.wants_total || 0, color: "#8B4DFF" },
-                          { name: "Ahorro", value: monthlySummary?.total_savings || 0, color: "#00E5FF" },
+                          { name: "Necesidades", value: monthlySummary?.needs_total || 0, color: "#2EEB8F", segment: "needs" },
+                          { name: "Deseos", value: monthlySummary?.wants_total || 0, color: "#8B4DFF", segment: "wants" },
+                          { name: "Ahorro", value: monthlySummary?.total_savings || 0, color: "#00E5FF", segment: "savings" },
                         ].filter(item => item.value > 0)}
                         cx="50%"
                         cy="50%"
-                        innerRadius={45}
-                        outerRadius={70}
-                        paddingAngle={2}
+                        innerRadius={0}
+                        outerRadius={55}
                         dataKey="value"
-                        label={({ percent }) => `${((percent ?? 0) * 100).toFixed(0)}%`}
-                        labelLine={{ stroke: "var(--brand-gray)", strokeWidth: 1 }}
-                        style={{ fontSize: "11px" }}
+                        label={({ name }) => window.innerWidth > 640 ? name : ""}
+                        labelLine={false}
+                        style={{ fontSize: "11px", cursor: "pointer", fontWeight: "600" }}
+                        onClick={(data) => {
+                          if (selectedSegment === data?.payload?.segment) {
+                            setSelectedSegment(null);
+                          } else {
+                            setSelectedSegment(data?.payload?.segment || null);
+                          }
+                        }}
                       >
                         {[
-                          { name: "Necesidades", value: monthlySummary?.needs_total || 0, color: "#2EEB8F" },
-                          { name: "Deseos", value: monthlySummary?.wants_total || 0, color: "#8B4DFF" },
-                          { name: "Ahorro", value: monthlySummary?.total_savings || 0, color: "#00E5FF" },
+                          { name: "Necesidades", value: monthlySummary?.needs_total || 0, color: "#2EEB8F", segment: "needs" },
+                          { name: "Deseos", value: monthlySummary?.wants_total || 0, color: "#8B4DFF", segment: "wants" },
+                          { name: "Ahorro", value: monthlySummary?.total_savings || 0, color: "#00E5FF", segment: "savings" },
                         ].filter(item => item.value > 0).map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={entry.color} />
+                          <Cell
+                            key={`cell-${index}`}
+                            fill={entry.color}
+                            fillOpacity={selectedSegment && selectedSegment !== entry.segment ? 0.4 : 1}
+                          />
+                        ))}
+                      </Pie>
+                      <Pie
+                        data={categoryDistribution}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={63}
+                        outerRadius={85}
+                        dataKey="amount"
+                        paddingAngle={1}
+                        stroke="none"
+                        onClick={(data) => {
+                          if (selectedSegment === data?.payload?.payload?.segment) {
+                            setSelectedSegment(null);
+                          } else {
+                            setSelectedSegment(data?.payload?.payload?.segment || null);
+                          }
+                        }}
+                        style={{ cursor: "pointer" }}
+                      >
+                        {categoryDistribution.map((entry, index) => (
+                          <Cell
+                            key={`cell-inner-${index}`}
+                            fill={entry.color}
+                            fillOpacity={selectedSegment && selectedSegment !== entry.segment ? 0.3 : 1}
+                          />
                         ))}
                       </Pie>
                       <Tooltip
-                        formatter={(value: number) => formatCurrency(value)}
+                        formatter={(value: number, name: string) => [formatCurrency(value), name]}
                         contentStyle={{
-                          backgroundColor: "var(--background)",
+                          backgroundColor: "var(--background-secondary)",
                           border: "1px solid var(--border)",
                           borderRadius: "8px",
                           fontSize: "12px",
+                          color: "var(--foreground)",
                         }}
+                        itemStyle={{ color: "var(--foreground)" }}
                       />
                     </PieChart>
                   </ResponsiveContainer>
                 </div>
                 <div className="flex flex-wrap justify-center gap-3 sm:gap-4 mt-2">
-                  <div className="flex items-center gap-1.5">
+                  <div
+                    onClick={() => setSelectedSegment(selectedSegment === "needs" ? null : "needs")}
+                    className={`flex items-center gap-1.5 cursor-pointer hover:opacity-80 transition-opacity ${selectedSegment && selectedSegment !== "needs" ? "opacity-30" : ""}`}
+                  >
                     <div className="w-3 h-3 rounded-full" style={{ backgroundColor: "#2EEB8F" }}></div>
-                    <span className="text-xs text-[var(--brand-gray)]">Necesidades: {formatCurrency(monthlySummary?.needs_total || 0)}</span>
+                    <span className="text-xs text-[var(--foreground)] font-medium">Necesidades: {formatCurrency(monthlySummary?.needs_total || 0)}</span>
                   </div>
-                  <div className="flex items-center gap-1.5">
+                  <div
+                    onClick={() => setSelectedSegment(selectedSegment === "wants" ? null : "wants")}
+                    className={`flex items-center gap-1.5 cursor-pointer hover:opacity-80 transition-opacity ${selectedSegment && selectedSegment !== "wants" ? "opacity-30" : ""}`}
+                  >
                     <div className="w-3 h-3 rounded-full" style={{ backgroundColor: "#8B4DFF" }}></div>
-                    <span className="text-xs text-[var(--brand-gray)]">Deseos: {formatCurrency(monthlySummary?.wants_total || 0)}</span>
+                    <span className="text-xs text-[var(--foreground)] font-medium">Deseos: {formatCurrency(monthlySummary?.wants_total || 0)}</span>
                   </div>
-                  <div className="flex items-center gap-1.5">
+                  <div
+                    onClick={() => setSelectedSegment(selectedSegment === "savings" ? null : "savings")}
+                    className={`flex items-center gap-1.5 cursor-pointer hover:opacity-80 transition-opacity ${selectedSegment && selectedSegment !== "savings" ? "opacity-30" : ""}`}
+                  >
                     <div className="w-3 h-3 rounded-full" style={{ backgroundColor: "#00E5FF" }}></div>
-                    <span className="text-xs text-[var(--brand-gray)]">Ahorro: {formatCurrency(monthlySummary?.total_savings || 0)}</span>
+                    <span className="text-xs text-[var(--foreground)] font-medium">Ahorro: {formatCurrency(monthlySummary?.total_savings || 0)}</span>
                   </div>
+                </div>
+
+                {/* Detalle Categorías (Se muestra al hacer click) */}
+                <div className="mt-4 pt-4 border-t border-[var(--border)] w-full">
+                  <h4 className="text-sm font-semibold mb-3 text-center text-[var(--brand-gray)]">
+                    {selectedSegment
+                      ? `Detalle de ${selectedSegment === "needs" ? "Necesidades" : selectedSegment === "wants" ? "Deseos" : "Ahorro"}`
+                      : "Haz clic en el gráfico para ver el detalle"}
+                  </h4>
+                  {selectedSegment && (
+                    <div className="space-y-2 max-h-40 overflow-y-auto pr-1 flex flex-col items-center custom-scrollbar animate-fade-in">
+                      {categoryDistribution
+                        .filter(c => c.segment === selectedSegment)
+                        .map(c => (
+                          <div key={c.id} className="flex items-center justify-between text-sm py-2 px-3 rounded-lg bg-[var(--background-secondary)] w-full max-w-[280px] hover:bg-[var(--border)] transition-colors">
+                            <div className="flex items-center gap-2">
+                              <span className="w-2.5 h-2.5 rounded-full shadow-sm" style={{ backgroundColor: c.color }} />
+                              <span className="font-medium truncate max-w-[140px]">{c.name}</span>
+                            </div>
+                            <span className="font-semibold tabular-nums">{formatCurrency(c.amount)}</span>
+                          </div>
+                        ))}
+                      {categoryDistribution.filter(c => c.segment === selectedSegment).length === 0 && (
+                        <p className="text-xs text-[var(--brand-gray)]">No hay operaciones específicas categorizadas aquí todavía.</p>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
             ) : (
