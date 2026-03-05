@@ -110,7 +110,6 @@ export default function CategoriasPage() {
   const [financialRule, setFinancialRule] = useState<FinancialRule>({ needs: 50, wants: 30, savings: 20 });
   const [showDefaultModal, setShowDefaultModal] = useState(false);
   const [isProcessingDefault, setIsProcessingDefault] = useState(false);
-  const [showOnlyMine, setShowOnlyMine] = useState(true);
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
     income: true,
     expense: true,
@@ -257,6 +256,57 @@ export default function CategoriasPage() {
     }
   };
 
+  const handleRestoreDefault = async () => {
+    setIsProcessingDefault(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const DEFAULT_CATEGORIES_DATA = [
+        // Ingresos
+        { name: 'Nómina', icon: 'Briefcase', color: '#10B981', type: 'income', is_default: true, segment: null },
+        { name: 'Freelance', icon: 'Laptop', color: '#06B6D4', type: 'income', is_default: true, segment: null },
+        { name: 'Inversiones', icon: 'TrendingUp', color: '#8B5CF6', type: 'income', is_default: true, segment: null },
+        { name: 'Otros ingresos', icon: 'Plus', color: '#6B7280', type: 'income', is_default: true, segment: null },
+        // Gastos - Necesidades
+        { name: 'Alquiler/Hipoteca', icon: 'Home', color: '#EF4444', type: 'expense', segment: 'needs', is_default: true },
+        { name: 'Electricidad', icon: 'Zap', color: '#FBBF24', type: 'expense', segment: 'needs', is_default: true },
+        { name: 'Agua', icon: 'Droplets', color: '#06B6D4', type: 'expense', segment: 'needs', is_default: true },
+        { name: 'Supermercado', icon: 'ShoppingBag', color: '#10B981', type: 'expense', segment: 'needs', is_default: true },
+        { name: 'Transporte', icon: 'Car', color: '#3B82F6', type: 'expense', segment: 'needs', is_default: true },
+        { name: 'Salud', icon: 'Stethoscope', color: '#F43F5E', type: 'expense', segment: 'needs', is_default: true },
+        // Gastos - Deseos
+        { name: 'Restaurantes', icon: 'Utensils', color: '#F97316', type: 'expense', segment: 'wants', is_default: true },
+        { name: 'Ocio', icon: 'Gamepad2', color: '#8B5CF6', type: 'expense', segment: 'wants', is_default: true },
+        { name: 'Compras', icon: 'ShoppingBag', color: '#EC4899', type: 'expense', segment: 'wants', is_default: true },
+        { name: 'Viajes', icon: 'Plane', color: '#06B6D4', type: 'expense', segment: 'wants', is_default: true },
+        // Ahorro
+        { name: 'Ahorro general', icon: 'PiggyBank', color: '#F97316', type: 'savings', segment: 'savings', is_default: true },
+        { name: 'Fondo emergencia', icon: 'Heart', color: '#EF4444', type: 'savings', segment: 'savings', is_default: true },
+      ];
+
+      // Insert missing categories
+      for (const cat of DEFAULT_CATEGORIES_DATA) {
+        const exists = categories.find(c => c.name === cat.name && c.is_default);
+        if (!exists) {
+          await supabase.from('categories').insert({ ...cat, user_id: user.id });
+        } else {
+          // Si existe pero tiene un emoji o icono viejo, lo actualizamos al nuevo premium
+          await supabase.from('categories').update({ icon: cat.icon, is_active: true }).eq('id', exists.id);
+        }
+      }
+
+      await fetchCategories();
+      setShowDefaultModal(false);
+      alert("Categorías premium restauradas con éxito.");
+    } catch (error) {
+      console.error("Error restoring default categories:", error);
+      alert("Error al restaurar las categorías");
+    } finally {
+      setIsProcessingDefault(false);
+    }
+  };
+
   const getTypeInfo = (type: string) => {
     return CATEGORY_TYPES.find((t) => t.value === type) || CATEGORY_TYPES[0];
   };
@@ -275,8 +325,6 @@ export default function CategoriasPage() {
     if (!showInactive && !cat.is_active) return false;
     // Search filter
     if (searchQuery && !cat.name.toLowerCase().includes(searchQuery.toLowerCase())) return false;
-    // Show only user categories filter
-    if (showOnlyMine && cat.is_default) return false;
     return true;
   }).sort((a, b) => {
     // Ordenar gastos por segmento (necesidades -> deseos)
@@ -531,7 +579,7 @@ export default function CategoriasPage() {
   };
 
   const renderCategories = (cats: Category[], type: "income" | "expense" | "savings", groupTitle: string, groupIcon: React.ReactNode) => {
-    if (cats.length === 0 && showOnlyMine) return null;
+    if (cats.length === 0) return null;
 
     const isExpanded = expandedSections[type];
 
@@ -689,25 +737,6 @@ export default function CategoriasPage() {
                 {tab.label}
               </button>
             ))}
-
-            <div className="ml-auto flex items-center gap-3">
-              {/* Show only mine toggle */}
-              <label className="flex items-center gap-2 px-3 py-1.5 sm:py-2 bg-[var(--background-secondary)] border border-[var(--border)] rounded-xl cursor-pointer hover:border-[var(--brand-purple)] transition-all">
-                <input
-                  type="checkbox"
-                  checked={showOnlyMine}
-                  onChange={(e) => setShowOnlyMine(e.target.checked)}
-                  className="hidden"
-                />
-                <div className={`w-8 h-4 rounded-full relative transition-colors ${showOnlyMine ? 'bg-[var(--brand-purple)]' : 'bg-gray-400'}`}>
-                  <div className={`absolute top-0.5 w-3 h-3 bg-white rounded-full transition-all ${showOnlyMine ? 'left-4.5' : 'left-0.5'}`} />
-                </div>
-                <span className="text-xs font-semibold whitespace-nowrap flex items-center gap-1.5">
-                  {showOnlyMine ? <Lock className="w-3 h-3" /> : <User2 className="w-3 h-3" />}
-                  Solo mis categorías
-                </span>
-              </label>
-            </div>
           </div>
 
           {/* Search, Segment Toggle, View Toggle & Inactive Toggle */}
@@ -797,18 +826,8 @@ export default function CategoriasPage() {
               <p className="text-[var(--brand-gray)] max-w-xs mx-auto mb-6">
                 {searchQuery
                   ? "No hay resultados para tu búsqueda actual."
-                  : showOnlyMine
-                    ? "Aún no has creado categorías propias. Desactiva el filtro superior para ver las predeterminadas."
-                    : "Crea tu primera categoría para empezar a organizar tus finanzas."}
+                  : "Organiza tus finanzas creando tus propias categorías o usando las predeterminadas."}
               </p>
-              {showOnlyMine && (
-                <button
-                  onClick={() => setShowOnlyMine(false)}
-                  className="px-6 py-2 rounded-xl bg-[var(--background-secondary)] border border-[var(--border)] font-bold hover:bg-[var(--border)] transition-colors"
-                >
-                  Ver categorías predeterminadas
-                </button>
-              )}
             </div>
           </div>
         ) : filter === "all" ? (
@@ -891,22 +910,34 @@ export default function CategoriasPage() {
 
               <div className="grid grid-cols-1 gap-3 pt-2">
                 <button
-                  onClick={() => handleToggleAllDefault(true)}
+                  onClick={handleRestoreDefault}
                   disabled={isProcessingDefault}
-                  className="flex items-center justify-center gap-2 w-full p-4 rounded-xl border-2 border-[var(--success)] text-[var(--success)] font-semibold hover:bg-[var(--success)]/10 transition-all disabled:opacity-50"
+                  className="flex items-center justify-center gap-2 w-full p-4 rounded-xl gradient-brand text-white font-bold hover:opacity-90 transition-all disabled:opacity-50"
+                  title="Carga de nuevo todas las categorías predeterminadas con iconos premium"
                 >
-                  <Eye className="w-5 h-5" />
-                  Activar todas las predeterminadas
+                  <Plus className="w-5 h-5" />
+                  Restaurar categorías premium
                 </button>
 
-                <button
-                  onClick={() => handleToggleAllDefault(false)}
-                  disabled={isProcessingDefault}
-                  className="flex items-center justify-center gap-2 w-full p-4 rounded-xl border-2 border-[var(--danger)] text-[var(--danger)] font-semibold hover:bg-[var(--danger)]/10 transition-all disabled:opacity-50"
-                >
-                  <EyeOff className="w-5 h-5" />
-                  Desactivar todas las predeterminadas
-                </button>
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    onClick={() => handleToggleAllDefault(true)}
+                    disabled={isProcessingDefault}
+                    className="flex flex-col items-center justify-center gap-2 p-3 rounded-xl border-2 border-[var(--success)] text-[var(--success)] font-semibold hover:bg-[var(--success)]/10 transition-all disabled:opacity-50"
+                  >
+                    <Eye className="w-5 h-5" />
+                    <span className="text-xs">Activar todas</span>
+                  </button>
+
+                  <button
+                    onClick={() => handleToggleAllDefault(false)}
+                    disabled={isProcessingDefault}
+                    className="flex flex-col items-center justify-center gap-2 p-3 rounded-xl border-2 border-[var(--danger)] text-[var(--danger)] font-semibold hover:bg-[var(--danger)]/10 transition-all disabled:opacity-50"
+                  >
+                    <EyeOff className="w-5 h-5" />
+                    <span className="text-xs">Ocultar todas</span>
+                  </button>
+                </div>
               </div>
 
               <p className="text-[10px] text-[var(--brand-gray)] text-center italic mt-4">
@@ -960,7 +991,7 @@ function CategoryModal({
       setSegment(category.segment);
     } else {
       setName("");
-      setIcon("📁");
+      setIcon("ShoppingBag");
       setColor("#9945FF");
       setType("expense");
       setSegment("needs"); // Default to "needs" for new expense categories
