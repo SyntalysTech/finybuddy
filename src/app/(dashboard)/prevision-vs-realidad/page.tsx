@@ -360,18 +360,18 @@ function PrevisionVsRealidadPageContent() {
           </div>
         </div>
 
-        {/* Budgeted */}
-        <div className="w-24 text-right">
-          <p className="text-xs text-[var(--brand-gray)]">Previsto</p>
-          <p className="font-medium">{formatCurrency(item.budgeted)}</p>
-        </div>
-
         {/* Actual */}
         <div className="w-24 text-right">
           <p className="text-xs text-[var(--brand-gray)]">Real</p>
           <p className={`font-medium ${item.type === "income" ? "text-[var(--success)]" : item.type === "savings" ? "text-[var(--brand-cyan)]" : "text-[var(--danger)]"}`}>
             {formatCurrency(item.actual)}
           </p>
+        </div>
+
+        {/* Budgeted */}
+        <div className="w-24 text-right">
+          <p className="text-xs text-[var(--brand-gray)]">Previsto</p>
+          <p className="font-medium">{formatCurrency(item.budgeted)}</p>
         </div>
 
         {/* Variance */}
@@ -444,12 +444,12 @@ function PrevisionVsRealidadPageContent() {
             </div>
             <div className="grid grid-cols-2 gap-3 mb-4">
               <div className="text-center p-3 rounded-lg bg-[var(--background-secondary)]">
-                <p className="text-xs text-[var(--brand-gray)] mb-1">Previsto</p>
-                <p className="text-lg font-bold">{formatCurrency(totalBudgetedIncome)}</p>
-              </div>
-              <div className="text-center p-3 rounded-lg bg-[var(--background-secondary)]">
                 <p className="text-xs text-[var(--brand-gray)] mb-1">Real</p>
                 <p className="text-lg font-bold text-[var(--success)]">{formatCurrency(totalActualIncome)}</p>
+              </div>
+              <div className="text-center p-3 rounded-lg bg-[var(--background-secondary)]">
+                <p className="text-xs text-[var(--brand-gray)] mb-1">Previsto</p>
+                <p className="text-lg font-bold">{formatCurrency(totalBudgetedIncome)}</p>
               </div>
             </div>
             {getIncomeMessage() && (
@@ -469,12 +469,12 @@ function PrevisionVsRealidadPageContent() {
             </div>
             <div className="grid grid-cols-2 gap-3 mb-4">
               <div className="text-center p-3 rounded-lg bg-[var(--background-secondary)]">
-                <p className="text-xs text-[var(--brand-gray)] mb-1">Previsto</p>
-                <p className="text-lg font-bold">{formatCurrency(totalBudgetedExpenses)}</p>
-              </div>
-              <div className="text-center p-3 rounded-lg bg-[var(--background-secondary)]">
                 <p className="text-xs text-[var(--brand-gray)] mb-1">Real</p>
                 <p className="text-lg font-bold text-[var(--danger)]">{formatCurrency(totalActualExpenses)}</p>
+              </div>
+              <div className="text-center p-3 rounded-lg bg-[var(--background-secondary)]">
+                <p className="text-xs text-[var(--brand-gray)] mb-1">Previsto</p>
+                <p className="text-lg font-bold">{formatCurrency(totalBudgetedExpenses)}</p>
               </div>
             </div>
             {getExpenseMessage() && (
@@ -494,12 +494,12 @@ function PrevisionVsRealidadPageContent() {
             </div>
             <div className="grid grid-cols-2 gap-3 mb-4">
               <div className="text-center p-3 rounded-lg bg-[var(--background-secondary)]">
-                <p className="text-xs text-[var(--brand-gray)] mb-1">Previsto</p>
-                <p className="text-lg font-bold">{formatCurrency(budgetedSavings)}</p>
-              </div>
-              <div className="text-center p-3 rounded-lg bg-[var(--background-secondary)]">
                 <p className="text-xs text-[var(--brand-gray)] mb-1">Real</p>
                 <p className="text-lg font-bold text-[var(--brand-cyan)]">{formatCurrency(actualSavings)}</p>
+              </div>
+              <div className="text-center p-3 rounded-lg bg-[var(--background-secondary)]">
+                <p className="text-xs text-[var(--brand-gray)] mb-1">Previsto</p>
+                <p className="text-lg font-bold">{formatCurrency(budgetedSavings)}</p>
               </div>
             </div>
             {getSavingsMessage() && (
