@@ -27,6 +27,9 @@ import {
   ChevronUp,
   User2,
   Lock,
+  MousePointer2,
+  CheckSquare,
+  Square,
   // Iconos para categorías
   Home, Building2, Sofa, Bed, Droplets, Zap, Utensils, Pizza, Coffee, Car, Bus, Plane, ShoppingBag, Shirt, Smartphone, Laptop, Gamepad2, Stethoscope, Pill, GraduationCap, Briefcase, Wallet, CreditCard, Banknote, Palmtree, Music, Camera, Heart, Gift, Baby, Dog, Cat, Hammer, Wrench, Lightbulb, Users, Dumbbell, Theater, Brush, Guitar, Package, Radio, Trash
 } from "lucide-react";
@@ -143,6 +146,8 @@ export default function CategoriasPage() {
     expense: true,
     savings: true
   });
+  const [isSelectionMode, setIsSelectionMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
   const supabase = createClient();
 
@@ -262,6 +267,48 @@ export default function CategoriasPage() {
     } catch (error) {
       console.error("Error deleting category:", error);
     }
+  };
+
+  const handleDeleteSelected = async () => {
+    if (selectedIds.length === 0) return;
+
+    const toDelete = categories.filter(c => selectedIds.includes(c.id));
+    const withOps = toDelete.filter(c => c.operation_count && c.operation_count > 0);
+
+    if (withOps.length > 0) {
+      setNotification({
+        message: `No se pueden eliminar ${withOps.length} categorías porque tienen operaciones asociadas.`,
+        type: 'error'
+      });
+      return;
+    }
+
+    if (!confirm(`¿Estás seguro de que quieres eliminar las ${selectedIds.length} categorías seleccionadas?`)) {
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from("categories")
+        .delete()
+        .in("id", selectedIds);
+
+      if (error) throw error;
+
+      setNotification({ message: "Categorías eliminadas con éxito", type: 'success' });
+      setSelectedIds([]);
+      setIsSelectionMode(false);
+      fetchCategories();
+    } catch (error) {
+      console.error("Error deleting categories:", error);
+      setNotification({ message: "Error al eliminar las categorías", type: 'error' });
+    }
+  };
+
+  const toggleSelectCategory = (id: string) => {
+    setSelectedIds(prev =>
+      prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
+    );
   };
 
   const handleToggleAllDefault = async (activate: boolean) => {
@@ -429,9 +476,19 @@ export default function CategoriasPage() {
         className={`p-2.5 sm:p-4 rounded-lg sm:rounded-xl border-l-4 border transition-all ${category.is_active
           ? "bg-[var(--background)] border-[var(--border)] hover:border-[var(--brand-gray)]"
           : "bg-[var(--background-secondary)]/50 border-[var(--border)] opacity-60"
-          }`}
+          } ${isSelectionMode ? "cursor-pointer relative" : "relative"}`}
         style={{ borderLeftColor: category.color }}
+        onClick={() => isSelectionMode && toggleSelectCategory(category.id)}
       >
+        {isSelectionMode && (
+          <div className="absolute top-2 right-2 z-10">
+            {selectedIds.includes(category.id) ? (
+              <CheckSquare className="w-5 h-5 text-[var(--brand-purple)] fill-[var(--brand-purple)]/10" />
+            ) : (
+              <Square className="w-5 h-5 text-[var(--brand-gray)]" />
+            )}
+          </div>
+        )}
         <div className="flex items-center gap-2 sm:gap-3">
           {/* Icon */}
           <div
@@ -516,7 +573,7 @@ export default function CategoriasPage() {
             )}
           </div>
         </div>
-      </div>
+      </div >
     );
   };
 
@@ -528,9 +585,18 @@ export default function CategoriasPage() {
     return (
       <div
         key={category.id}
-        className={`flex items-center gap-2 sm:gap-3 px-2.5 sm:px-4 py-1.5 sm:py-2.5 border-b border-[var(--border)] last:border-b-0 transition-colors hover:bg-[var(--background-secondary)]/50 ${!category.is_active ? "opacity-60" : ""
-          }`}
+        className={`flex items-center gap-2 sm:gap-3 px-2.5 sm:px-4 py-1.5 sm:py-2.5 border-b border-[var(--border)] last:border-b-0 transition-colors hover:bg-[var(--background-secondary)]/50 ${!category.is_active ? "opacity-60" : ""} ${isSelectionMode ? "cursor-pointer" : ""}`}
+        onClick={() => isSelectionMode && toggleSelectCategory(category.id)}
       >
+        {isSelectionMode && (
+          <div className="shrink-0 mr-1">
+            {selectedIds.includes(category.id) ? (
+              <CheckSquare className="w-4 h-4 text-[var(--brand-purple)]" />
+            ) : (
+              <Square className="w-4 h-4 text-[var(--brand-gray)]" />
+            )}
+          </div>
+        )}
         <div
           className="w-7 h-7 sm:w-9 sm:h-9 rounded-lg flex items-center justify-center shrink-0"
           style={{ backgroundColor: `${category.color}30` }}
@@ -577,6 +643,24 @@ export default function CategoriasPage() {
           <table className="w-full text-xs sm:text-sm">
             <thead>
               <tr className="border-b border-[var(--border)] bg-[var(--background-secondary)]">
+                {isSelectionMode && (
+                  <th className="px-2 sm:px-4 py-2 sm:py-3 w-10">
+                    <button
+                      onClick={() => {
+                        const visibleIds = cats.map(c => c.id);
+                        const allSelected = visibleIds.every(id => selectedIds.includes(id));
+                        if (allSelected) {
+                          setSelectedIds(prev => prev.filter(id => !visibleIds.includes(id)));
+                        } else {
+                          setSelectedIds(prev => Array.from(new Set([...prev, ...visibleIds])));
+                        }
+                      }}
+                      className="p-1 hover:bg-[var(--brand-purple)]/10 rounded transition-colors"
+                    >
+                      <CheckSquare className={`w-4 h-4 ${cats.every(c => selectedIds.includes(c.id)) ? "text-[var(--brand-purple)]" : "text-[var(--brand-gray)]"}`} />
+                    </button>
+                  </th>
+                )}
                 <th className="text-left px-2 sm:px-4 py-2 sm:py-3 font-medium text-[var(--brand-gray)]">Categoría</th>
                 <th className="text-left px-2 sm:px-4 py-2 sm:py-3 font-medium text-[var(--brand-gray)]">Tipo</th>
                 <th className="text-left px-2 sm:px-4 py-2 sm:py-3 font-medium text-[var(--brand-gray)] hidden sm:table-cell">Segmento</th>
@@ -590,7 +674,20 @@ export default function CategoriasPage() {
                 const typeInfo = getTypeInfo(category.type);
                 const segmentInfo = getSegmentInfo(category.segment);
                 return (
-                  <tr key={category.id} className={`border-b border-[var(--border)] last:border-b-0 hover:bg-[var(--background-secondary)]/50 transition-colors ${!category.is_active ? "opacity-60" : ""}`}>
+                  <tr
+                    key={category.id}
+                    className={`border-b border-[var(--border)] last:border-b-0 hover:bg-[var(--background-secondary)]/50 transition-colors ${!category.is_active ? "opacity-60" : ""} ${isSelectionMode ? "cursor-pointer" : ""}`}
+                    onClick={() => isSelectionMode && toggleSelectCategory(category.id)}
+                  >
+                    {isSelectionMode && (
+                      <td className="px-2 sm:px-4 py-2 sm:py-3 text-center">
+                        {selectedIds.includes(category.id) ? (
+                          <CheckSquare className="w-4 h-4 text-[var(--brand-purple)] mx-auto" />
+                        ) : (
+                          <Square className="w-4 h-4 text-[var(--brand-gray)] mx-auto" />
+                        )}
+                      </td>
+                    )}
                     <td className="px-2 sm:px-4 py-2 sm:py-3">
                       <div className="flex items-center gap-2">
                         <CategoryIcon name={category.icon} color={category.color} className="w-4 h-4 sm:w-5 sm:h-5" />
@@ -871,11 +968,38 @@ export default function CategoriasPage() {
             {/* Default Categories Toggle Button */}
             <button
               onClick={() => setShowDefaultModal(true)}
-              className="flex items-center gap-2 px-3 py-1.5 sm:py-2 bg-[var(--background-secondary)] border border-[var(--border)] rounded-lg text-xs sm:text-sm font-medium hover:border-[var(--brand-purple)] transition-colors ml-auto"
+              className="flex items-center gap-2 px-3 py-1.5 sm:py-2 bg-[var(--background-secondary)] border border-[var(--border)] rounded-lg text-xs sm:text-sm font-medium hover:border-[var(--brand-purple)] transition-colors"
             >
               <Settings className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[var(--brand-purple)]" />
-              <span>Categorías Predeterminadas</span>
+              <span>Ajustes</span>
             </button>
+
+            {/* Selection Mode Toggles */}
+            <div className="flex items-center gap-2 ml-auto">
+              {isSelectionMode && selectedIds.length > 0 && (
+                <button
+                  onClick={handleDeleteSelected}
+                  className="flex items-center gap-2 px-3 py-1.5 sm:py-2 bg-[var(--danger)]/10 text-[var(--danger)] border border-[var(--danger)]/20 rounded-lg text-xs sm:text-sm font-bold hover:bg-[var(--danger)]/20 transition-all animate-fade-in"
+                >
+                  <Trash2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                  <span>Borrar ({selectedIds.length})</span>
+                </button>
+              )}
+
+              <button
+                onClick={() => {
+                  setIsSelectionMode(!isSelectionMode);
+                  if (isSelectionMode) setSelectedIds([]);
+                }}
+                className={`flex items-center gap-2 px-3 py-1.5 sm:py-2 border rounded-lg text-xs sm:text-sm font-medium transition-all ${isSelectionMode
+                  ? "bg-[var(--brand-purple)] text-white border-[var(--brand-purple)] shadow-lg scale-105"
+                  : "bg-[var(--background-secondary)] border-[var(--border)] hover:border-[var(--brand-purple)]"
+                  }`}
+              >
+                {isSelectionMode ? <CheckSquare className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> : <MousePointer2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />}
+                <span>{isSelectionMode ? "Finalizar selección" : "Seleccionar varios"}</span>
+              </button>
+            </div>
           </div>
         </div>
 
