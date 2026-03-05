@@ -914,11 +914,6 @@ export default function DashboardPage() {
                       <div className="w-3 h-3 rounded-full" style={{ backgroundColor: macro.color }}></div>
                       <span className="text-xs text-[var(--foreground)] font-medium">
                         {macro.name}: {formatCurrency(macro.value)}
-                        {monthlySummary && monthlySummary.total_income > 0 && (
-                          <span className="ml-1 opacity-60 text-[10px]">
-                            ({Math.round((macro.value / monthlySummary.total_income) * 100)}%)
-                          </span>
-                        )}
                       </span>
                     </div>
                   ))}
@@ -953,11 +948,6 @@ export default function DashboardPage() {
                               <div className="w-2 h-8 rounded-full opacity-60 group-hover:opacity-100 transition-all" style={{ backgroundColor: c.color }}></div>
                               <div className="flex flex-col">
                                 <span className="text-xs font-bold text-[var(--foreground)] line-clamp-1">{c.name}</span>
-                                <span className="text-[10px] font-medium text-[var(--brand-gray)]">
-                                  {monthlySummary && monthlySummary.total_income > 0
-                                    ? Math.round((c.amount / monthlySummary.total_income) * 100)
-                                    : 0}% de tus ingresos
-                                </span>
                               </div>
                             </div>
                             <span className="font-black text-sm tabular-nums" style={{ color: c.color }}>{formatCurrency(c.amount)}</span>
