@@ -28,7 +28,8 @@ import {
   User2,
   Lock,
   // Iconos para categorías
-  Home, Building2, Sofa, Bed, Droplets, Zap, Utensils, Pizza, Coffee, Car, Bus, Plane, ShoppingBag, Shirt, Smartphone, Laptop, Gamepad2, Stethoscope, Pill, GraduationCap, Briefcase, Wallet, CreditCard, Banknote, Palmtree, Music, Camera, Heart, Gift, Baby, Dog, Cat, Hammer, Wrench, Lightbulb, Users, Dumbbell, Theater, Brush, Guitar, Package, Radio, Trash
+  Home, Building2, Sofa, Bed, Droplets, Zap, Utensils, Pizza, Coffee, Car, Bus, Plane, ShoppingBag, Shirt, Smartphone, Laptop, Gamepad2, Stethoscope, Pill, GraduationCap, Briefcase, Wallet, CreditCard, Banknote, Palmtree, Music, Camera, Heart, Gift, Baby, Dog, Cat, Hammer, Wrench, Lightbulb, Users, Dumbbell, Theater, Brush, Guitar, Package, Radio, Trash,
+  Shield, Flame, Globe, Fuel, Activity, FileText, Tv, Mail, FileEdit, Target
 } from "lucide-react";
 import DeleteConfirmModal from "@/components/operations/DeleteConfirmModal";
 import FinyInfoPanel from "@/components/ui/FinyInfoPanel";
@@ -62,8 +63,20 @@ const ICON_OPTIONS = [
   "Bus", "Plane", "ShoppingBag", "Shirt", "Smartphone", "Laptop", "Gamepad2", "Stethoscope", "Pill", "GraduationCap",
   "Briefcase", "Wallet", "CreditCard", "Banknote", "PiggyBank", "Palmtree", "Music", "Camera", "Heart", "Gift",
   "Baby", "Dog", "Cat", "Hammer", "Wrench", "Lightbulb", "Users", "Dumbbell", "Theater", "Brush",
-  "Guitar", "Package", "Radio", "Trash"
+  "Guitar", "Package", "Radio", "Trash", "TrendingUp", "TrendingDown", "Plus", "Shield", "Flame", "Globe", "Fuel", "Activity", "FileText", "Tv", "Mail", "FileEdit", "Target"
 ];
+
+const EMOJI_TO_ICON: Record<string, string> = {
+  '💼': 'Briefcase', '💻': 'Laptop', '📈': 'TrendingUp', '🏠': 'Home', '🛒': 'ShoppingBag',
+  '🎁': 'Gift', '💰': 'Banknote', '➕': 'Plus', '🏢': 'Building2', '🛡️': 'Shield',
+  '⚡': 'Zap', '🔥': 'Flame', '💧': 'Droplets', '🌐': 'Globe', '📱': 'Smartphone',
+  '⛽': 'Fuel', '🚌': 'Bus', '🚗': 'Car', '🔧': 'Wrench', '💊': 'Pill',
+  '🏥': 'Stethoscope', '🩺': 'Activity', '📚': 'GraduationCap', '📋': 'FileText',
+  '📄': 'FileText', '🍽️': 'Utensils', '🎮': 'Gamepad2', '📺': 'Tv', '👕': 'Shirt',
+  '💪': 'Dumbbell', '✈️': 'Plane', '💅': 'Heart', '🎨': 'Brush', '📧': 'Mail',
+  '🍫': 'Pizza', '🐾': 'Dog', '📝': 'FileEdit', '🆘': 'Heart', '🐷': 'PiggyBank',
+  '📊': 'TrendingUp', '👴': 'Users', '🎯': 'Target'
+};
 
 const CategoryIcon = ({ name, color, className }: { name: string; color?: string; className?: string }) => {
   const icons: any = {
@@ -71,15 +84,19 @@ const CategoryIcon = ({ name, color, className }: { name: string; color?: string
     Bus, Plane, ShoppingBag, Shirt, Smartphone, Laptop, Gamepad2, Stethoscope, Pill, GraduationCap,
     Briefcase, Wallet, CreditCard, Banknote, PiggyBank, Palmtree, Music, Camera, Heart, Gift,
     Baby, Dog, Cat, Hammer, Wrench, Lightbulb, Users, Dumbbell, Theater, Brush,
-    Guitar, Package, Radio, Trash
+    Guitar, Package, Radio, Trash, TrendingUp, TrendingDown, Plus, Shield, Flame, Globe, Fuel, Activity, FileText, Tv, Mail, FileEdit, Target
   };
 
-  // Detectar si es emoji (compatibilidad)
-  const isEmoji = /[\u1000-\uFFFF]/.test(name) || name.length <= 2;
-  if (isEmoji) return <span className={className}>{name}</span>;
+  const mappedName = EMOJI_TO_ICON[name] || name;
+  const IconComp = icons[mappedName];
 
-  const IconComp = icons[name];
-  if (!IconComp) return <Tag className={className} style={{ color }} />;
+  if (!IconComp) {
+    // Si sigue siendo un emoji no mapeado, lo mostramos
+    const isEmoji = /[\u1000-\uFFFF]/.test(name) || name.length <= 2;
+    if (isEmoji) return <span className={className}>{name}</span>;
+    return <Tag className={className} style={{ color }} />;
+  }
+
   return <IconComp className={className} style={{ color }} />;
 };
 
@@ -267,22 +284,54 @@ export default function CategoriasPage() {
         { name: 'Nómina', icon: 'Briefcase', color: '#10B981', type: 'income', is_default: true, segment: null },
         { name: 'Freelance', icon: 'Laptop', color: '#06B6D4', type: 'income', is_default: true, segment: null },
         { name: 'Inversiones', icon: 'TrendingUp', color: '#8B5CF6', type: 'income', is_default: true, segment: null },
+        { name: 'Alquiler', icon: 'Home', color: '#F59E0B', type: 'income', is_default: true, segment: null },
+        { name: 'Ventas', icon: 'ShoppingBag', color: '#EC4899', type: 'income', is_default: true, segment: null },
+        { name: 'Regalos', icon: 'Gift', color: '#EF4444', type: 'income', is_default: true, segment: null },
+        { name: 'Reembolsos', icon: 'Banknote', color: '#14B8A6', type: 'income', is_default: true, segment: null },
         { name: 'Otros ingresos', icon: 'Plus', color: '#6B7280', type: 'income', is_default: true, segment: null },
+
         // Gastos - Necesidades
         { name: 'Alquiler/Hipoteca', icon: 'Home', color: '#EF4444', type: 'expense', segment: 'needs', is_default: true },
+        { name: 'Comunidad', icon: 'Building2', color: '#F97316', type: 'expense', segment: 'needs', is_default: true },
+        { name: 'Seguro hogar', icon: 'Shield', color: '#F59E0B', type: 'expense', segment: 'needs', is_default: true },
         { name: 'Electricidad', icon: 'Zap', color: '#FBBF24', type: 'expense', segment: 'needs', is_default: true },
+        { name: 'Gas', icon: 'Flame', color: '#F97316', type: 'expense', segment: 'needs', is_default: true },
         { name: 'Agua', icon: 'Droplets', color: '#06B6D4', type: 'expense', segment: 'needs', is_default: true },
+        { name: 'Internet', icon: 'Globe', color: '#8B5CF6', type: 'expense', segment: 'needs', is_default: true },
+        { name: 'Teléfono', icon: 'Smartphone', color: '#A855F7', type: 'expense', segment: 'needs', is_default: true },
         { name: 'Supermercado', icon: 'ShoppingBag', color: '#10B981', type: 'expense', segment: 'needs', is_default: true },
-        { name: 'Transporte', icon: 'Car', color: '#3B82F6', type: 'expense', segment: 'needs', is_default: true },
-        { name: 'Salud', icon: 'Stethoscope', color: '#F43F5E', type: 'expense', segment: 'needs', is_default: true },
+        { name: 'Gasolina', icon: 'Fuel', color: '#6366F1', type: 'expense', segment: 'needs', is_default: true },
+        { name: 'Transporte público', icon: 'Bus', color: '#3B82F6', type: 'expense', segment: 'needs', is_default: true },
+        { name: 'Seguro coche', icon: 'Car', color: '#0EA5E9', type: 'expense', segment: 'needs', is_default: true },
+        { name: 'Mantenimiento vehículo', icon: 'Wrench', color: '#14B8A6', type: 'expense', segment: 'needs', is_default: true },
+        { name: 'Farmacia', icon: 'Pill', color: '#EC4899', type: 'expense', segment: 'needs', is_default: true },
+        { name: 'Médico/Dentista', icon: 'Stethoscope', color: '#F43F5E', type: 'expense', segment: 'needs', is_default: true },
+        { name: 'Seguro médico', icon: 'Activity', color: '#FB7185', type: 'expense', segment: 'needs', is_default: true },
+        { name: 'Educación', icon: 'GraduationCap', color: '#8B5CF6', type: 'expense', segment: 'needs', is_default: true },
+        { name: 'Impuestos', icon: 'FileText', color: '#6B7280', type: 'expense', segment: 'needs', is_default: true },
+        { name: 'Seguros otros', icon: 'FileText', color: '#9CA3AF', type: 'expense', segment: 'needs', is_default: true },
+
         // Gastos - Deseos
         { name: 'Restaurantes', icon: 'Utensils', color: '#F97316', type: 'expense', segment: 'wants', is_default: true },
         { name: 'Ocio', icon: 'Gamepad2', color: '#8B5CF6', type: 'expense', segment: 'wants', is_default: true },
-        { name: 'Compras', icon: 'ShoppingBag', color: '#EC4899', type: 'expense', segment: 'wants', is_default: true },
+        { name: 'Streaming', icon: 'Tv', color: '#EF4444', type: 'expense', segment: 'wants', is_default: true },
+        { name: 'Ropa', icon: 'Shirt', color: '#EC4899', type: 'expense', segment: 'wants', is_default: true },
+        { name: 'Gimnasio', icon: 'Dumbbell', color: '#10B981', type: 'expense', segment: 'wants', is_default: true },
         { name: 'Viajes', icon: 'Plane', color: '#06B6D4', type: 'expense', segment: 'wants', is_default: true },
+        { name: 'Belleza/Cuidado personal', icon: 'Heart', color: '#F472B6', type: 'expense', segment: 'wants', is_default: true },
+        { name: 'Hobbies', icon: 'Brush', color: '#A855F7', type: 'expense', segment: 'wants', is_default: true },
+        { name: 'Regalos dados', icon: 'Gift', color: '#FB923C', type: 'expense', segment: 'wants', is_default: true },
+        { name: 'Suscripciones', icon: 'Mail', color: '#6366F1', type: 'expense', segment: 'wants', is_default: true },
+        { name: 'Caprichos', icon: 'Pizza', color: '#FBBF24', type: 'expense', segment: 'wants', is_default: true },
+        { name: 'Mascotas', icon: 'Dog', color: '#F59E0B', type: 'expense', segment: 'wants', is_default: true },
+        { name: 'Otros gastos', icon: 'FileEdit', color: '#6B7280', type: 'expense', segment: 'wants', is_default: true },
+
         // Ahorro
+        { name: 'Fondo de emergencia', icon: 'Heart', color: '#EF4444', type: 'savings', segment: 'savings', is_default: true },
         { name: 'Ahorro general', icon: 'PiggyBank', color: '#F97316', type: 'savings', segment: 'savings', is_default: true },
-        { name: 'Fondo emergencia', icon: 'Heart', color: '#EF4444', type: 'savings', segment: 'savings', is_default: true },
+        { name: 'Inversiones', icon: 'TrendingUp', color: '#10B981', type: 'savings', segment: 'savings', is_default: true },
+        { name: 'Jubilación', icon: 'Users', color: '#8B5CF6', type: 'savings', segment: 'savings', is_default: true },
+        { name: 'Meta específica', icon: 'Target', color: '#06B6D4', type: 'savings', segment: 'savings', is_default: true },
       ];
 
       // Insert missing categories
@@ -913,10 +962,10 @@ export default function CategoriasPage() {
                   onClick={handleRestoreDefault}
                   disabled={isProcessingDefault}
                   className="flex items-center justify-center gap-2 w-full p-4 rounded-xl gradient-brand text-white font-bold hover:opacity-90 transition-all disabled:opacity-50"
-                  title="Carga de nuevo todas las categorías predeterminadas con iconos premium"
+                  title="Carga de nuevo las categorías predeterminadas o restaura iconos premium"
                 >
                   <Plus className="w-5 h-5" />
-                  Restaurar categorías premium
+                  Restaurar categorías originales
                 </button>
 
                 <div className="grid grid-cols-2 gap-3">
