@@ -326,21 +326,15 @@ function PrevisionVsRealidadPageContent() {
   };
 
   // Get progress bar color
-  const getProgressColor = (percentage: number, isExpense: boolean) => {
-    if (isExpense) {
-      if (percentage <= 80) return "bg-[var(--success)]";
-      if (percentage <= 100) return "bg-[var(--warning)]";
-      return "bg-[var(--danger)]";
-    } else {
-      if (percentage >= 100) return "bg-[var(--success)]";
-      if (percentage >= 80) return "bg-[var(--warning)]";
-      return "bg-[var(--danger)]";
-    }
+  const getProgressColor = (type: string) => {
+    if (type === "income") return "bg-[var(--success)]";
+    if (type === "savings") return "bg-[var(--brand-cyan)]";
+    return "bg-[var(--danger)]";
   };
 
   const renderComparisonRow = (item: BudgetVsActual) => {
     const isExpense = item.type === "expense";
-    const progressColor = getProgressColor(item.percentage, isExpense);
+    const progressColor = getProgressColor(item.type);
     const varianceIcon = getVarianceIcon(item.budgeted, item.actual, isExpense);
 
     return (
@@ -375,7 +369,7 @@ function PrevisionVsRealidadPageContent() {
         {/* Actual */}
         <div className="w-24 text-right">
           <p className="text-xs text-[var(--brand-gray)]">Real</p>
-          <p className={`font-medium ${item.type === "income" ? "text-[var(--success)]" : ""}`}>
+          <p className={`font-medium ${item.type === "income" ? "text-[var(--success)]" : item.type === "savings" ? "text-[var(--brand-cyan)]" : "text-[var(--danger)]"}`}>
             {formatCurrency(item.actual)}
           </p>
         </div>
