@@ -1176,7 +1176,7 @@ function PrevisionPageContent() {
               </div>
             )}
 
-            {availableBalance >= 0 && availableBalance <= closeToBalancedThreshold && (
+            {availableBalance > 0 && availableBalance <= closeToBalancedThreshold && (
               <div className="p-4 rounded-xl bg-[var(--warning)]/10 border border-[var(--warning)]/20 flex items-start gap-3">
                 <AlertCircle className="w-5 h-5 text-[var(--warning)] shrink-0 mt-0.5" />
                 <div>
