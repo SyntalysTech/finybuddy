@@ -89,6 +89,7 @@ function PrevisionPageContent() {
     savings: true,
   });
   const [isRuleExpanded, setIsRuleExpanded] = useState(true);
+  const [hoveredRuleSegment, setHoveredRuleSegment] = useState<string | null>(null);
   const [showHistoryCategory, setShowHistoryCategory] = useState<Category | null>(null);
   const [historyData, setHistoryData] = useState<any[]>([]);
   const [loadingHistory, setLoadingHistory] = useState(false);
@@ -359,6 +360,7 @@ function PrevisionPageContent() {
       key: "needs",
       label: "Necesidades",
       description: "Gastos esenciales",
+      amount: needsTotal,
       percent: needsPercent,
       gradient: "linear-gradient(to right, #2EEB8F, #1EEA8A)",
     },
@@ -366,6 +368,7 @@ function PrevisionPageContent() {
       key: "wants",
       label: "Deseos",
       description: "Gastos opcionales",
+      amount: wantsTotal,
       percent: wantsPercent,
       gradient: "linear-gradient(to right, #3B82F6, #2563EB)",
     },
@@ -373,10 +376,13 @@ function PrevisionPageContent() {
       key: "savings",
       label: "Ahorro",
       description: "Ahorro e inversion",
+      amount: savingsTotal,
       percent: savingsPercent,
       gradient: "linear-gradient(to right, #00E5FF, #00DDF0)",
     },
   ];
+  const hoveredSegmentData = ruleSegments.find((segment) => segment.key === hoveredRuleSegment) || null;
+  const closeToBalancedThreshold = totalIncome * 0.05;
   // Calculate deviation in euros
   const ruleNeeds = profile?.rule_needs_percent ?? 50;
   const ruleWants = profile?.rule_wants_percent ?? 30;
@@ -1099,105 +1105,56 @@ function PrevisionPageContent() {
 
             {isRuleExpanded && (
               <>
-                {Math.abs(availableBalance) < 0.01 ? (
-                  // Estado CONFIRMADA
-                  <div>
-                    <p className="text-sm text-[var(--foreground)] mb-1">
-                      Genial, has creado tu propia regla financiera. La regla más común es la 50/30/20, pero esta es la tuya según tu presupuesto.
-                    </p>
-                    <p className="text-sm font-medium text-[var(--foreground)] mb-4">
-                      {savingsPercent > 50
-                        ? "Estupendo porcentaje de ahorro, sigue así."
-                        : savingsPercent >= 20
-                          ? "Es un muy buen porcentaje de ahorro."
-                          : "Vamos a intentar mejorar ese ahorro. Quizá puedas ajustar algunos gastos."}
-                    </p>
+                <div className={Math.abs(availableBalance) < 0.01 ? "" : "opacity-75"}>
+                  <p className="text-sm text-[var(--foreground)] mb-1">
+                    {Math.abs(availableBalance) < 0.01
+                      ? "Genial, esta regla ya cuadra con tus ingresos."
+                      : "Tu regla esta casi lista. Ajusta un poco para cuadrarla al 100%."}
+                  </p>
+                  <p className="text-sm font-medium text-[var(--foreground)] mb-4">
+                    {savingsPercent > 50
+                      ? "Estupendo porcentaje de ahorro, sigue asi."
+                      : savingsPercent >= 20
+                        ? "Buen nivel de ahorro. Puedes mantener este ritmo."
+                        : "Hay margen para mejorar ahorro si recortas algo en deseos."}
+                  </p>
 
-                    {/* Progress Bar Confirmada */}
-                    <div className="progress-bar h-4 flex mb-6">
-                      <div
-                        className="transition-all"
-                        style={{ width: `${needsPercent}%`, background: "linear-gradient(to right, #2EEB8F, #1EEA8A)" }}
-                        title={`Necesidades: ${needsPercent}%`}
-                      />
-                      <div
-                        className="transition-all"
-                        style={{ width: `${wantsPercent}%`, background: "linear-gradient(to right, #3B82F6, #2563EB)" }}
-                        title={`Deseos: ${wantsPercent}%`}
-                      />
-                      <div
-                        className="transition-all"
-                        style={{ width: `${savingsPercent}%`, background: "linear-gradient(to right, #00E5FF, #00DDF0)" }}
-                        title={`Ahorro: ${savingsPercent}%`}
-                      />
-                    </div>
-
-
-                    <div className="space-y-2 sm:space-y-3">
+                  <div className="relative mb-2">
+                    <div className={`progress-bar h-4 flex ${Math.abs(availableBalance) < 0.01 ? "" : "opacity-70"}`}>
                       {ruleSegments.map((segment) => (
-                        <div key={segment.key} className="rounded-xl border border-[var(--border)] bg-[var(--background-secondary)]/70 p-3 sm:p-4">
-                          <div className="flex items-center justify-between mb-2">
-                            <div>
-                              <p className="font-semibold text-sm sm:text-base">{segment.label}</p>
-                              <p className="text-xs sm:text-sm text-[var(--brand-gray)]">{segment.description}</p>
-                            </div>
-                            <span className="text-sm sm:text-base font-bold">{segment.percent}%</span>
-                          </div>
-                          <div className="h-2 rounded-full bg-[var(--background)] overflow-hidden">
-                            <div
-                              className="h-full rounded-full transition-all"
-                              style={{ width: `${segment.percent}%`, background: segment.gradient }}
-                            />
-                          </div>
-                        </div>
+                        <button
+                          key={segment.key}
+                          type="button"
+                          className="h-full transition-all"
+                          style={{ width: `${segment.percent}%`, background: segment.gradient }}
+                          title={`${segment.label}: ${segment.percent}%`}
+                          onMouseEnter={() => setHoveredRuleSegment(segment.key)}
+                          onMouseLeave={() => setHoveredRuleSegment(null)}
+                          onFocus={() => setHoveredRuleSegment(segment.key)}
+                          onBlur={() => setHoveredRuleSegment(null)}
+                          aria-label={`${segment.label} ${segment.percent}%`}
+                        />
                       ))}
                     </div>
-                  </div>
-                ) : (
-                  // Estado PENDIENTE (descuadrado)
-                  <div className="opacity-60">
-                    <p className="text-sm font-medium text-[var(--foreground)] mb-4">
-                      Presupuesto pendiente de cuadrar
-                    </p>
 
-                    {/* Progress Bar Pendiente */}
-                    <div className="progress-bar h-4 flex mb-6">
-                      <div
-                        className="transition-all opacity-50"
-                        style={{ width: `${needsPercent}%`, background: "linear-gradient(to right, #2EEB8F, #1EEA8A)" }}
-                      />
-                      <div
-                        className="transition-all opacity-50"
-                        style={{ width: `${wantsPercent}%`, background: "linear-gradient(to right, #3B82F6, #2563EB)" }}
-                      />
-                      <div
-                        className="transition-all opacity-50"
-                        style={{ width: `${savingsPercent}%`, background: "linear-gradient(to right, #00E5FF, #00DDF0)" }}
-                      />
-                    </div>
-
-
-                    <div className="space-y-2 sm:space-y-3 opacity-70">
-                      {ruleSegments.map((segment) => (
-                        <div key={segment.key} className="rounded-xl border border-[var(--border)] bg-[var(--background-secondary)]/70 p-3 sm:p-4">
-                          <div className="flex items-center justify-between mb-2">
-                            <div>
-                              <p className="font-semibold text-sm sm:text-base">{segment.label}</p>
-                              <p className="text-xs sm:text-sm text-[var(--brand-gray)]">{segment.description}</p>
-                            </div>
-                            <span className="text-sm sm:text-base font-bold">{segment.percent}%</span>
+                    {hoveredSegmentData && (
+                      <div className="absolute left-1/2 -translate-x-1/2 top-6 mt-2 z-20">
+                        <div className="rounded-xl border border-[var(--border)] bg-[var(--background)] shadow-xl px-3 py-2 min-w-[220px]">
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="font-semibold text-sm">{hoveredSegmentData.label}</span>
+                            <span className="font-bold text-sm">{hoveredSegmentData.percent}%</span>
                           </div>
-                          <div className="h-2 rounded-full bg-[var(--background)] overflow-hidden">
-                            <div
-                              className="h-full rounded-full transition-all"
-                              style={{ width: `${segment.percent}%`, background: segment.gradient }}
-                            />
-                          </div>
+                          <p className="text-xs text-[var(--brand-gray)]">{hoveredSegmentData.description}</p>
+                          <p className="text-xs font-medium mt-1">{formatCurrency(hoveredSegmentData.amount)} previstos</p>
                         </div>
-                      ))}
-                    </div>
+                      </div>
+                    )}
                   </div>
-                )}
+
+                  <p className="text-xs text-[var(--brand-gray)]">
+                    Pasa el cursor por cada color para ver detalle sin ocupar mas espacio.
+                  </p>
+                </div>
               </>
             )}
           </div>
@@ -1205,17 +1162,44 @@ function PrevisionPageContent() {
 
 
 
-        {/* Balance warning if negative */}
-        {hasBudget && availableBalance < 0 && (
-          <div className="p-4 rounded-xl bg-[var(--danger)]/10 border border-[var(--danger)]/20 flex items-start gap-3">
-            <AlertTriangle className="w-5 h-5 text-[var(--danger)] shrink-0 mt-0.5" />
-            <div>
-              <p className="font-medium text-[var(--danger)]">Tu presupuesto no cuadra</p>
-              <p className="text-sm text-[var(--foreground)]">
-                Tus gastos previstos ({formatCurrency(totalExpenses)}) + ahorro previsto ({formatCurrency(totalSavings)}) superan tus ingresos previstos ({formatCurrency(totalIncome)}) en <strong>{formatCurrency(Math.abs(availableBalance))}</strong>.
-              </p>
-            </div>
-          </div>
+        {hasBudget && totalIncome > 0 && (
+          <>
+            {availableBalance < 0 && (
+              <div className="p-4 rounded-xl bg-[var(--danger)]/10 border border-[var(--danger)]/20 flex items-start gap-3">
+                <AlertTriangle className="w-5 h-5 text-[var(--danger)] shrink-0 mt-0.5" />
+                <div>
+                  <p className="font-medium text-[var(--danger)]">Te has pasado de ingresos</p>
+                  <p className="text-sm text-[var(--foreground)]">
+                    Tus gastos previstos ({formatCurrency(totalExpenses)}) + ahorro previsto ({formatCurrency(totalSavings)}) superan tus ingresos ({formatCurrency(totalIncome)}) en <strong>{formatCurrency(Math.abs(availableBalance))}</strong>.
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {availableBalance >= 0 && availableBalance <= closeToBalancedThreshold && (
+              <div className="p-4 rounded-xl bg-[var(--warning)]/10 border border-[var(--warning)]/20 flex items-start gap-3">
+                <AlertCircle className="w-5 h-5 text-[var(--warning)] shrink-0 mt-0.5" />
+                <div>
+                  <p className="font-medium text-[var(--warning)]">Te falta muy poco para cuadrar</p>
+                  <p className="text-sm text-[var(--foreground)]">
+                    Te quedan <strong>{formatCurrency(availableBalance)}</strong> por asignar para cerrar el mes.
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {availableBalance > closeToBalancedThreshold && (
+              <div className="p-4 rounded-xl bg-[var(--brand-cyan)]/10 border border-[var(--brand-cyan)]/20 flex items-start gap-3">
+                <CheckCircle className="w-5 h-5 text-[var(--brand-cyan)] shrink-0 mt-0.5" />
+                <div>
+                  <p className="font-medium text-[var(--brand-cyan)]">Todavia tienes margen disponible</p>
+                  <p className="text-sm text-[var(--foreground)]">
+                    Aun te faltan <strong>{formatCurrency(availableBalance)}</strong> para llegar al total de ingresos previstos y dejar todo asignado.
+                  </p>
+                </div>
+              </div>
+            )}
+          </>
         )}
 
         {/* Action buttons */}
