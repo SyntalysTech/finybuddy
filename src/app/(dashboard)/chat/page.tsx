@@ -767,7 +767,6 @@ function ChatPageContent() {
                       Live
                     </span>
                   </div>
-                  <p className="text-xs text-[var(--brand-gray)] opacity-60 font-medium hidden sm:block">Inteligencia Financiera Activa</p>
                 </div>
               </div>
             </div>
@@ -778,7 +777,7 @@ function ChatPageContent() {
                 className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[var(--brand-purple)]/10 text-[var(--brand-purple)] hover:bg-[var(--brand-purple)] hover:text-white transition-all font-bold text-xs group"
               >
                 <Phone className="w-4 h-4 group-hover:animate-bounce" />
-                <span className="hidden sm:inline">Modo Voz</span>
+                <span className="hidden sm:inline">Llamame!</span>
               </button>
 
               <div className="h-8 w-[1px] bg-[var(--border)] mx-1 hidden sm:block" />
