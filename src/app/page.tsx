@@ -182,24 +182,20 @@ function FinyAIDemo() {
     setScanLine(-1); setCategorized(-1); setShowStats(false); setShowInsights(-1); setTotalAnimated(0); setShowDonut(false);
     setPhase("scanning");
 
-    // Phase 1: Scan raw transactions with glow line
     DEMO_TX.forEach((_, i) => {
       addTimeout(() => setScanLine(i), i * 180);
     });
 
-    // Phase 2: Categorize them (starts overlapping with scan for speed feel)
     addTimeout(() => setPhase("categorizing"), 400);
     DEMO_TX.forEach((_, i) => {
       addTimeout(() => setCategorized(i), 400 + i * 220);
     });
 
-    // Phase 3: Analysis
     const catDone = 400 + DEMO_TX.length * 220 + 200;
     addTimeout(() => {
       setPhase("analyzing");
       setShowStats(true);
       setShowDonut(true);
-      // Animate total counter
       const steps = 30;
       const increment = total / steps;
       for (let s = 1; s <= steps; s++) {
@@ -207,12 +203,10 @@ function FinyAIDemo() {
       }
     }, catDone);
 
-    // Phase 4: Insights
     DEMO_INSIGHTS.forEach((_, i) => {
       addTimeout(() => setShowInsights(i), catDone + 600 + i * 500);
     });
 
-    // Phase 5: Done
     addTimeout(() => setPhase("done"), catDone + 600 + DEMO_INSIGHTS.length * 500 + 300);
   };
 
@@ -229,318 +223,279 @@ function FinyAIDemo() {
     { label: "Ahorro", value: savingsTotal, pct: Math.round((savingsTotal / total) * 100), color: "#02EAFF" },
   ];
 
-  // SVG donut math
-  const radius = 42;
-  const circumference = 2 * Math.PI * radius;
-  let cumulativeOffset = 0;
+  const monthlyFlow = [
+    { month: "Sep", planned: 1820, actual: 1760 },
+    { month: "Oct", planned: 1840, actual: 1880 },
+    { month: "Nov", planned: 1890, actual: 1810 },
+    { month: "Dic", planned: 1910, actual: 1930 },
+    { month: "Ene", planned: 1950, actual: 1860 },
+    { month: "Feb", planned: 1980, actual: 1842 },
+  ];
+
+  const budgetRows = [
+    { label: "Vivienda", planned: 650, actual: 650, tone: "var(--danger)" },
+    { label: "Transporte", planned: 120, actual: 94, tone: "var(--warning)" },
+    { label: "Restaurantes", planned: 130, actual: 154, tone: "var(--brand-purple)" },
+    { label: "Suministros", planned: 90, actual: 84, tone: "var(--brand-cyan)" },
+    { label: "Ahorro", planned: 200, actual: 200, tone: "var(--success)" },
+  ];
+
+  const phaseLabel = {
+    idle: "Listo para procesar",
+    scanning: "Leyendo extracto bancario",
+    categorizing: "Asignando categorias",
+    analyzing: "Generando recomendaciones",
+    done: "Analisis completado",
+  }[phase];
 
   return (
-    <div className="relative">
-      {/* Ambient glow behind the whole demo */}
-      <div className={`absolute -inset-8 rounded-3xl blur-3xl transition-opacity duration-1000 ${phase !== "idle" ? "opacity-100" : "opacity-0"}`}
-        style={{ background: "radial-gradient(ellipse at center, rgba(2,234,255,0.08) 0%, rgba(119,57,254,0.05) 50%, transparent 70%)" }} />
-
-      <div className="relative space-y-4">
-        {/* Main demo area */}
-        <div className="relative rounded-2xl border border-[var(--border)] bg-[var(--background)]/80 backdrop-blur-xl overflow-hidden shadow-2xl">
-          {/* Top bar - terminal style */}
-          <div className="flex items-center justify-between px-4 sm:px-5 py-3 border-b border-[var(--border)] bg-[var(--background-secondary)]/80">
-            <div className="flex items-center gap-1.5">
-              <div className="w-3 h-3 rounded-full bg-[#FF5F57]" />
-              <div className="w-3 h-3 rounded-full bg-[#FFBD2E]" />
-              <div className="w-3 h-3 rounded-full bg-[#28CA41]" />
-            </div>
-            <div className="flex items-center gap-2 px-3 py-1 rounded-lg bg-[var(--background)] border border-[var(--border)]">
-              <Sparkles className={`w-3 h-3 transition-colors duration-300 ${phase !== "idle" ? "text-[var(--brand-cyan)]" : "text-[var(--brand-gray)]"}`} />
-              <span className="text-[10px] sm:text-xs text-[var(--brand-gray)] font-mono">finy-ai-engine v2.0</span>
-              {phase !== "idle" && phase !== "done" && (
-                <span className="relative flex h-2 w-2">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[var(--brand-cyan)] opacity-75" />
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-[var(--brand-cyan)]" />
-                </span>
-              )}
-            </div>
-            <div className="w-[52px]" />
+    <div className="relative space-y-4">
+      <div className="relative rounded-2xl border border-[var(--border)] bg-[var(--background)]/90 backdrop-blur-xl overflow-hidden shadow-2xl">
+        <div className="flex items-center justify-between px-4 sm:px-5 py-3 border-b border-[var(--border)] bg-[var(--background-secondary)]/80">
+          <div className="flex items-center gap-2">
+            <div className="w-2.5 h-2.5 rounded-full bg-[var(--success)]" />
+            <span className="text-xs font-semibold">FinyBuddy Workspace</span>
           </div>
-
-          {/* Two column layout */}
-          <div className="grid lg:grid-cols-2">
-            {/* LEFT: Raw bank extract */}
-            <div className={`relative lg:border-r border-[var(--border)] ${phase === "idle" ? "" : "border-b lg:border-b-0"}`}>
-              <div className="px-4 sm:px-5 py-2.5 border-b border-[var(--border)] bg-[var(--background-secondary)]/50">
-                <p className="text-[10px] sm:text-xs font-semibold flex items-center gap-2 text-[var(--brand-gray)] uppercase tracking-wider">
-                  <Database className="w-3.5 h-3.5" />
-                  Movimientos en bruto
-                </p>
-              </div>
-              <div className="p-2 sm:p-3 space-y-0.5 font-mono text-[10px] sm:text-xs relative">
-                {DEMO_TX.map((t, i) => {
-                  const isScanned = scanLine >= i;
-                  const isActive = scanLine === i;
-                  return (
-                    <div
-                      key={i}
-                      className={`relative flex items-center justify-between px-2.5 sm:px-3 py-2 sm:py-2.5 rounded-lg transition-all duration-300 ${isActive ? "bg-[var(--brand-cyan)]/10 shadow-[0_0_20px_rgba(2,234,255,0.15)]" :
-                        isScanned ? "bg-[var(--brand-cyan)]/5" : "bg-transparent"
-                        }`}
-                    >
-                      {/* Scan line glow */}
-                      {isActive && (
-                        <div className="absolute inset-0 rounded-lg border border-[var(--brand-cyan)]/40 shadow-[inset_0_0_12px_rgba(2,234,255,0.1)]" />
-                      )}
-                      <span className={`relative transition-all duration-300 ${isScanned ? "text-[var(--foreground)]" : "text-[var(--brand-gray)]/50"}`}>
-                        {t.raw}
-                      </span>
-                      <span className={`relative font-semibold transition-all duration-300 tabular-nums ${isScanned ? "text-[var(--foreground)]" : "text-[var(--brand-gray)]/50"}`}>
-                        {t.rawAmt}
-                      </span>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* RIGHT: Categorized output - hidden on mobile until demo starts */}
-            <div className={`relative ${phase === "idle" ? "hidden lg:block" : ""}`}>
-              <div className="px-4 sm:px-5 py-2.5 border-b border-[var(--border)] bg-[var(--background-secondary)]/50">
-                <p className="text-[10px] sm:text-xs font-semibold flex items-center gap-2 text-[var(--brand-gray)] uppercase tracking-wider">
-                  <Sparkles className="w-3.5 h-3.5" />
-                  Categorizado por Finy AI
-                </p>
-              </div>
-              <div className="p-2 sm:p-3 space-y-0.5">
-                {DEMO_TX.map((t, i) => {
-                  const Icon = t.icon;
-                  const isVisible = categorized >= i;
-                  const isJustAppeared = categorized === i;
-                  return (
-                    <div
-                      key={i}
-                      className="relative overflow-hidden rounded-lg"
-                      style={{ minHeight: "40px" }}
-                    >
-                      {/* Flash effect on appear */}
-                      {isJustAppeared && (
-                        <div className="absolute inset-0 rounded-lg animate-[fadeIn_0.5s_ease-out]"
-                          style={{ boxShadow: `inset 0 0 20px ${t.color}15, 0 0 15px ${t.color}10` }} />
-                      )}
-                      <div
-                        className={`relative flex items-center justify-between px-2.5 sm:px-3 py-2 sm:py-2.5 rounded-lg transition-all duration-500 ${isVisible ? "opacity-100 translate-x-0 scale-100" : "opacity-0 translate-x-8 scale-95"
-                          }`}
-                        style={isVisible ? { borderLeft: `3px solid ${t.color}` } : {}}
-                      >
-                        <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-                          <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center flex-shrink-0 transition-transform duration-300"
-                            style={{ backgroundColor: `${t.color}15`, boxShadow: isJustAppeared ? `0 0 12px ${t.color}30` : "none" }}>
-                            <Icon className="w-3.5 h-3.5 sm:w-4 sm:h-4" style={{ color: t.color }} />
-                          </div>
-                          <div className="min-w-0">
-                            <p className="text-xs sm:text-sm font-medium truncate">{t.concept}</p>
-                            <div className="flex items-center gap-1.5">
-                              <span className="inline-block w-1.5 h-1.5 rounded-full" style={{ backgroundColor: t.color }} />
-                              <p className="text-[9px] sm:text-[10px] font-medium truncate" style={{ color: t.color }}>{t.category}</p>
-                            </div>
-                          </div>
-                        </div>
-                        <span className="text-xs sm:text-sm font-bold flex-shrink-0 ml-2" style={{ color: t.type === "savings" ? "#02EAFF" : "var(--danger)" }}>
-                          {fmtAmount(t.amount)} €
-                        </span>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
+          <div className="hidden sm:flex items-center gap-2 text-[10px] text-[var(--brand-gray)]">
+            <span className="px-2 py-1 rounded-md border border-[var(--border)]">Marzo 2026</span>
+            <span className="px-2 py-1 rounded-md border border-[var(--border)]">Cuenta principal</span>
+          </div>
+          <div className="flex items-center gap-2 px-2.5 py-1 rounded-lg bg-[var(--background)] border border-[var(--border)]">
+            <Sparkles className={`w-3 h-3 ${phase === "idle" ? "text-[var(--brand-gray)]" : "text-[var(--brand-cyan)]"}`} />
+            <span className="text-[10px] text-[var(--brand-gray)]">IA en directo</span>
           </div>
         </div>
 
-        {/* Stats + Insights Panel */}
-        <div className={`transition-all duration-700 ${showStats ? "opacity-100 translate-y-0" : "hidden"}`}>
-          <div className="grid lg:grid-cols-5 gap-4 sm:gap-5">
-            {/* Total + Donut */}
-            <div className="lg:col-span-2 rounded-2xl border border-[var(--border)] bg-[var(--background)]/80 backdrop-blur-xl p-4 sm:p-5 shadow-xl relative overflow-hidden">
-              {/* Subtle gradient accent */}
-              <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-[var(--brand-cyan)]/5 to-transparent rounded-bl-full pointer-events-none" />
-              <p className="text-[10px] sm:text-xs font-semibold text-[var(--brand-gray)] uppercase tracking-wider mb-4">Análisis instantáneo</p>
-
-              <div className="flex items-center gap-4 sm:gap-5">
-                {/* Donut chart */}
-                <div className={`relative w-24 h-24 sm:w-28 sm:h-28 flex-shrink-0 transition-all duration-1000 ${showDonut ? "opacity-100 scale-100" : "opacity-0 scale-50"}`}>
-                  <svg viewBox="0 0 100 100" className="w-full h-full -rotate-90">
-                    {distData.map((item, i) => {
-                      const dashLen = (item.pct / 100) * circumference;
-                      const offset = cumulativeOffset;
-                      cumulativeOffset += dashLen;
-                      return (
-                        <circle
-                          key={i}
-                          cx="50" cy="50" r={radius}
-                          fill="none"
-                          stroke={item.color}
-                          strokeWidth="8"
-                          strokeLinecap="round"
-                          strokeDasharray={`${dashLen} ${circumference - dashLen}`}
-                          strokeDashoffset={-offset}
-                          className="transition-all duration-1000"
-                          style={{ filter: `drop-shadow(0 0 4px ${item.color}40)` }}
-                        />
-                      );
-                    })}
-                  </svg>
-                  {/* Center total */}
-                  <div className="absolute inset-0 flex flex-col items-center justify-center">
-                    <span className="text-[9px] text-[var(--brand-gray)]">Total</span>
-                    <span className="text-sm sm:text-base font-bold tabular-nums">{fmtAmount(totalAnimated)} €</span>
+        <div className="grid xl:grid-cols-12">
+          <div className="xl:col-span-4 border-b xl:border-b-0 xl:border-r border-[var(--border)]">
+            <div className="px-4 py-2.5 border-b border-[var(--border)] bg-[var(--background-secondary)]/50">
+              <p className="text-[10px] sm:text-xs font-semibold flex items-center gap-2 text-[var(--brand-gray)] uppercase tracking-wider">
+                <Database className="w-3.5 h-3.5" />
+                Extracto importado
+              </p>
+            </div>
+            <div className="p-2.5 sm:p-3 space-y-1 font-mono text-[10px] sm:text-xs">
+              {DEMO_TX.map((t, i) => {
+                const isScanned = scanLine >= i;
+                const isActive = scanLine === i;
+                return (
+                  <div
+                    key={i}
+                    className={`flex items-center justify-between px-2.5 py-2 rounded-lg border transition-all duration-300 ${
+                      isActive
+                        ? "border-[var(--brand-cyan)]/30 bg-[var(--brand-cyan)]/10"
+                        : isScanned
+                          ? "border-[var(--border)] bg-[var(--background-secondary)]/60"
+                          : "border-transparent"
+                    }`}
+                  >
+                    <span className={isScanned ? "text-[var(--foreground)]" : "text-[var(--brand-gray)]/55"}>{t.raw}</span>
+                    <span className={`tabular-nums ${isScanned ? "text-[var(--foreground)]" : "text-[var(--brand-gray)]/55"}`}>{t.rawAmt}</span>
                   </div>
-                </div>
+                );
+              })}
+            </div>
+          </div>
 
-                {/* Legend */}
-                <div className="space-y-2.5 flex-1">
-                  {distData.map((item, i) => (
-                    <div key={i} className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: item.color, boxShadow: `0 0 6px ${item.color}50` }} />
-                        <span className="text-[10px] sm:text-xs text-[var(--brand-gray)]">{item.label}</span>
+          <div className="xl:col-span-5 border-b xl:border-b-0 xl:border-r border-[var(--border)]">
+            <div className="px-4 py-2.5 border-b border-[var(--border)] bg-[var(--background-secondary)]/50">
+              <p className="text-[10px] sm:text-xs font-semibold flex items-center gap-2 text-[var(--brand-gray)] uppercase tracking-wider">
+                <LayoutDashboard className="w-3.5 h-3.5" />
+                Operaciones categorizadas
+              </p>
+            </div>
+            <div className="hidden sm:grid grid-cols-12 gap-2 px-4 pt-3 text-[10px] text-[var(--brand-gray)] uppercase tracking-wider">
+              <span className="col-span-4">Concepto</span>
+              <span className="col-span-4">Categoria</span>
+              <span className="col-span-2 text-right">Tipo</span>
+              <span className="col-span-2 text-right">Importe</span>
+            </div>
+            <div className="p-2.5 sm:p-3 space-y-1.5">
+              {DEMO_TX.map((t, i) => {
+                const Icon = t.icon;
+                const isVisible = categorized >= i;
+                return (
+                  <div
+                    key={i}
+                    className={`grid grid-cols-12 gap-2 items-center px-2.5 sm:px-3 py-2.5 rounded-lg border transition-all duration-500 ${
+                      isVisible ? "opacity-100 translate-x-0 border-[var(--border)]" : "opacity-0 translate-x-4 border-transparent h-0 py-0 overflow-hidden"
+                    }`}
+                  >
+                    <div className="col-span-6 sm:col-span-4 flex items-center gap-2 min-w-0">
+                      <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0" style={{ backgroundColor: `${t.color}15` }}>
+                        <Icon className="w-3.5 h-3.5" style={{ color: t.color }} />
                       </div>
-                      <div className="text-right">
-                        <span className="text-[10px] sm:text-xs font-bold" style={{ color: item.color }}>{item.pct}%</span>
-                      </div>
+                      <span className="text-xs font-medium truncate">{t.concept}</span>
                     </div>
-                  ))}
+                    <div className="col-span-4 sm:col-span-4 text-[11px] font-medium truncate" style={{ color: t.color }}>{t.category}</div>
+                    <div className="hidden sm:block col-span-2 text-right text-[10px] text-[var(--brand-gray)] uppercase">{t.type}</div>
+                    <div className="col-span-2 text-right text-xs font-bold tabular-nums" style={{ color: t.type === "savings" ? "var(--brand-cyan)" : "var(--danger)" }}>
+                      {fmtAmount(t.amount)} €
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="xl:col-span-3">
+            <div className="px-4 py-2.5 border-b border-[var(--border)] bg-[var(--background-secondary)]/50">
+              <p className="text-[10px] sm:text-xs font-semibold flex items-center gap-2 text-[var(--brand-gray)] uppercase tracking-wider">
+                <Sparkles className="w-3.5 h-3.5" />
+                Motor de decisiones
+              </p>
+            </div>
+            <div className="p-3 sm:p-4 space-y-4">
+              <div className="p-3 rounded-xl border border-[var(--border)] bg-[var(--background-secondary)]/60">
+                <div className="flex items-center justify-between mb-1.5">
+                  <span className="text-[10px] uppercase tracking-wider text-[var(--brand-gray)]">Estado</span>
+                  <span className={`w-2 h-2 rounded-full ${phase === "idle" ? "bg-[var(--brand-gray)]/50" : phase === "done" ? "bg-[var(--success)]" : "bg-[var(--brand-cyan)] animate-pulse"}`} />
                 </div>
+                <p className="text-sm font-semibold">{phaseLabel}</p>
               </div>
 
-              {/* Mini progress bars */}
-              <div className="mt-4 space-y-1.5">
-                {distData.map((item, i) => (
-                  <div key={i} className="h-1.5 rounded-full bg-[var(--border)] overflow-hidden">
-                    <div className="h-full rounded-full transition-all duration-[1500ms] ease-out"
-                      style={{ width: showDonut ? `${item.pct}%` : "0%", backgroundColor: item.color, boxShadow: `0 0 8px ${item.color}40` }} />
+              <div className="p-3 rounded-xl border border-[var(--border)] bg-[var(--background-secondary)]/60">
+                <p className="text-[10px] uppercase tracking-wider text-[var(--brand-gray)] mb-3">Regla 50 / 30 / 20</p>
+                {distData.map((item) => (
+                  <div key={item.label} className="mb-3 last:mb-0">
+                    <div className="flex items-center justify-between text-[11px] mb-1.5">
+                      <span>{item.label}</span>
+                      <span className="font-semibold" style={{ color: item.color }}>{item.pct}%</span>
+                    </div>
+                    <div className="h-2 rounded-full bg-[var(--border)] overflow-hidden">
+                      <div
+                        className="h-full rounded-full transition-all duration-700"
+                        style={{ width: showDonut ? `${item.pct}%` : "0%", backgroundColor: item.color }}
+                      />
+                    </div>
                   </div>
                 ))}
               </div>
-            </div>
 
-            {/* Finy Insights */}
-            <div className="lg:col-span-3 rounded-2xl border border-[var(--brand-cyan)]/20 bg-gradient-to-br from-[var(--background)]/80 to-[var(--brand-cyan)]/[0.02] backdrop-blur-xl p-4 sm:p-5 shadow-xl relative overflow-hidden">
-              {/* Animated gradient border accent */}
-              <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-[var(--brand-cyan)] to-transparent opacity-40" />
-
-              <div className="flex items-center gap-2.5 mb-4">
-                <div className="relative">
-                  <Image src="/assets/finy-mascota-minimalista.png" alt="Finy" width={36} height={36} className="rounded-xl w-9 h-9 object-contain" />
-                  <div className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-[var(--background)] transition-colors duration-300 ${phase !== "idle" ? "bg-[var(--brand-cyan)]" : "bg-[var(--brand-gray)]"}`} />
-                </div>
-                <div>
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-sm font-bold text-[var(--brand-cyan)]">Finy AI</span>
-                    <Sparkles className="w-3.5 h-3.5 text-[var(--brand-cyan)] opacity-70" />
-                  </div>
-                  <p className="text-[9px] sm:text-[10px] text-[var(--brand-gray)]">Analizando tus movimientos...</p>
-                </div>
-              </div>
-
-              <div className="space-y-3">
+              <div className="space-y-2">
                 {DEMO_INSIGHTS.map((insight, i) => {
                   const isVisible = showInsights >= i;
-                  const colors = { warning: { bg: "var(--warning)", icon: "!" }, info: { bg: "var(--brand-cyan)", icon: "i" }, tip: { bg: "var(--success)", icon: "✓" } };
-                  const c = colors[insight.type];
                   return (
                     <div
                       key={i}
-                      className={`flex items-start gap-3 p-3 rounded-xl transition-all duration-600 ${isVisible ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-4"
-                        }`}
-                      style={isVisible ? { backgroundColor: `color-mix(in srgb, ${c.bg} 8%, transparent)`, border: `1px solid color-mix(in srgb, ${c.bg} 15%, transparent)` } : {}}
+                      className={`p-2.5 rounded-lg border text-xs transition-all duration-500 ${
+                        isVisible ? "opacity-100 translate-y-0 border-[var(--border)] bg-[var(--background-secondary)]/60" : "opacity-0 translate-y-2"
+                      }`}
                     >
-                      <div className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 text-[9px] font-bold text-white"
-                        style={{ backgroundColor: c.bg, boxShadow: `0 0 8px color-mix(in srgb, ${c.bg} 40%, transparent)` }}>
-                        {c.icon}
-                      </div>
-                      <p className="text-xs sm:text-sm text-[var(--foreground)] leading-relaxed">{insight.text}</p>
+                      {insight.text}
                     </div>
                   );
                 })}
-
-                {/* Savings opportunity highlight */}
-                <div className={`mt-2 p-3 sm:p-4 rounded-xl transition-all duration-700 ${phase === "done" ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
-                  }`}
-                  style={{ background: "linear-gradient(135deg, rgba(2,234,255,0.08) 0%, rgba(119,57,254,0.08) 100%)", border: "1px solid rgba(2,234,255,0.2)" }}>
-                  <div className="flex items-center justify-between flex-wrap gap-2">
-                    <div className="flex items-center gap-2">
-                      <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-br from-[var(--brand-cyan)] to-[var(--brand-purple)] flex items-center justify-center shadow-lg">
-                        <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
-                      </div>
-                      <div>
-                        <p className="text-[10px] sm:text-xs text-[var(--brand-gray)]">Potencial de ahorro detectado</p>
-                        <p className="text-sm sm:text-lg font-bold gradient-brand-text">+15,00 € / mes</p>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-[10px] sm:text-xs text-[var(--brand-gray)]">Proyección anual</p>
-                      <p className="text-sm sm:text-base font-bold text-[var(--success)]">+180,00 €</p>
-                    </div>
-                  </div>
-                </div>
               </div>
             </div>
           </div>
         </div>
+      </div>
 
-        {/* CTA Button */}
-        <div className="text-center">
-          {phase === "idle" && (
-            <button
-              onClick={startDemo}
-              className="group relative inline-flex items-center gap-2.5 px-8 sm:px-10 py-4 sm:py-5 rounded-2xl bg-gradient-to-r from-[var(--brand-purple)] to-[var(--brand-cyan)] text-white font-bold text-sm sm:text-base hover:opacity-90 transition-all hover:scale-105 active:scale-95 shadow-2xl shadow-[var(--brand-purple)]/30"
-            >
-              {/* Animated border glow */}
-              <div className="absolute -inset-[1px] rounded-2xl bg-gradient-to-r from-[var(--brand-cyan)] via-[var(--brand-purple)] to-[var(--brand-cyan)] opacity-0 group-hover:opacity-50 blur-sm transition-opacity duration-500" />
-              <Play className="w-5 h-5 relative" />
-              <span className="relative">Probar la magia de Finy</span>
-            </button>
-          )}
-          {(phase === "scanning" || phase === "categorizing" || phase === "analyzing") && (
-            <div className="inline-flex items-center gap-3 px-6 sm:px-8 py-3 sm:py-4 rounded-xl bg-[var(--background)] border border-[var(--brand-cyan)]/30 shadow-lg shadow-[var(--brand-cyan)]/5">
-              <div className="relative w-5 h-5">
-                <div className="absolute inset-0 rounded-full border-2 border-[var(--brand-cyan)]/20" />
-                <div className="absolute inset-0 rounded-full border-2 border-transparent border-t-[var(--brand-cyan)] animate-spin" />
-              </div>
-              <span className="text-sm font-medium text-[var(--brand-cyan)]">
-                {phase === "scanning" && "Escaneando movimientos..."}
-                {phase === "categorizing" && "Categorizando con IA..."}
-                {phase === "analyzing" && "Generando insights..."}
-              </span>
-              <div className="flex gap-1">
-                {[0, 1, 2].map(d => (
-                  <div key={d} className="w-1.5 h-1.5 rounded-full bg-[var(--brand-cyan)] animate-bounce" style={{ animationDelay: `${d * 0.15}s` }} />
-                ))}
-              </div>
+      <div className={`transition-all duration-700 ${showStats ? "opacity-100 translate-y-0" : "hidden"}`}>
+        <div className="grid lg:grid-cols-5 gap-4 sm:gap-5">
+          <div className="lg:col-span-3 rounded-2xl border border-[var(--border)] bg-[var(--background)]/85 p-4 sm:p-5">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-sm font-semibold">Cashflow mensual</h3>
+              <span className="text-xs text-[var(--brand-gray)]">Planificado vs real</span>
             </div>
-          )}
-          {phase === "done" && (
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-              <button
-                onClick={resetDemo}
-                className="inline-flex items-center gap-2 px-6 py-3 rounded-xl border border-[var(--border)] hover:bg-[var(--background-secondary)] transition-all text-sm font-medium hover:scale-105 active:scale-95"
-              >
-                <Play className="w-4 h-4" />
-                Repetir demo
-              </button>
-              <Link
-                href="/register"
-                className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-[var(--brand-purple)] to-[var(--brand-cyan)] text-white font-semibold hover:opacity-90 transition-all hover:scale-105 active:scale-95 shadow-lg"
-              >
-                Empieza gratis
-                <ArrowRight className="w-4 h-4" />
-              </Link>
+            <div className="grid grid-cols-6 gap-2 h-44 items-end">
+              {monthlyFlow.map((m) => {
+                const max = 2100;
+                return (
+                  <div key={m.month} className="flex flex-col items-center gap-1.5">
+                    <div className="w-full h-32 flex items-end justify-center gap-1">
+                      <div className="w-2.5 rounded-t bg-[var(--brand-cyan)]/70" style={{ height: `${(m.planned / max) * 100}%` }} />
+                      <div className="w-2.5 rounded-t bg-[var(--brand-purple)]/80" style={{ height: `${(m.actual / max) * 100}%` }} />
+                    </div>
+                    <span className="text-[10px] text-[var(--brand-gray)]">{m.month}</span>
+                  </div>
+                );
+              })}
             </div>
-          )}
+            <div className="flex items-center gap-4 mt-3 text-[10px] text-[var(--brand-gray)]">
+              <div className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-[var(--brand-cyan)]/80" />Plan</div>
+              <div className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-[var(--brand-purple)]/80" />Real</div>
+            </div>
+          </div>
+
+          <div className="lg:col-span-2 rounded-2xl border border-[var(--border)] bg-[var(--background)]/85 p-4 sm:p-5">
+            <h3 className="text-sm font-semibold mb-4">Prevision vs realidad</h3>
+            <div className="space-y-3">
+              {budgetRows.map((row) => {
+                const pct = Math.round((row.actual / row.planned) * 100);
+                const over = row.actual > row.planned;
+                return (
+                  <div key={row.label}>
+                    <div className="flex items-center justify-between text-[11px] mb-1">
+                      <span className="text-[var(--brand-gray)]">{row.label}</span>
+                      <span className={`font-semibold ${over ? "text-[var(--danger)]" : "text-[var(--success)]"}`}>
+                        {fmtAmount(row.actual)} € / {fmtAmount(row.planned)} €
+                      </span>
+                    </div>
+                    <div className="h-2 rounded-full bg-[var(--border)] overflow-hidden">
+                      <div
+                        className="h-full rounded-full transition-all duration-700"
+                        style={{ width: showDonut ? `${Math.min(pct, 100)}%` : "0%", backgroundColor: over ? "var(--danger)" : row.tone }}
+                      />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            <div className="mt-4 p-3 rounded-xl border border-[var(--brand-cyan)]/25 bg-[var(--brand-cyan)]/5">
+              <p className="text-[10px] uppercase tracking-wider text-[var(--brand-gray)] mb-1">Balance procesado</p>
+              <p className="text-lg font-bold tabular-nums">{fmtAmount(totalAnimated)} €</p>
+            </div>
+          </div>
         </div>
+      </div>
+
+      <div className="text-center">
+        {phase === "idle" && (
+          <button
+            onClick={startDemo}
+            className="group relative inline-flex items-center gap-2.5 px-8 sm:px-10 py-4 sm:py-5 rounded-2xl bg-gradient-to-r from-[var(--brand-purple)] to-[var(--brand-cyan)] text-white font-bold text-sm sm:text-base hover:opacity-90 transition-all hover:scale-105 active:scale-95 shadow-2xl shadow-[var(--brand-purple)]/30"
+          >
+            <Play className="w-5 h-5 relative" />
+            <span className="relative">Probar la magia de Finy</span>
+          </button>
+        )}
+        {(phase === "scanning" || phase === "categorizing" || phase === "analyzing") && (
+          <div className="inline-flex items-center gap-3 px-6 sm:px-8 py-3 sm:py-4 rounded-xl bg-[var(--background)] border border-[var(--brand-cyan)]/30 shadow-lg shadow-[var(--brand-cyan)]/5">
+            <div className="relative w-5 h-5">
+              <div className="absolute inset-0 rounded-full border-2 border-[var(--brand-cyan)]/20" />
+              <div className="absolute inset-0 rounded-full border-2 border-transparent border-t-[var(--brand-cyan)] animate-spin" />
+            </div>
+            <span className="text-sm font-medium text-[var(--brand-cyan)]">
+              {phase === "scanning" && "Escaneando movimientos..."}
+              {phase === "categorizing" && "Categorizando con IA..."}
+              {phase === "analyzing" && "Generando insights..."}
+            </span>
+          </div>
+        )}
+        {phase === "done" && (
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+            <button
+              onClick={resetDemo}
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl border border-[var(--border)] hover:bg-[var(--background-secondary)] transition-all text-sm font-medium hover:scale-105 active:scale-95"
+            >
+              <Play className="w-4 h-4" />
+              Repetir demo
+            </button>
+            <Link
+              href="/register"
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-[var(--brand-purple)] to-[var(--brand-cyan)] text-white font-semibold hover:opacity-90 transition-all hover:scale-105 active:scale-95 shadow-lg"
+            >
+              Empieza gratis
+              <ArrowRight className="w-4 h-4" />
+            </Link>
+          </div>
+        )}
       </div>
     </div>
   );
 }
-
 // Floating particles background - using fixed values to avoid hydration mismatch
 const PARTICLES = [
   { w: 8, h: 12, l: 5, t: 15, d: 12, delay: 2 },
@@ -1152,160 +1107,153 @@ export default function HomePage() {
               Todo en un <span className="gradient-brand-text">vistazo</span>
             </h2>
             <p className="text-[var(--brand-gray)] max-w-2xl mx-auto text-lg">
-              Dashboard intuitivo para ver tu situación financiera al momento
+              Una preview fiel al dashboard real: control diario, seguimiento por modulos y decisiones accionables.
             </p>
           </div>
 
-          {/* Mock Dashboard with glass effect */}
-          <div className="relative">
-            {/* Glow effect behind */}
-            <div className="absolute -inset-4 bg-gradient-to-r from-[var(--brand-cyan)]/20 to-[var(--brand-purple)]/20 rounded-3xl blur-2xl" />
-
-            <div className="relative rounded-2xl border border-[var(--border)] bg-[var(--background)]/80 backdrop-blur-xl p-6 md:p-8 shadow-2xl">
-              {/* Browser bar mock */}
-              <div className="flex items-center gap-2 mb-6 pb-4 border-b border-[var(--border)]">
-                <div className="flex gap-1.5">
-                  <div className="w-3 h-3 rounded-full bg-[#FF5F57]" />
-                  <div className="w-3 h-3 rounded-full bg-[#FFBD2E]" />
-                  <div className="w-3 h-3 rounded-full bg-[#28CA41]" />
-                </div>
-                <div className="flex-1 flex justify-center">
-                  <div className="px-4 py-1 rounded-lg bg-[var(--background-secondary)] text-xs text-[var(--brand-gray)]">
-                    www.finybuddy.com/dashboard
-                  </div>
-                </div>
+          <div className="relative rounded-3xl border border-[var(--border)] bg-[var(--background)]/90 backdrop-blur-xl shadow-2xl overflow-hidden">
+            <div className="flex items-center justify-between px-5 sm:px-6 py-3 border-b border-[var(--border)] bg-[var(--background-secondary)]/80">
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full bg-[#FF5F57]" />
+                <div className="w-3 h-3 rounded-full bg-[#FFBD2E]" />
+                <div className="w-3 h-3 rounded-full bg-[#28CA41]" />
               </div>
+              <div className="text-xs text-[var(--brand-gray)] hidden sm:block">app.finybuddy.com/dashboard</div>
+              <div className="text-[10px] px-2 py-1 rounded-lg bg-[var(--background)] border border-[var(--border)] text-[var(--brand-gray)]">Mar 2026</div>
+            </div>
 
-              {/* Finy greeting */}
-              <div className="flex items-center gap-2.5 mb-5 p-3 rounded-xl bg-gradient-to-r from-[var(--brand-cyan)]/5 to-[var(--brand-purple)]/5 border border-[var(--border)]">
-                <Image src="/assets/finy-mascota-minimalista.png" alt="Finy" width={32} height={32} className="rounded-xl w-8 h-8 flex-shrink-0 object-contain" />
-                <div className="min-w-0">
-                  <p className="text-xs font-semibold text-[var(--brand-cyan)]">Vas bien este mes, sigue así</p>
-                  <p className="text-[10px] text-[var(--brand-gray)] italic">&ldquo;El ahorro es la base de la fortuna&rdquo;</p>
+            <div className="grid lg:grid-cols-12 min-h-[620px]">
+              <aside className="lg:col-span-3 border-b lg:border-b-0 lg:border-r border-[var(--border)] bg-[var(--background-secondary)]/55 p-4 sm:p-5">
+                <div className="flex items-center gap-3 mb-6">
+                  <Image src="/assets/finy-mascota-minimalista.png" alt="Finy" width={34} height={34} className="rounded-xl w-8 h-8 object-contain" />
+                  <div>
+                    <p className="text-xs text-[var(--brand-gray)]">Buenos dias</p>
+                    <p className="text-sm font-semibold">Panel principal</p>
+                  </div>
                 </div>
-              </div>
 
-              {/* KPI Cards - 3 like real dashboard */}
-              <div className="grid grid-cols-3 gap-2 sm:gap-4 mb-5">
-                <div className="p-2.5 sm:p-4 rounded-xl bg-[var(--background-secondary)] border border-[var(--border)]">
-                  <div className="flex items-center gap-1.5 text-[var(--brand-gray)] mb-1.5">
-                    <TrendingUp className="w-3.5 h-3.5 text-[var(--success)]" />
-                    <span className="text-[10px] sm:text-xs">Ingresos</span>
-                  </div>
-                  <p className="text-sm sm:text-xl font-bold text-[var(--success)]">2.850 €</p>
+                <div className="space-y-2">
+                  {[
+                    { label: "Dashboard", icon: LayoutDashboard, active: true },
+                    { label: "Operaciones", icon: CreditCard },
+                    { label: "Prevision", icon: Target },
+                    { label: "Calendario", icon: Calendar },
+                    { label: "Ahorro", icon: PiggyBank },
+                    { label: "FinyBot", icon: Sparkles },
+                  ].map((item) => (
+                    <div
+                      key={item.label}
+                      className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl border ${item.active ? "border-[var(--brand-cyan)]/25 bg-[var(--brand-cyan)]/8" : "border-transparent hover:border-[var(--border)]"}`}
+                    >
+                      <item.icon className={`w-4 h-4 ${item.active ? "text-[var(--brand-cyan)]" : "text-[var(--brand-gray)]"}`} />
+                      <span className={`text-sm ${item.active ? "font-semibold" : "text-[var(--brand-gray)]"}`}>{item.label}</span>
+                    </div>
+                  ))}
                 </div>
-                <div className="p-2.5 sm:p-4 rounded-xl bg-[var(--background-secondary)] border border-[var(--border)]">
-                  <div className="flex items-center gap-1.5 text-[var(--brand-gray)] mb-1.5">
-                    <TrendingDown className="w-3.5 h-3.5 text-[var(--danger)]" />
-                    <span className="text-[10px] sm:text-xs">Gastos</span>
-                  </div>
-                  <p className="text-sm sm:text-xl font-bold text-[var(--danger)]">1.424 €</p>
-                </div>
-                <div className="p-2.5 sm:p-4 rounded-xl bg-[var(--background-secondary)] border border-[var(--border)]">
-                  <div className="flex items-center gap-1.5 text-[var(--brand-gray)] mb-1.5">
-                    <PiggyBank className="w-3.5 h-3.5 text-[var(--brand-cyan)]" />
-                    <span className="text-[10px] sm:text-xs">Ahorro</span>
-                  </div>
-                  <p className="text-sm sm:text-xl font-bold text-[var(--brand-cyan)]">570 €</p>
-                </div>
-              </div>
 
-              {/* Main content grid */}
-              <div className="grid lg:grid-cols-2 gap-4 sm:gap-5">
-                {/* Evolución mensual - bar chart mockup */}
-                <div className="p-4 sm:p-5 rounded-xl bg-[var(--background-secondary)] border border-[var(--border)]">
-                  <h3 className="font-semibold mb-4 flex items-center gap-2 text-xs sm:text-sm">
-                    <BarChart3 className="w-4 h-4 text-[var(--brand-purple)]" />
-                    Evolución mensual
-                  </h3>
-                  {/* Simulated bar chart */}
-                  <div className="flex items-end gap-1.5 sm:gap-3 h-28 sm:h-32">
-                    {[
-                      { label: "Sep", income: 60, expense: 45, savings: 15 },
-                      { label: "Oct", income: 70, expense: 55, savings: 15 },
-                      { label: "Nov", income: 65, expense: 50, savings: 15 },
-                      { label: "Dic", income: 80, expense: 48, savings: 32 },
-                      { label: "Ene", income: 75, expense: 52, savings: 23 },
-                      { label: "Feb", income: 85, expense: 50, savings: 35 },
-                    ].map((m, i) => (
-                      <div key={i} className="flex-1 flex flex-col items-center gap-1">
-                        <div className="w-full flex gap-0.5 items-end h-24 sm:h-28">
-                          <div className="flex-1 rounded-t bg-[var(--success)]/80" style={{ height: `${m.income}%` }} />
-                          <div className="flex-1 rounded-t bg-[var(--danger)]/80" style={{ height: `${m.expense}%` }} />
-                          <div className="flex-1 rounded-t bg-[var(--brand-cyan)]/80" style={{ height: `${m.savings}%` }} />
-                        </div>
-                        <span className="text-[8px] sm:text-[10px] text-[var(--brand-gray)]">{m.label}</span>
+                <div className="mt-6 p-3 rounded-xl border border-[var(--brand-cyan)]/20 bg-[var(--brand-cyan)]/5">
+                  <p className="text-[10px] uppercase tracking-wider text-[var(--brand-gray)] mb-1">Regla 50/30/20</p>
+                  <p className="text-lg font-bold">20% ahorro</p>
+                  <p className="text-xs text-[var(--brand-gray)]">Objetivo mensual completado</p>
+                </div>
+              </aside>
+
+              <main className="lg:col-span-9 p-4 sm:p-6">
+                <div className="grid sm:grid-cols-4 gap-3 mb-4">
+                  {[
+                    { label: "Ingresos", value: "2.850 €", icon: TrendingUp, tone: "text-[var(--success)]" },
+                    { label: "Gastos", value: "1.424 €", icon: TrendingDown, tone: "text-[var(--danger)]" },
+                    { label: "Ahorro", value: "570 €", icon: PiggyBank, tone: "text-[var(--brand-cyan)]" },
+                    { label: "Balance", value: "+1.426 €", icon: BarChart3, tone: "text-[var(--brand-purple)]" },
+                  ].map((kpi) => (
+                    <div key={kpi.label} className="p-3 rounded-xl border border-[var(--border)] bg-[var(--background-secondary)]/60">
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-[11px] text-[var(--brand-gray)]">{kpi.label}</span>
+                        <kpi.icon className={kpi.tone + " w-3.5 h-3.5"} />
                       </div>
-                    ))}
-                  </div>
-                  <div className="flex justify-center gap-3 sm:gap-4 mt-3">
-                    <div className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-[var(--success)]" /><span className="text-[8px] sm:text-[10px] text-[var(--brand-gray)]">Ingresos</span></div>
-                    <div className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-[var(--danger)]" /><span className="text-[8px] sm:text-[10px] text-[var(--brand-gray)]">Gastos</span></div>
-                    <div className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-[var(--brand-cyan)]" /><span className="text-[8px] sm:text-[10px] text-[var(--brand-gray)]">Ahorro</span></div>
-                  </div>
+                      <p className={kpi.tone + " text-lg font-bold"}>{kpi.value}</p>
+                    </div>
+                  ))}
                 </div>
 
-                {/* Distribución + Finy AI */}
-                <div className="space-y-4 sm:space-y-5">
-                  {/* Distribución pie chart mockup */}
-                  <div className="p-4 sm:p-5 rounded-xl bg-[var(--background-secondary)] border border-[var(--border)]">
-                    <h3 className="font-semibold mb-3 flex items-center gap-2 text-xs sm:text-sm">
-                      <PieChartIcon className="w-4 h-4 text-[var(--brand-cyan)]" />
-                      Distribución del mes
-                    </h3>
-                    <div className="flex items-center gap-4">
-                      {/* Simulated donut chart */}
-                      <div className="relative w-20 h-20 sm:w-24 sm:h-24 flex-shrink-0">
-                        <svg viewBox="0 0 36 36" className="w-full h-full -rotate-90">
-                          <circle cx="18" cy="18" r="14" fill="none" stroke="#2EEB8F" strokeWidth="4" strokeDasharray="44 88" strokeDashoffset="0" />
-                          <circle cx="18" cy="18" r="14" fill="none" stroke="#3B82F6" strokeWidth="4" strokeDasharray="26.4 88" strokeDashoffset="-44" />
-                          <circle cx="18" cy="18" r="14" fill="none" stroke="#00E5FF" strokeWidth="4" strokeDasharray="17.6 88" strokeDashoffset="-70.4" />
-                        </svg>
-                      </div>
-                      <div className="space-y-1.5 flex-1 min-w-0">
-                        <div className="flex items-center gap-1.5">
-                          <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: "#2EEB8F" }} />
-                          <span className="text-[10px] sm:text-xs text-[var(--brand-gray)]">Necesidades: 712 €</span>
-                        </div>
-                        <div className="flex items-center gap-1.5">
-                          <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: "#3B82F6" }} />
-                          <span className="text-[10px] sm:text-xs text-[var(--brand-gray)]">Deseos: 641 €</span>
-                        </div>
-                        <div className="flex items-center gap-1.5">
-                          <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: "#00E5FF" }} />
-                          <span className="text-[10px] sm:text-xs text-[var(--brand-gray)]">Ahorro: 570 €</span>
-                        </div>
-                      </div>
+                <div className="grid xl:grid-cols-5 gap-4">
+                  <div className="xl:col-span-3 p-4 rounded-2xl border border-[var(--border)] bg-[var(--background-secondary)]/60">
+                    <div className="flex items-center justify-between mb-3">
+                      <h3 className="text-sm font-semibold flex items-center gap-2">
+                        <Target className="w-4 h-4 text-[var(--brand-purple)]" />
+                        Prevision vs realidad
+                      </h3>
+                      <span className="text-[11px] text-[var(--brand-gray)]">Ultimos 30 dias</span>
+                    </div>
+                    <div className="space-y-3">
+                      {[
+                        { c: "Vivienda", plan: 650, real: 650 },
+                        { c: "Comida", plan: 280, real: 252 },
+                        { c: "Transporte", plan: 120, real: 94 },
+                        { c: "Ocio", plan: 140, real: 176 },
+                        { c: "Suministros", plan: 90, real: 84 },
+                      ].map((row) => {
+                        const pct = Math.round((row.real / row.plan) * 100);
+                        return (
+                          <div key={row.c}>
+                            <div className="flex items-center justify-between text-xs mb-1">
+                              <span className="text-[var(--brand-gray)]">{row.c}</span>
+                              <span className={row.real > row.plan ? "text-[var(--danger)] font-semibold" : "text-[var(--success)] font-semibold"}>
+                                {row.real} € / {row.plan} €
+                              </span>
+                            </div>
+                            <div className="h-2 rounded-full bg-[var(--border)] overflow-hidden">
+                              <div
+                                className="h-full rounded-full"
+                                style={{ width: `${Math.min(pct, 100)}%`, backgroundColor: row.real > row.plan ? "var(--danger)" : "var(--brand-cyan)" }}
+                              />
+                            </div>
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
 
-                  {/* Finy AI Panel */}
-                  <div className="p-4 sm:p-5 rounded-xl border border-[var(--brand-cyan)]/20 bg-gradient-to-br from-[var(--brand-cyan)]/5 to-[var(--brand-purple)]/5">
-                    <div className="flex items-center gap-2 mb-2.5">
-                      <Image src="/assets/finy-mascota-minimalista.png" alt="Finy" width={28} height={28} className="rounded-xl w-7 h-7 object-contain" />
-                      <div className="flex items-center gap-1">
-                        <span className="text-xs font-bold text-[var(--brand-cyan)]">Finy</span>
-                        <Sparkles className="w-3 h-3 text-[var(--brand-cyan)] opacity-60" />
+                  <div className="xl:col-span-2 space-y-4">
+                    <div className="p-4 rounded-2xl border border-[var(--border)] bg-[var(--background-secondary)]/60">
+                      <h3 className="text-sm font-semibold mb-3 flex items-center gap-2">
+                        <CreditCard className="w-4 h-4 text-[var(--brand-cyan)]" />
+                        Operaciones recientes
+                      </h3>
+                      <div className="space-y-2.5 text-xs">
+                        {[
+                          ["Amazon", "Compras online", "-34,50 €"],
+                          ["Alquiler", "Vivienda", "-650,00 €"],
+                          ["Nomina", "Ingreso", "+2.850,00 €"],
+                          ["Transfer ahorro", "Ahorro", "-200,00 €"],
+                        ].map(([name, cat, amount]) => (
+                          <div key={name} className="flex items-center justify-between p-2.5 rounded-lg border border-[var(--border)] bg-[var(--background)]/80">
+                            <div>
+                              <p className="font-medium">{name}</p>
+                              <p className="text-[10px] text-[var(--brand-gray)]">{cat}</p>
+                            </div>
+                            <p className={"font-semibold tabular-nums " + (String(amount).startsWith("+") ? "text-[var(--success)]" : "text-[var(--danger)]")}>{amount}</p>
+                          </div>
+                        ))}
                       </div>
                     </div>
-                    <div className="space-y-1.5">
-                      <div className="flex items-start gap-1.5">
-                        <span className="w-1.5 h-1.5 rounded-full bg-[var(--brand-cyan)] mt-1.5 flex-shrink-0" />
-                        <p className="text-[10px] sm:text-xs text-[var(--foreground)]">Has ahorrado un 20% de tus ingresos este mes</p>
+
+                    <div className="p-4 rounded-2xl border border-[var(--brand-cyan)]/20 bg-gradient-to-br from-[var(--brand-cyan)]/5 to-[var(--brand-purple)]/5">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Image src="/assets/finy-mascota-minimalista.png" alt="Finy" width={24} height={24} className="object-contain" />
+                        <p className="text-xs font-semibold text-[var(--brand-cyan)]">Sugerencia de Finy</p>
                       </div>
-                      <div className="flex items-start gap-1.5">
-                        <span className="w-1.5 h-1.5 rounded-full bg-[var(--brand-cyan)] mt-1.5 flex-shrink-0" />
-                        <p className="text-[10px] sm:text-xs text-[var(--foreground)]">Gastas un 12% menos que el mes pasado</p>
-                      </div>
+                      <p className="text-sm leading-relaxed">
+                        Estas a 1% de tu objetivo de ahorro. Si reduces ocio en 15 €, cierras marzo al 20%.
+                      </p>
                     </div>
                   </div>
                 </div>
-              </div>
+              </main>
             </div>
           </div>
         </div>
       </section>
-
       {/* Features Section */}
       <section id="features" className="py-20 px-6 relative">
         <GridBackground />
@@ -1317,39 +1265,99 @@ export default function HomePage() {
               Funcionalidades
             </div>
             <h2 className="text-3xl md:text-4xl font-bold mb-4">
-              Todo lo que necesitas
+              Producto completo, <span className="gradient-brand-text">flujo unificado</span>
             </h2>
             <p className="text-[var(--brand-gray)] max-w-2xl mx-auto text-lg">
-              Herramientas diseñadas para simplificar tu gestión financiera
+              Menos pantallas sueltas. Mas continuidad: registras, analizas, comparas y ejecutas decisiones en el mismo flujo.
             </p>
           </div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {[
-              { icon: BarChart3, color: "brand-purple", title: "Dashboard completo", desc: "Visualiza ingresos, gastos y balance en tiempo real con gráficos claros" },
-              { icon: Target, color: "brand-cyan", title: "Previsión vs Realidad", desc: "Compara tu presupuesto planificado con los gastos reales de cada categoría" },
-              { icon: PiggyBank, color: "success", title: "Metas de ahorro", desc: "Crea metas personalizadas y sigue tu progreso con contribuciones" },
-              { icon: CreditCard, color: "danger", title: "Gestión de deudas", desc: "Controla hipotecas, préstamos y tarjetas con seguimiento de pagos" },
-              { icon: Calendar, color: "warning", title: "Calendario financiero", desc: "Ve tus operaciones organizadas por día en una vista de calendario" },
-              { icon: TrendingUp, color: "brand-purple", title: "Regla 50/30/20", desc: "Distribuye tus ingresos entre necesidades, deseos y ahorro automáticamente" },
-            ].map((feature, i) => (
-              <div
-                key={i}
-                className="group p-6 rounded-2xl border border-[var(--border)] bg-[var(--background)] hover:border-[var(--brand-cyan)] transition-all duration-300 hover:shadow-xl hover:shadow-[var(--brand-cyan)]/10 hover:-translate-y-1"
-              >
-                <div className={`w-12 h-12 rounded-xl bg-[var(--${feature.color})]/10 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform`}>
-                  <feature.icon className={`w-6 h-6 text-[var(--${feature.color})]`} />
-                </div>
-                <h3 className="font-semibold text-lg mb-2">{feature.title}</h3>
-                <p className="text-sm text-[var(--brand-gray)] leading-relaxed">
-                  {feature.desc}
-                </p>
+          <div className="grid lg:grid-cols-12 gap-5">
+            <div className="lg:col-span-7 rounded-2xl border border-[var(--border)] bg-[var(--background)] p-5 sm:p-6">
+              <div className="flex items-center justify-between mb-5">
+                <h3 className="text-lg font-semibold">Workflow real de uso</h3>
+                <span className="text-xs text-[var(--brand-gray)]">De operacion a decision</span>
               </div>
-            ))}
+
+              <div className="space-y-4">
+                {[
+                  {
+                    title: "1) Captura inteligente",
+                    desc: "Texto, voz o importacion de movimientos para no perder tiempo en tareas manuales.",
+                    points: ["Registro por categorias", "Deteccion automatica", "Correccion en 1 clic"],
+                  },
+                  {
+                    title: "2) Contexto financiero",
+                    desc: "Dashboard y modulos conectados para ver impacto en ahorro, deuda y presupuesto.",
+                    points: ["KPI en tiempo real", "Historico mensual", "Alertas por desviacion"],
+                  },
+                  {
+                    title: "3) Accion recomendada",
+                    desc: "FinyBot propone ajustes concretos y te lleva al modulo correcto para ejecutarlos.",
+                    points: ["Sugerencias accionables", "Regla 50/30/20", "Seguimiento de objetivos"],
+                  },
+                ].map((step) => (
+                  <div key={step.title} className="p-4 rounded-xl border border-[var(--border)] bg-[var(--background-secondary)]/60">
+                    <h4 className="font-semibold mb-1.5">{step.title}</h4>
+                    <p className="text-sm text-[var(--brand-gray)] mb-3">{step.desc}</p>
+                    <div className="flex flex-wrap gap-2">
+                      {step.points.map((p) => (
+                        <span key={p} className="px-2.5 py-1 rounded-lg text-xs border border-[var(--border)] bg-[var(--background)]">
+                          {p}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="lg:col-span-5 space-y-5">
+              <div className="rounded-2xl border border-[var(--border)] bg-[var(--background)] p-5 sm:p-6">
+                <h3 className="text-lg font-semibold mb-4">Modulos conectados</h3>
+                <div className="grid grid-cols-2 gap-2.5 text-sm">
+                  {[
+                    { name: "Dashboard", icon: LayoutDashboard },
+                    { name: "Operaciones", icon: CreditCard },
+                    { name: "Categorias", icon: Database },
+                    { name: "Prevision", icon: Target },
+                    { name: "Ahorro", icon: PiggyBank },
+                    { name: "Deuda", icon: TrendingDown },
+                    { name: "Calendario", icon: Calendar },
+                    { name: "FinyBot", icon: Sparkles },
+                  ].map((item) => {
+                    const Icon = item.icon;
+                    return (
+                      <div key={item.name} className="flex items-center gap-2.5 p-2.5 rounded-xl border border-[var(--border)] bg-[var(--background-secondary)]/60">
+                        <Icon className="w-4 h-4 text-[var(--brand-cyan)]" />
+                        <span>{item.name}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="rounded-2xl border border-[var(--brand-purple)]/20 bg-gradient-to-br from-[var(--brand-purple)]/5 to-[var(--brand-cyan)]/5 p-5 sm:p-6">
+                <h3 className="text-lg font-semibold mb-3">Para quien esta hecho</h3>
+                <div className="space-y-3 text-sm">
+                  <div className="p-3 rounded-xl border border-[var(--border)] bg-[var(--background)]/80">
+                    <p className="font-semibold mb-1">Personas que quieren control total</p>
+                    <p className="text-[var(--brand-gray)]">Sin hojas de calculo ni apps desconectadas.</p>
+                  </div>
+                  <div className="p-3 rounded-xl border border-[var(--border)] bg-[var(--background)]/80">
+                    <p className="font-semibold mb-1">Usuarios que ejecutan decisiones rapido</p>
+                    <p className="text-[var(--brand-gray)]">No solo ver datos, sino actuar cada semana.</p>
+                  </div>
+                  <div className="p-3 rounded-xl border border-[var(--border)] bg-[var(--background)]/80">
+                    <p className="font-semibold mb-1">Perfil proactivo</p>
+                    <p className="text-[var(--brand-gray)]">Quien mide progreso y quiere mejorar mes a mes.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </section>
-
       {/* Finy AI Interactive Demo */}
       <section className="py-16 sm:py-24 px-4 sm:px-6 relative overflow-hidden">
         <GridBackground />
