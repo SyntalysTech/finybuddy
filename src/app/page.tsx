@@ -748,16 +748,15 @@ export default function HomePage() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [hasUsedTrial, setHasUsedTrial] = useState(false);
+  const [headerScrolled, setHeaderScrolled] = useState(false);
 
   useEffect(() => {
-    // Check system preference or saved preference
     const saved = localStorage.getItem("theme");
     const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
     const initialTheme = saved ? (saved as "light" | "dark") : prefersDark ? "dark" : "light";
     setTheme(initialTheme);
     document.documentElement.classList.toggle("dark", initialTheme === "dark");
 
-    // Check auth and subscription
     const supabase = createClient();
     supabase.auth.getUser().then(async ({ data: { user } }) => {
       if (user) {
@@ -773,13 +772,31 @@ export default function HomePage() {
       }
     });
 
-    // Trigger animations
     setIsVisible(true);
 
-    // Track scroll
-    const handleScroll = () => setScrollY(window.scrollY);
+    const handleScroll = () => {
+      setScrollY(window.scrollY);
+      setHeaderScrolled(window.scrollY > 20);
+    };
     window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
+
+    // Scroll reveal observer
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add("revealed");
+          }
+        });
+      },
+      { threshold: 0.08, rootMargin: "0px 0px -40px 0px" }
+    );
+    document.querySelectorAll(".reveal, .reveal-left, .reveal-right, .reveal-scale").forEach(el => observer.observe(el));
+
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+      observer.disconnect();
+    };
   }, []);
 
   const toggleTheme = () => {
@@ -791,10 +808,10 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-[var(--background)] overflow-x-hidden transition-colors duration-300">
-      {/* Fixed Header */}
-      <header className="fixed top-0 left-0 right-0 z-50 bg-[var(--background)]/80 backdrop-blur-xl border-b border-[var(--border)]">
-        <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
-          <Link href="/">
+      {/* ───── HEADER ───── */}
+      <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${headerScrolled ? "bg-[var(--background)]/85 backdrop-blur-2xl border-b border-[var(--border)] shadow-sm" : "bg-transparent border-b border-transparent"}`}>
+        <div className="max-w-7xl mx-auto px-6 sm:px-8 h-16 sm:h-[72px] flex items-center justify-between">
+          <Link href="/" className="relative z-10">
             <Image
               src="/assets/logo-finybuddy-wordmark.png"
               alt="FinyBuddy"
@@ -804,38 +821,40 @@ export default function HomePage() {
             />
           </Link>
 
-          {/* Desktop Nav */}
-          <nav className="hidden md:flex items-center gap-6">
-            <a href="#features" className="text-sm text-[var(--brand-gray)] hover:text-[var(--foreground)] transition-colors">
-              Funciones
-            </a>
-            <a href="#pricing" className="text-sm text-[var(--brand-gray)] hover:text-[var(--foreground)] transition-colors">
-              Planes
-            </a>
-            <a href="#newsletter" className="text-sm text-[var(--brand-gray)] hover:text-[var(--foreground)] transition-colors">
-              Newsletter
-            </a>
+          <nav className="hidden md:flex items-center gap-1">
+            {[
+              { label: "Funciones", href: "#features" },
+              { label: "Demo IA", href: "#demo" },
+              { label: "Planes", href: "#pricing" },
+              { label: "Newsletter", href: "#newsletter" },
+            ].map((link) => (
+              <a
+                key={link.href}
+                href={link.href}
+                className="px-4 py-2 rounded-lg text-sm font-medium text-[var(--brand-gray)] hover:text-[var(--foreground)] hover:bg-[var(--background-secondary)] transition-all"
+              >
+                {link.label}
+              </a>
+            ))}
           </nav>
 
-          <div className="flex items-center gap-3">
-            {/* Theme Toggle */}
+          <div className="flex items-center gap-2 sm:gap-3">
             <button
               onClick={toggleTheme}
-              className="p-2 rounded-lg border border-[var(--border)] hover:bg-[var(--background-secondary)] transition-all hover:scale-105 active:scale-95"
+              className="p-2.5 rounded-xl border border-[var(--border)] hover:bg-[var(--background-secondary)] transition-all hover:scale-105 active:scale-95"
               aria-label="Cambiar tema"
             >
               {theme === "light" ? (
-                <Moon className="w-5 h-5 text-[var(--brand-gray)]" />
+                <Moon className="w-[18px] h-[18px] text-[var(--brand-gray)]" />
               ) : (
-                <Sun className="w-5 h-5 text-[var(--brand-yellow)]" />
+                <Sun className="w-[18px] h-[18px] text-[var(--brand-yellow)]" />
               )}
             </button>
 
-            {/* Desktop buttons */}
             {isLoggedIn ? (
               <Link
                 href="/dashboard"
-                className="hidden md:inline-flex items-center gap-2 px-5 py-2 rounded-lg bg-gradient-to-r from-[var(--brand-purple)] to-[var(--brand-cyan)] text-white font-medium text-sm hover:opacity-90 transition-all hover:scale-105 active:scale-95 shadow-lg shadow-[var(--brand-purple)]/25"
+                className="hidden md:inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-[var(--brand-purple)] to-[var(--brand-cyan)] text-white font-semibold text-sm hover:opacity-90 transition-all hover:scale-[1.03] active:scale-[0.97] shadow-lg shadow-[var(--brand-purple)]/20"
               >
                 <LayoutDashboard className="w-4 h-4" />
                 Mi Dashboard
@@ -844,84 +863,64 @@ export default function HomePage() {
               <>
                 <Link
                   href="/login"
-                  className="hidden md:inline-flex px-5 py-2 rounded-lg border border-[var(--border)] text-sm font-medium hover:bg-[var(--background-secondary)] transition-all hover:scale-105 active:scale-95"
+                  className="hidden md:inline-flex px-5 py-2.5 rounded-xl text-sm font-medium text-[var(--brand-gray)] hover:text-[var(--foreground)] hover:bg-[var(--background-secondary)] transition-all"
                 >
-                  Iniciar sesión
+                  Iniciar sesion
                 </Link>
                 <Link
                   href="/register"
-                  className="hidden md:inline-flex px-5 py-2 rounded-lg bg-gradient-to-r from-[var(--brand-purple)] to-[var(--brand-cyan)] text-white font-medium text-sm hover:opacity-90 transition-all hover:scale-105 active:scale-95 shadow-lg shadow-[var(--brand-purple)]/25"
+                  className="hidden md:inline-flex px-5 py-2.5 rounded-xl bg-gradient-to-r from-[var(--brand-purple)] to-[var(--brand-cyan)] text-white font-semibold text-sm hover:opacity-90 transition-all hover:scale-[1.03] active:scale-[0.97] shadow-lg shadow-[var(--brand-purple)]/20"
                 >
-                  Crear cuenta gratis
+                  Empezar gratis
                 </Link>
               </>
             )}
 
-            {/* Mobile hamburger */}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="md:hidden p-2 rounded-lg border border-[var(--border)] hover:bg-[var(--background-secondary)] transition-all"
-              aria-label="Menú"
+              className="md:hidden p-2.5 rounded-xl border border-[var(--border)] hover:bg-[var(--background-secondary)] transition-all"
+              aria-label="Menu"
             >
-              {mobileMenuOpen ? (
-                <X className="w-5 h-5" />
-              ) : (
-                <Menu className="w-5 h-5" />
-              )}
+              {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
             </button>
           </div>
         </div>
 
-        {/* Mobile Menu */}
         {mobileMenuOpen && (
-          <div className="md:hidden border-t border-[var(--border)] bg-[var(--background)]/95 backdrop-blur-xl">
-            <div className="px-6 py-4 space-y-1">
-              <a
-                href="#features"
-                onClick={() => setMobileMenuOpen(false)}
-                className="block px-4 py-3 rounded-lg text-sm font-medium text-[var(--brand-gray)] hover:text-[var(--foreground)] hover:bg-[var(--background-secondary)] transition-colors"
-              >
-                Funciones
-              </a>
-              <a
-                href="#pricing"
-                onClick={() => setMobileMenuOpen(false)}
-                className="block px-4 py-3 rounded-lg text-sm font-medium text-[var(--brand-gray)] hover:text-[var(--foreground)] hover:bg-[var(--background-secondary)] transition-colors"
-              >
-                Planes
-              </a>
-              <a
-                href="#newsletter"
-                onClick={() => setMobileMenuOpen(false)}
-                className="block px-4 py-3 rounded-lg text-sm font-medium text-[var(--brand-gray)] hover:text-[var(--foreground)] hover:bg-[var(--background-secondary)] transition-colors"
-              >
-                Newsletter
-              </a>
-              <div className="pt-3 mt-3 border-t border-[var(--border)] space-y-2">
+          <div className="md:hidden border-t border-[var(--border)] bg-[var(--background)]/98 backdrop-blur-2xl">
+            <div className="px-6 py-5 space-y-1">
+              {[
+                { label: "Funciones", href: "#features" },
+                { label: "Demo IA", href: "#demo" },
+                { label: "Planes", href: "#pricing" },
+                { label: "Newsletter", href: "#newsletter" },
+              ].map((link) => (
+                <a
+                  key={link.href}
+                  href={link.href}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="block px-4 py-3 rounded-xl text-sm font-medium text-[var(--brand-gray)] hover:text-[var(--foreground)] hover:bg-[var(--background-secondary)] transition-colors"
+                >
+                  {link.label}
+                </a>
+              ))}
+              <div className="pt-4 mt-4 border-t border-[var(--border)] space-y-2">
                 {isLoggedIn ? (
                   <Link
                     href="/dashboard"
                     onClick={() => setMobileMenuOpen(false)}
-                    className="flex items-center justify-center gap-2 w-full px-4 py-3 rounded-lg bg-gradient-to-r from-[var(--brand-purple)] to-[var(--brand-cyan)] text-white text-sm font-semibold hover:opacity-90 transition-all shadow-lg shadow-[var(--brand-purple)]/25"
+                    className="flex items-center justify-center gap-2 w-full px-4 py-3.5 rounded-xl bg-gradient-to-r from-[var(--brand-purple)] to-[var(--brand-cyan)] text-white text-sm font-semibold"
                   >
                     <LayoutDashboard className="w-4 h-4" />
                     Mi Dashboard
                   </Link>
                 ) : (
                   <>
-                    <Link
-                      href="/login"
-                      onClick={() => setMobileMenuOpen(false)}
-                      className="block w-full text-center px-4 py-3 rounded-lg border border-[var(--border)] text-sm font-medium hover:bg-[var(--background-secondary)] transition-all"
-                    >
-                      Iniciar sesión
+                    <Link href="/login" onClick={() => setMobileMenuOpen(false)} className="block w-full text-center px-4 py-3 rounded-xl border border-[var(--border)] text-sm font-medium hover:bg-[var(--background-secondary)] transition-all">
+                      Iniciar sesion
                     </Link>
-                    <Link
-                      href="/register"
-                      onClick={() => setMobileMenuOpen(false)}
-                      className="block w-full text-center px-4 py-3 rounded-lg bg-gradient-to-r from-[var(--brand-purple)] to-[var(--brand-cyan)] text-white text-sm font-semibold hover:opacity-90 transition-all shadow-lg shadow-[var(--brand-purple)]/25"
-                    >
-                      Crear cuenta gratis
+                    <Link href="/register" onClick={() => setMobileMenuOpen(false)} className="block w-full text-center px-4 py-3.5 rounded-xl bg-gradient-to-r from-[var(--brand-purple)] to-[var(--brand-cyan)] text-white text-sm font-semibold">
+                      Empezar gratis
                     </Link>
                   </>
                 )}
@@ -931,32 +930,32 @@ export default function HomePage() {
         )}
       </header>
 
-      {/* Hero Section */}
-      <section className="relative pt-28 pb-20 px-6 min-h-screen flex items-center">
+      {/* ───── HERO ───── */}
+      <section className="relative min-h-screen flex items-center pt-24 pb-20 px-6 sm:px-8 overflow-hidden noise-overlay">
         <GridBackground />
         <FloatingParticles />
 
-        {/* Glowing orbs */}
-        <GlowOrb color="var(--brand-cyan)" size={400} top="10%" left="-10%" delay={0} />
-        <GlowOrb color="var(--brand-purple)" size={300} top="60%" left="80%" delay={2} />
-        <GlowOrb color="var(--brand-yellow)" size={200} top="80%" left="20%" delay={4} />
+        {/* Mesh gradient blobs */}
+        <div className="absolute top-[-10%] left-[-15%] w-[600px] h-[600px] rounded-full bg-[var(--brand-cyan)]/20 blur-[120px] animate-mesh-1 pointer-events-none" />
+        <div className="absolute top-[50%] right-[-10%] w-[500px] h-[500px] rounded-full bg-[var(--brand-purple)]/20 blur-[120px] animate-mesh-2 pointer-events-none" />
+        <div className="absolute bottom-[-10%] left-[30%] w-[400px] h-[400px] rounded-full bg-[var(--brand-yellow)]/10 blur-[100px] animate-mesh-3 pointer-events-none" />
 
-        <div className="max-w-7xl mx-auto relative z-10">
-          <div className="grid lg:grid-cols-2 gap-12 items-center">
+        <div className="max-w-7xl mx-auto relative z-10 w-full">
+          <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+            {/* Left - Copy */}
             <div className={`transition-all duration-1000 ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"}`}>
-              {/* Badge */}
-              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[var(--brand-purple)]/10 border border-[var(--brand-purple)]/20 text-[var(--brand-purple)] text-sm font-medium mb-6 animate-bounce-subtle">
-                <Sparkles className="w-4 h-4" />
-                Tu dinero, bajo control
+              <div className="inline-flex items-center gap-2.5 px-4 py-2 rounded-full bg-[var(--brand-purple)]/10 border border-[var(--brand-purple)]/20 text-[var(--brand-purple)] text-sm font-medium mb-8">
+                <div className="w-2 h-2 rounded-full bg-[var(--brand-purple)] animate-pulse" />
+                Inteligencia financiera personal
               </div>
 
-              <h1 className="text-4xl md:text-6xl font-bold leading-tight mb-6">
+              <h1 className="text-[2.75rem] sm:text-5xl md:text-[3.5rem] lg:text-6xl xl:text-[4rem] font-extrabold leading-[1.1] tracking-tight mb-7">
                 Tu asistente{" "}
-                <span className="relative">
+                <span className="relative inline-block">
                   <span className="text-transparent bg-clip-text bg-gradient-to-r from-[var(--brand-cyan)] via-[var(--brand-purple)] to-[var(--brand-cyan)] bg-[length:200%_auto] animate-gradient">
                     financiero
                   </span>
-                  <svg className="absolute -bottom-2 left-0 w-full" viewBox="0 0 200 8" fill="none">
+                  <svg className="absolute -bottom-1.5 left-0 w-full" viewBox="0 0 200 8" fill="none">
                     <path d="M1 5.5Q50 1 100 5.5T199 5.5" stroke="url(#underline-gradient)" strokeWidth="3" strokeLinecap="round" className="animate-draw" />
                     <defs>
                       <linearGradient id="underline-gradient" x1="0" y1="0" x2="200" y2="0">
@@ -965,21 +964,21 @@ export default function HomePage() {
                       </linearGradient>
                     </defs>
                   </svg>
-                </span>{" "}
-                <br />personal
+                </span>
+                <br />
+                <span className="text-[var(--foreground)]">personal con IA</span>
               </h1>
 
-              <p className="text-lg md:text-xl text-[var(--brand-gray)] mb-8 max-w-lg leading-relaxed">
-                Gestióna tus finanzas de forma inteligente. Controla ingresos,
-                gastos, ahorros y deudas en un solo lugar con{" "}
-                <span className="font-semibold text-[var(--foreground)]">IA integrada</span>.
+              <p className="text-lg sm:text-xl text-[var(--brand-gray)] mb-10 max-w-xl leading-relaxed">
+                Controla ingresos, gastos, ahorros y deudas desde un solo lugar.
+                La <span className="font-semibold text-[var(--foreground)]">IA de Finy</span> analiza, categoriza y te recomienda acciones concretas para mejorar tu economia.
               </p>
 
-              <div className="flex flex-col sm:flex-row gap-4 mb-4">
+              <div className="flex flex-col sm:flex-row gap-4 mb-5">
                 {isLoggedIn ? (
                   <Link
                     href="/dashboard"
-                    className="group inline-flex items-center justify-center gap-2 px-8 py-4 rounded-xl bg-gradient-to-r from-[var(--brand-purple)] to-[var(--brand-cyan)] text-white font-semibold hover:opacity-90 transition-all hover:scale-105 active:scale-95 shadow-xl shadow-[var(--brand-purple)]/30"
+                    className="group inline-flex items-center justify-center gap-2.5 px-8 py-4 rounded-2xl bg-gradient-to-r from-[var(--brand-purple)] to-[var(--brand-cyan)] text-white font-bold text-base hover:opacity-90 transition-all hover:scale-[1.03] active:scale-[0.97] shadow-2xl shadow-[var(--brand-purple)]/30 animate-cta-glow"
                   >
                     <LayoutDashboard className="w-5 h-5" />
                     Ir al Dashboard
@@ -987,59 +986,87 @@ export default function HomePage() {
                 ) : (
                   <Link
                     href="/register"
-                    className="group inline-flex items-center justify-center gap-2 px-8 py-4 rounded-xl bg-gradient-to-r from-[var(--brand-purple)] to-[var(--brand-cyan)] text-white font-semibold hover:opacity-90 transition-all hover:scale-105 active:scale-95 shadow-xl shadow-[var(--brand-purple)]/30"
+                    className="group inline-flex items-center justify-center gap-2.5 px-8 py-4 rounded-2xl bg-gradient-to-r from-[var(--brand-purple)] to-[var(--brand-cyan)] text-white font-bold text-base hover:opacity-90 transition-all hover:scale-[1.03] active:scale-[0.97] shadow-2xl shadow-[var(--brand-purple)]/30 animate-cta-glow"
                   >
-                    {hasUsedTrial ? "Crear cuenta gratis" : "Prueba gratis 15 días"}
+                    {hasUsedTrial ? "Crear cuenta gratis" : "Prueba gratis 15 dias"}
                     <ArrowRight className="w-5 h-5 transition-transform group-hover:translate-x-1" />
                   </Link>
                 )}
                 <a
-                  href="#pricing"
-                  className="inline-flex items-center justify-center gap-2 px-8 py-4 rounded-xl border border-[var(--border)] font-medium hover:bg-[var(--background-secondary)] transition-all hover:scale-105"
+                  href="#demo"
+                  className="inline-flex items-center justify-center gap-2.5 px-8 py-4 rounded-2xl border border-[var(--border)] font-semibold hover:bg-[var(--background-secondary)] transition-all hover:scale-[1.03] hover:border-[var(--brand-cyan)]/40"
                 >
-                  Ver planes
-                  <ChevronDown className="w-5 h-5" />
+                  <Play className="w-4 h-4 text-[var(--brand-cyan)]" />
+                  Ver demo IA
                 </a>
               </div>
               {!isLoggedIn && (
-                <p className="text-sm text-[var(--brand-gray)] mb-10">
+                <p className="text-sm text-[var(--brand-gray)]">
                   {hasUsedTrial
                     ? "Plan Basic gratuito para siempre. Actualiza a Pro cuando quieras."
-                    : "Sin tarjeta de crédito. Acceso Pro completo durante 15 días."}
+                    : "Sin tarjeta de credito. Acceso Pro completo durante 15 dias."}
                 </p>
               )}
-              {isLoggedIn && <div className="mb-10" />}
 
+              {/* Trust signals */}
+              <div className="mt-10 pt-8 border-t border-[var(--border)]">
+                <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
+                  {[
+                    { icon: Shield, text: "Datos 100% privados" },
+                    { icon: Zap, text: "IA en tiempo real" },
+                    { icon: CheckCircle, text: "Gratis para siempre" },
+                  ].map((item) => (
+                    <div key={item.text} className="flex items-center gap-2 text-sm text-[var(--brand-gray)]">
+                      <item.icon className="w-4 h-4 text-[var(--brand-cyan)]" />
+                      <span>{item.text}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
 
-            {/* Mascot with animated effects */}
+            {/* Right - Mascot */}
             <div className={`relative flex justify-center transition-all duration-1000 delay-300 ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"}`}>
-              {/* Animated rings */}
               <div className="absolute inset-0 flex items-center justify-center">
-                <div className="w-56 h-56 sm:w-72 sm:h-72 md:w-96 md:h-96 rounded-full border border-[var(--brand-cyan)]/20 animate-spin-slow" />
-                <div className="absolute w-48 h-48 sm:w-64 sm:h-64 md:w-80 md:h-80 rounded-full border border-[var(--brand-purple)]/20 animate-spin-reverse" />
-                <div className="absolute w-40 h-40 sm:w-56 sm:h-56 md:w-72 md:h-72 rounded-full border-2 border-dashed border-[var(--brand-yellow)]/30 animate-spin-slower" />
+                <div className="w-56 h-56 sm:w-72 sm:h-72 md:w-[380px] md:h-[380px] rounded-full border border-[var(--brand-cyan)]/15 animate-spin-slow" />
+                <div className="absolute w-48 h-48 sm:w-64 sm:h-64 md:w-80 md:h-80 rounded-full border border-[var(--brand-purple)]/15 animate-spin-reverse" />
+                <div className="absolute w-40 h-40 sm:w-56 sm:h-56 md:w-72 md:h-72 rounded-full border-2 border-dashed border-[var(--brand-yellow)]/20 animate-spin-slower" />
               </div>
 
-              {/* Floating stats around mascot */}
-              <div className="absolute -top-2 sm:top-0 right-0 md:right-10 p-2 sm:p-3 rounded-lg sm:rounded-xl bg-[var(--background)] border border-[var(--border)] shadow-lg animate-float">
-                <div className="flex items-center gap-1.5 sm:gap-2">
-                  <TrendingUp className="w-3 h-3 sm:w-4 sm:h-4 text-[var(--success)]" />
-                  <span className="text-xs sm:text-sm font-semibold text-[var(--success)]">+2.850 €</span>
+              {/* Floating stat cards - glassmorphism */}
+              <div className="absolute -top-2 sm:top-2 right-0 md:right-6 p-3 sm:p-3.5 rounded-2xl bg-[var(--background)]/90 backdrop-blur-xl border border-[var(--border)] shadow-xl animate-float z-20">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-lg bg-[var(--success)]/10 flex items-center justify-center">
+                    <TrendingUp className="w-4 h-4 text-[var(--success)]" />
+                  </div>
+                  <div>
+                    <p className="text-[10px] text-[var(--brand-gray)] font-medium">Ingresos</p>
+                    <p className="text-sm font-bold text-[var(--success)]">+2.850 €</p>
+                  </div>
                 </div>
               </div>
 
-              <div className="absolute bottom-4 sm:bottom-10 left-0 md:left-5 p-2 sm:p-3 rounded-lg sm:rounded-xl bg-[var(--background)] border border-[var(--border)] shadow-lg animate-float-delayed">
-                <div className="flex items-center gap-1.5 sm:gap-2">
-                  <PiggyBank className="w-3 h-3 sm:w-4 sm:h-4 text-[var(--brand-cyan)]" />
-                  <span className="text-xs sm:text-sm font-semibold">570 € ahorrado</span>
+              <div className="absolute bottom-6 sm:bottom-12 left-0 md:left-2 p-3 sm:p-3.5 rounded-2xl bg-[var(--background)]/90 backdrop-blur-xl border border-[var(--border)] shadow-xl animate-float-delayed z-20">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-lg bg-[var(--brand-cyan)]/10 flex items-center justify-center">
+                    <PiggyBank className="w-4 h-4 text-[var(--brand-cyan)]" />
+                  </div>
+                  <div>
+                    <p className="text-[10px] text-[var(--brand-gray)] font-medium">Ahorrado</p>
+                    <p className="text-sm font-bold">570 €</p>
+                  </div>
                 </div>
               </div>
 
-              <div className="absolute top-1/3 left-0 md:-left-5 p-2 sm:p-3 rounded-lg sm:rounded-xl bg-[var(--background)] border border-[var(--border)] shadow-lg animate-float-slow">
-                <div className="flex items-center gap-1.5 sm:gap-2">
-                  <Target className="w-3 h-3 sm:w-4 sm:h-4 text-[var(--brand-purple)]" />
-                  <span className="text-xs sm:text-sm font-semibold">Meta: 85%</span>
+              <div className="absolute top-1/3 left-0 md:-left-8 p-3 sm:p-3.5 rounded-2xl bg-[var(--background)]/90 backdrop-blur-xl border border-[var(--border)] shadow-xl animate-float-slow z-20">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-lg bg-[var(--brand-purple)]/10 flex items-center justify-center">
+                    <Target className="w-4 h-4 text-[var(--brand-purple)]" />
+                  </div>
+                  <div>
+                    <p className="text-[10px] text-[var(--brand-gray)] font-medium">Meta</p>
+                    <p className="text-sm font-bold">85% <span className="text-[var(--success)] text-xs">&#x2191;</span></p>
+                  </div>
                 </div>
               </div>
 
@@ -1049,7 +1076,8 @@ export default function HomePage() {
                 width={350}
                 height={350}
                 className="relative z-10 drop-shadow-2xl animate-bounce-subtle w-[220px] h-[220px] sm:w-[280px] sm:h-[280px] md:w-[350px] md:h-[350px]"
-                style={{ transform: `translateY(${scrollY * 0.1}px)` }}
+                style={{ transform: `translateY(${scrollY * 0.08}px)` }}
+                priority
               />
             </div>
           </div>
@@ -1057,439 +1085,565 @@ export default function HomePage() {
 
         {/* Scroll indicator */}
         <div className="absolute bottom-8 left-1/2 -translate-x-1/2 animate-bounce">
-          <ChevronDown className="w-6 h-6 text-[var(--brand-gray)]" />
-        </div>
-      </section>
-
-      {/* Stats Banner */}
-      <section className="py-12 sm:py-16 px-6 bg-gradient-to-r from-[var(--brand-purple)] to-[var(--brand-cyan)] relative overflow-hidden">
-        <div className="absolute inset-0 opacity-10">
-          <div className="absolute inset-0" style={{
-            backgroundImage: "url(\"data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E\")",
-          }} />
-        </div>
-
-        <div className="max-w-7xl mx-auto relative z-10">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 sm:gap-8">
-            <div className="text-center text-white">
-              <p className="text-3xl sm:text-4xl md:text-5xl font-bold mb-1 sm:mb-2">
-                <AnimatedNumber value={100} suffix="%" />
-              </p>
-              <p className="text-white/80 text-xs sm:text-sm">Privado y seguro</p>
-            </div>
-            <div className="text-center text-white">
-              <p className="text-3xl sm:text-4xl md:text-5xl font-bold mb-1 sm:mb-2">
-                <AnimatedNumber value={24} suffix="/7" />
-              </p>
-              <p className="text-white/80 text-xs sm:text-sm">Finy AI disponible</p>
-            </div>
-            <div className="text-center text-white">
-              <p className="text-3xl sm:text-4xl md:text-5xl font-bold mb-1 sm:mb-2">
-                <AnimatedNumber value={6} suffix="+" />
-              </p>
-              <p className="text-white/80 text-xs sm:text-sm">Herramientas financieras</p>
-            </div>
-            <div className="text-center text-white">
-              <p className="text-3xl sm:text-4xl md:text-5xl font-bold mb-1 sm:mb-2">
-                <AnimatedNumber value={0} suffix=" €" />
-              </p>
-              <p className="text-white/80 text-xs sm:text-sm">Para empezar gratis</p>
-            </div>
+          <div className="flex flex-col items-center gap-2">
+            <span className="text-xs text-[var(--brand-gray)] font-medium tracking-wide">Descubre mas</span>
+            <ChevronDown className="w-5 h-5 text-[var(--brand-gray)]" />
           </div>
         </div>
       </section>
 
-      {/* Dashboard Preview */}
-      <section className="py-20 px-6 bg-[var(--background-secondary)] relative">
-        <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">
+      {/* ───── STATS STRIP ───── */}
+      <section className="relative py-16 sm:py-20 px-6 sm:px-8 overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-r from-[var(--brand-purple)] to-[var(--brand-cyan)]" />
+        <div className="absolute inset-0 opacity-[0.07]" style={{
+          backgroundImage: "url(\"data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E\")",
+        }} />
+
+        <div className="max-w-6xl mx-auto relative z-10">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6">
+            {[
+              { value: 100, suffix: "%", label: "Privado y seguro", icon: Shield },
+              { value: 24, suffix: "/7", label: "Finy AI disponible", icon: Sparkles },
+              { value: 6, suffix: "+", label: "Herramientas financieras", icon: Zap },
+              { value: 0, suffix: " €", label: "Para empezar gratis", icon: CheckCircle },
+            ].map((stat) => (
+              <div key={stat.label} className="text-center p-5 sm:p-6 rounded-2xl bg-white/10 backdrop-blur-sm border border-white/15">
+                <stat.icon className="w-5 h-5 text-white/70 mx-auto mb-3" />
+                <p className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-white mb-1.5 tracking-tight">
+                  <AnimatedNumber value={stat.value} suffix={stat.suffix} />
+                </p>
+                <p className="text-white/70 text-xs sm:text-sm font-medium">{stat.label}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ───── DASHBOARD PREVIEW ───── */}
+      <section className="py-24 sm:py-32 px-6 sm:px-8 bg-[var(--background-secondary)] relative overflow-hidden">
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-[var(--brand-cyan)]/5 rounded-full blur-[120px] pointer-events-none" />
+
+        <div className="max-w-7xl mx-auto relative z-10">
+          <div className="text-center mb-14 reveal">
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[var(--brand-cyan)]/10 border border-[var(--brand-cyan)]/20 text-[var(--brand-cyan)] text-sm font-medium mb-6">
+              <LayoutDashboard className="w-4 h-4" />
+              Vista previa
+            </div>
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold mb-5 tracking-tight">
               Todo en un <span className="gradient-brand-text">vistazo</span>
             </h2>
-            <p className="text-[var(--brand-gray)] max-w-2xl mx-auto text-lg">
+            <p className="text-[var(--brand-gray)] max-w-2xl mx-auto text-lg leading-relaxed">
               Una preview fiel al dashboard real: control diario, seguimiento por modulos y decisiones accionables.
             </p>
           </div>
 
-          <div className="relative rounded-3xl border border-[var(--border)] bg-[var(--background)]/90 backdrop-blur-xl shadow-2xl overflow-hidden">
-            <div className="flex items-center justify-between px-5 sm:px-6 py-3 border-b border-[var(--border)] bg-[var(--background-secondary)]/80">
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full bg-[#FF5F57]" />
-                <div className="w-3 h-3 rounded-full bg-[#FFBD2E]" />
-                <div className="w-3 h-3 rounded-full bg-[#28CA41]" />
+          <div className="reveal-scale perspective-container">
+            <div className="relative rounded-3xl border border-[var(--border)] bg-[var(--background)]/95 backdrop-blur-xl shadow-2xl overflow-hidden perspective-tilt">
+              {/* Browser chrome */}
+              <div className="flex items-center justify-between px-5 sm:px-6 py-3.5 border-b border-[var(--border)] bg-[var(--background-secondary)]/80">
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-full bg-[#FF5F57]" />
+                  <div className="w-3 h-3 rounded-full bg-[#FFBD2E]" />
+                  <div className="w-3 h-3 rounded-full bg-[#28CA41]" />
+                </div>
+                <div className="flex-1 max-w-sm mx-4 hidden sm:block">
+                  <div className="flex items-center gap-2 px-4 py-1.5 rounded-lg bg-[var(--background)] border border-[var(--border)] text-xs text-[var(--brand-gray)]">
+                    <Shield className="w-3 h-3 text-[var(--success)]" />
+                    app.finybuddy.com/dashboard
+                  </div>
+                </div>
+                <div className="text-[10px] px-2.5 py-1.5 rounded-lg bg-[var(--background)] border border-[var(--border)] text-[var(--brand-gray)] font-medium">Mar 2026</div>
               </div>
-              <div className="text-xs text-[var(--brand-gray)] hidden sm:block">app.finybuddy.com/dashboard</div>
-              <div className="text-[10px] px-2 py-1 rounded-lg bg-[var(--background)] border border-[var(--border)] text-[var(--brand-gray)]">Mar 2026</div>
-            </div>
 
-            <div className="grid lg:grid-cols-12 min-h-[620px]">
-              <aside className="lg:col-span-3 border-b lg:border-b-0 lg:border-r border-[var(--border)] bg-[var(--background-secondary)]/55 p-4 sm:p-5">
-                <div className="flex items-center gap-3 mb-6">
-                  <Image src="/assets/finy-mascota-minimalista.png" alt="Finy" width={34} height={34} className="rounded-xl w-8 h-8 object-contain" />
-                  <div>
-                    <p className="text-xs text-[var(--brand-gray)]">Buenos dias</p>
-                    <p className="text-sm font-semibold">Panel principal</p>
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  {[
-                    { label: "Dashboard", icon: LayoutDashboard, active: true },
-                    { label: "Operaciones", icon: CreditCard },
-                    { label: "Prevision", icon: Target },
-                    { label: "Calendario", icon: Calendar },
-                    { label: "Ahorro", icon: PiggyBank },
-                    { label: "FinyBot", icon: Sparkles },
-                  ].map((item) => (
-                    <div
-                      key={item.label}
-                      className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl border ${item.active ? "border-[var(--brand-cyan)]/25 bg-[var(--brand-cyan)]/8" : "border-transparent hover:border-[var(--border)]"}`}
-                    >
-                      <item.icon className={`w-4 h-4 ${item.active ? "text-[var(--brand-cyan)]" : "text-[var(--brand-gray)]"}`} />
-                      <span className={`text-sm ${item.active ? "font-semibold" : "text-[var(--brand-gray)]"}`}>{item.label}</span>
+              <div className="grid lg:grid-cols-12 min-h-[620px]">
+                <aside className="lg:col-span-3 border-b lg:border-b-0 lg:border-r border-[var(--border)] bg-[var(--background-secondary)]/55 p-4 sm:p-5">
+                  <div className="flex items-center gap-3 mb-6">
+                    <Image src="/assets/finy-mascota-minimalista.png" alt="Finy" width={34} height={34} className="rounded-xl w-8 h-8 object-contain" />
+                    <div>
+                      <p className="text-xs text-[var(--brand-gray)]">Buenos dias</p>
+                      <p className="text-sm font-semibold">Panel principal</p>
                     </div>
-                  ))}
-                </div>
+                  </div>
 
-                <div className="mt-6 p-3 rounded-xl border border-[var(--brand-cyan)]/20 bg-[var(--brand-cyan)]/5">
-                  <p className="text-[10px] uppercase tracking-wider text-[var(--brand-gray)] mb-1">Regla 50/30/20</p>
-                  <p className="text-lg font-bold">20% ahorro</p>
-                  <p className="text-xs text-[var(--brand-gray)]">Objetivo mensual completado</p>
-                </div>
-              </aside>
-
-              <main className="lg:col-span-9 p-4 sm:p-6">
-                <div className="grid sm:grid-cols-4 gap-3 mb-4">
-                  {[
-                    { label: "Ingresos", value: "2.850 €", icon: TrendingUp, tone: "text-[var(--success)]" },
-                    { label: "Gastos", value: "1.424 €", icon: TrendingDown, tone: "text-[var(--danger)]" },
-                    { label: "Ahorro", value: "570 €", icon: PiggyBank, tone: "text-[var(--brand-cyan)]" },
-                    { label: "Balance", value: "+1.426 €", icon: BarChart3, tone: "text-[var(--brand-purple)]" },
-                  ].map((kpi) => (
-                    <div key={kpi.label} className="p-3 rounded-xl border border-[var(--border)] bg-[var(--background-secondary)]/60">
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="text-[11px] text-[var(--brand-gray)]">{kpi.label}</span>
-                        <kpi.icon className={kpi.tone + " w-3.5 h-3.5"} />
+                  <div className="space-y-1.5">
+                    {[
+                      { label: "Dashboard", icon: LayoutDashboard, active: true },
+                      { label: "Operaciones", icon: CreditCard },
+                      { label: "Prevision", icon: Target },
+                      { label: "Calendario", icon: Calendar },
+                      { label: "Ahorro", icon: PiggyBank },
+                      { label: "FinyBot", icon: Sparkles },
+                    ].map((item) => (
+                      <div
+                        key={item.label}
+                        className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl border transition-colors ${item.active ? "border-[var(--brand-cyan)]/25 bg-[var(--brand-cyan)]/8" : "border-transparent"}`}
+                      >
+                        <item.icon className={`w-4 h-4 ${item.active ? "text-[var(--brand-cyan)]" : "text-[var(--brand-gray)]"}`} />
+                        <span className={`text-sm ${item.active ? "font-semibold" : "text-[var(--brand-gray)]"}`}>{item.label}</span>
                       </div>
-                      <p className={kpi.tone + " text-lg font-bold"}>{kpi.value}</p>
-                    </div>
-                  ))}
-                </div>
-
-                <div className="grid xl:grid-cols-5 gap-4">
-                  <div className="xl:col-span-3 p-4 rounded-2xl border border-[var(--border)] bg-[var(--background-secondary)]/60">
-                    <div className="flex items-center justify-between mb-3">
-                      <h3 className="text-sm font-semibold flex items-center gap-2">
-                        <Target className="w-4 h-4 text-[var(--brand-purple)]" />
-                        Prevision vs realidad
-                      </h3>
-                      <span className="text-[11px] text-[var(--brand-gray)]">Ultimos 30 dias</span>
-                    </div>
-                    <div className="space-y-3">
-                      {[
-                        { c: "Vivienda", plan: 650, real: 650 },
-                        { c: "Comida", plan: 280, real: 252 },
-                        { c: "Transporte", plan: 120, real: 94 },
-                        { c: "Ocio", plan: 140, real: 176 },
-                        { c: "Suministros", plan: 90, real: 84 },
-                      ].map((row) => {
-                        const pct = Math.round((row.real / row.plan) * 100);
-                        return (
-                          <div key={row.c}>
-                            <div className="flex items-center justify-between text-xs mb-1">
-                              <span className="text-[var(--brand-gray)]">{row.c}</span>
-                              <span className={row.real > row.plan ? "text-[var(--danger)] font-semibold" : "text-[var(--success)] font-semibold"}>
-                                {row.real} € / {row.plan} €
-                              </span>
-                            </div>
-                            <div className="h-2 rounded-full bg-[var(--border)] overflow-hidden">
-                              <div
-                                className="h-full rounded-full"
-                                style={{ width: `${Math.min(pct, 100)}%`, backgroundColor: row.real > row.plan ? "var(--danger)" : "var(--brand-cyan)" }}
-                              />
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
+                    ))}
                   </div>
 
-                  <div className="xl:col-span-2 space-y-4">
-                    <div className="p-4 rounded-2xl border border-[var(--border)] bg-[var(--background-secondary)]/60">
-                      <h3 className="text-sm font-semibold mb-3 flex items-center gap-2">
-                        <CreditCard className="w-4 h-4 text-[var(--brand-cyan)]" />
-                        Operaciones recientes
-                      </h3>
-                      <div className="space-y-2.5 text-xs">
+                  <div className="mt-6 p-3.5 rounded-xl border border-[var(--brand-cyan)]/20 bg-[var(--brand-cyan)]/5">
+                    <p className="text-[10px] uppercase tracking-wider text-[var(--brand-gray)] mb-1">Regla 50/30/20</p>
+                    <p className="text-lg font-bold">20% ahorro</p>
+                    <p className="text-xs text-[var(--brand-gray)]">Objetivo mensual completado</p>
+                  </div>
+                </aside>
+
+                <main className="lg:col-span-9 p-4 sm:p-6">
+                  <div className="grid sm:grid-cols-4 gap-3 mb-4">
+                    {[
+                      { label: "Ingresos", value: "2.850 €", icon: TrendingUp, tone: "text-[var(--success)]" },
+                      { label: "Gastos", value: "1.424 €", icon: TrendingDown, tone: "text-[var(--danger)]" },
+                      { label: "Ahorro", value: "570 €", icon: PiggyBank, tone: "text-[var(--brand-cyan)]" },
+                      { label: "Balance", value: "+1.426 €", icon: BarChart3, tone: "text-[var(--brand-purple)]" },
+                    ].map((kpi) => (
+                      <div key={kpi.label} className="p-3.5 rounded-xl border border-[var(--border)] bg-[var(--background-secondary)]/60">
+                        <div className="flex items-center justify-between mb-1.5">
+                          <span className="text-[11px] text-[var(--brand-gray)] font-medium">{kpi.label}</span>
+                          <kpi.icon className={kpi.tone + " w-3.5 h-3.5"} />
+                        </div>
+                        <p className={kpi.tone + " text-lg font-bold tabular-nums"}>{kpi.value}</p>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="grid xl:grid-cols-5 gap-4">
+                    <div className="xl:col-span-3 p-4 rounded-2xl border border-[var(--border)] bg-[var(--background-secondary)]/60">
+                      <div className="flex items-center justify-between mb-3">
+                        <h3 className="text-sm font-semibold flex items-center gap-2">
+                          <Target className="w-4 h-4 text-[var(--brand-purple)]" />
+                          Prevision vs realidad
+                        </h3>
+                        <span className="text-[11px] text-[var(--brand-gray)]">Ultimos 30 dias</span>
+                      </div>
+                      <div className="space-y-3">
                         {[
-                          ["Amazon", "Compras online", "-34,50 €"],
-                          ["Alquiler", "Vivienda", "-650,00 €"],
-                          ["Nomina", "Ingreso", "+2.850,00 €"],
-                          ["Transfer ahorro", "Ahorro", "-200,00 €"],
-                        ].map(([name, cat, amount]) => (
-                          <div key={name} className="flex items-center justify-between p-2.5 rounded-lg border border-[var(--border)] bg-[var(--background)]/80">
-                            <div>
-                              <p className="font-medium">{name}</p>
-                              <p className="text-[10px] text-[var(--brand-gray)]">{cat}</p>
+                          { c: "Vivienda", plan: 650, real: 650 },
+                          { c: "Comida", plan: 280, real: 252 },
+                          { c: "Transporte", plan: 120, real: 94 },
+                          { c: "Ocio", plan: 140, real: 176 },
+                          { c: "Suministros", plan: 90, real: 84 },
+                        ].map((row) => {
+                          const pct = Math.round((row.real / row.plan) * 100);
+                          return (
+                            <div key={row.c}>
+                              <div className="flex items-center justify-between text-xs mb-1">
+                                <span className="text-[var(--brand-gray)]">{row.c}</span>
+                                <span className={row.real > row.plan ? "text-[var(--danger)] font-semibold" : "text-[var(--success)] font-semibold"}>
+                                  {row.real} € / {row.plan} €
+                                </span>
+                              </div>
+                              <div className="h-2 rounded-full bg-[var(--border)] overflow-hidden">
+                                <div className="h-full rounded-full" style={{ width: `${Math.min(pct, 100)}%`, backgroundColor: row.real > row.plan ? "var(--danger)" : "var(--brand-cyan)" }} />
+                              </div>
                             </div>
-                            <p className={"font-semibold tabular-nums " + (String(amount).startsWith("+") ? "text-[var(--success)]" : "text-[var(--danger)]")}>{amount}</p>
-                          </div>
-                        ))}
+                          );
+                        })}
                       </div>
                     </div>
 
-                    <div className="p-4 rounded-2xl border border-[var(--brand-cyan)]/20 bg-gradient-to-br from-[var(--brand-cyan)]/5 to-[var(--brand-purple)]/5">
-                      <div className="flex items-center gap-2 mb-2">
-                        <Image src="/assets/finy-mascota-minimalista.png" alt="Finy" width={24} height={24} className="object-contain" />
-                        <p className="text-xs font-semibold text-[var(--brand-cyan)]">Sugerencia de Finy</p>
+                    <div className="xl:col-span-2 space-y-4">
+                      <div className="p-4 rounded-2xl border border-[var(--border)] bg-[var(--background-secondary)]/60">
+                        <h3 className="text-sm font-semibold mb-3 flex items-center gap-2">
+                          <CreditCard className="w-4 h-4 text-[var(--brand-cyan)]" />
+                          Operaciones recientes
+                        </h3>
+                        <div className="space-y-2.5 text-xs">
+                          {[
+                            ["Amazon", "Compras online", "-34,50 €"],
+                            ["Alquiler", "Vivienda", "-650,00 €"],
+                            ["Nomina", "Ingreso", "+2.850,00 €"],
+                            ["Transfer ahorro", "Ahorro", "-200,00 €"],
+                          ].map(([name, cat, amount]) => (
+                            <div key={name} className="flex items-center justify-between p-2.5 rounded-lg border border-[var(--border)] bg-[var(--background)]/80">
+                              <div>
+                                <p className="font-medium">{name}</p>
+                                <p className="text-[10px] text-[var(--brand-gray)]">{cat}</p>
+                              </div>
+                              <p className={"font-semibold tabular-nums " + (String(amount).startsWith("+") ? "text-[var(--success)]" : "text-[var(--danger)]")}>{amount}</p>
+                            </div>
+                          ))}
+                        </div>
                       </div>
-                      <p className="text-sm leading-relaxed">
-                        Estas a 1% de tu objetivo de ahorro. Si reduces ocio en 15 €, cierras marzo al 20%.
-                      </p>
+
+                      <div className="p-4 rounded-2xl border border-[var(--brand-cyan)]/20 bg-gradient-to-br from-[var(--brand-cyan)]/5 to-[var(--brand-purple)]/5">
+                        <div className="flex items-center gap-2 mb-2">
+                          <Image src="/assets/finy-mascota-minimalista.png" alt="Finy" width={24} height={24} className="object-contain" />
+                          <p className="text-xs font-semibold text-[var(--brand-cyan)]">Sugerencia de Finy</p>
+                        </div>
+                        <p className="text-sm leading-relaxed">
+                          Estas a 1% de tu objetivo de ahorro. Si reduces ocio en 15 €, cierras marzo al 20%.
+                        </p>
+                      </div>
                     </div>
                   </div>
-                </div>
-              </main>
+                </main>
+              </div>
             </div>
           </div>
         </div>
       </section>
-      {/* Features Section */}
-      <section id="features" className="py-20 px-6 relative">
+
+      {/* Section divider */}
+      <div className="section-divider" />
+
+      {/* ───── FEATURES - BENTO GRID ───── */}
+      <section id="features" className="py-24 sm:py-32 px-6 sm:px-8 relative overflow-hidden">
         <GridBackground />
+        <div className="absolute bottom-0 right-0 w-[500px] h-[500px] bg-[var(--brand-purple)]/5 rounded-full blur-[120px] pointer-events-none" />
 
         <div className="max-w-7xl mx-auto relative z-10">
-          <div className="text-center mb-16">
+          <div className="text-center mb-16 sm:mb-20 reveal">
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[var(--brand-cyan)]/10 border border-[var(--brand-cyan)]/20 text-[var(--brand-cyan)] text-sm font-medium mb-6">
               <Zap className="w-4 h-4" />
               Funcionalidades
             </div>
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">
-              Producto completo, <span className="gradient-brand-text">flujo unificado</span>
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold mb-5 tracking-tight">
+              Todo lo que necesitas, <br className="hidden sm:block" /><span className="gradient-brand-text">nada que no</span>
             </h2>
-            <p className="text-[var(--brand-gray)] max-w-2xl mx-auto text-lg">
-              Menos pantallas sueltas. Mas continuidad: registras, analizas, comparas y ejecutas decisiones en el mismo flujo.
+            <p className="text-[var(--brand-gray)] max-w-2xl mx-auto text-lg leading-relaxed">
+              Un producto completo con flujo unificado. Registras, analizas, comparas y ejecutas decisiones en el mismo lugar.
             </p>
           </div>
 
-          <div className="grid lg:grid-cols-12 gap-5">
-            <div className="lg:col-span-7 rounded-2xl border border-[var(--border)] bg-[var(--background)] p-5 sm:p-6">
-              <div className="flex items-center justify-between mb-5">
-                <h3 className="text-lg font-semibold">Workflow real de uso</h3>
-                <span className="text-xs text-[var(--brand-gray)]">De operacion a decision</span>
-              </div>
-
-              <div className="space-y-4">
-                {[
-                  {
-                    title: "1) Captura inteligente",
-                    desc: "Texto, voz o importacion de movimientos para no perder tiempo en tareas manuales.",
-                    points: ["Registro por categorias", "Deteccion automatica", "Correccion en 1 clic"],
-                  },
-                  {
-                    title: "2) Contexto financiero",
-                    desc: "Dashboard y modulos conectados para ver impacto en ahorro, deuda y presupuesto.",
-                    points: ["KPI en tiempo real", "Historico mensual", "Alertas por desviacion"],
-                  },
-                  {
-                    title: "3) Accion recomendada",
-                    desc: "FinyBot propone ajustes concretos y te lleva al modulo correcto para ejecutarlos.",
-                    points: ["Sugerencias accionables", "Regla 50/30/20", "Seguimiento de objetivos"],
-                  },
-                ].map((step) => (
-                  <div key={step.title} className="p-4 rounded-xl border border-[var(--border)] bg-[var(--background-secondary)]/60">
-                    <h4 className="font-semibold mb-1.5">{step.title}</h4>
-                    <p className="text-sm text-[var(--brand-gray)] mb-3">{step.desc}</p>
-                    <div className="flex flex-wrap gap-2">
-                      {step.points.map((p) => (
-                        <span key={p} className="px-2.5 py-1 rounded-lg text-xs border border-[var(--border)] bg-[var(--background)]">
-                          {p}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                ))}
+          {/* Bento Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
+            {/* Card 1 - Large: Dashboard */}
+            <div className="reveal reveal-delay-1 lg:col-span-2 bento-card rounded-3xl border border-[var(--border)] bg-[var(--background)] p-7 sm:p-8 relative overflow-hidden group">
+              <div className="absolute top-0 right-0 w-40 h-40 bg-[var(--brand-cyan)]/5 rounded-full blur-[60px] group-hover:bg-[var(--brand-cyan)]/10 transition-all duration-700 pointer-events-none" />
+              <div className="relative z-10">
+                <div className="w-12 h-12 rounded-2xl bg-[var(--brand-cyan)]/10 flex items-center justify-center mb-5">
+                  <LayoutDashboard className="w-6 h-6 text-[var(--brand-cyan)]" />
+                </div>
+                <h3 className="text-xl sm:text-2xl font-bold mb-3">Dashboard inteligente</h3>
+                <p className="text-[var(--brand-gray)] text-base leading-relaxed mb-6 max-w-lg">
+                  KPIs en tiempo real, graficos de tendencia y alertas automaticas. Todo tu panorama financiero en una sola pantalla.
+                </p>
+                <div className="flex flex-wrap gap-2.5">
+                  {["KPIs en tiempo real", "Graficos mensuales", "Alertas por desviacion", "Regla 50/30/20"].map((tag) => (
+                    <span key={tag} className="px-3.5 py-1.5 rounded-xl text-xs font-medium border border-[var(--border)] bg-[var(--background-secondary)]/80">{tag}</span>
+                  ))}
+                </div>
               </div>
             </div>
 
-            <div className="lg:col-span-5 space-y-5">
-              <div className="rounded-2xl border border-[var(--border)] bg-[var(--background)] p-5 sm:p-6">
-                <h3 className="text-lg font-semibold mb-4">Modulos conectados</h3>
-                <div className="grid grid-cols-2 gap-2.5 text-sm">
-                  {[
-                    { name: "Dashboard", icon: LayoutDashboard },
-                    { name: "Operaciones", icon: CreditCard },
-                    { name: "Categorias", icon: Database },
-                    { name: "Prevision", icon: Target },
-                    { name: "Ahorro", icon: PiggyBank },
-                    { name: "Deuda", icon: TrendingDown },
-                    { name: "Calendario", icon: Calendar },
-                    { name: "FinyBot", icon: Sparkles },
-                  ].map((item) => {
-                    const Icon = item.icon;
-                    return (
-                      <div key={item.name} className="flex items-center gap-2.5 p-2.5 rounded-xl border border-[var(--border)] bg-[var(--background-secondary)]/60">
-                        <Icon className="w-4 h-4 text-[var(--brand-cyan)]" />
-                        <span>{item.name}</span>
-                      </div>
-                    );
-                  })}
+            {/* Card 2 - FinyBot AI */}
+            <div className="reveal reveal-delay-2 bento-card rounded-3xl border border-[var(--border)] bg-[var(--background)] p-7 sm:p-8 relative overflow-hidden group">
+              <div className="absolute bottom-0 left-0 w-32 h-32 bg-[var(--brand-purple)]/5 rounded-full blur-[50px] group-hover:bg-[var(--brand-purple)]/10 transition-all duration-700 pointer-events-none" />
+              <div className="relative z-10">
+                <div className="w-12 h-12 rounded-2xl bg-[var(--brand-purple)]/10 flex items-center justify-center mb-5">
+                  <Sparkles className="w-6 h-6 text-[var(--brand-purple)]" />
+                </div>
+                <h3 className="text-xl font-bold mb-3">FinyBot IA</h3>
+                <p className="text-[var(--brand-gray)] text-sm leading-relaxed">
+                  Chat y voz con inteligencia artificial. Analiza tus datos y propone acciones concretas para mejorar tu economia.
+                </p>
+                <div className="mt-5 flex items-center gap-2">
+                  <Crown className="w-4 h-4 text-[var(--brand-purple)]" />
+                  <span className="text-xs font-medium text-[var(--brand-purple)]">Incluido en Pro</span>
                 </div>
               </div>
+            </div>
 
-              <div className="rounded-2xl border border-[var(--brand-purple)]/20 bg-gradient-to-br from-[var(--brand-purple)]/5 to-[var(--brand-cyan)]/5 p-5 sm:p-6">
-                <h3 className="text-lg font-semibold mb-3">Para quien esta hecho</h3>
-                <div className="space-y-3 text-sm">
-                  <div className="p-3 rounded-xl border border-[var(--border)] bg-[var(--background)]/80">
-                    <p className="font-semibold mb-1">Personas que quieren control total</p>
-                    <p className="text-[var(--brand-gray)]">Sin hojas de calculo ni apps desconectadas.</p>
+            {/* Card 3 - Prevision */}
+            <div className="reveal reveal-delay-1 bento-card rounded-3xl border border-[var(--border)] bg-[var(--background)] p-7 sm:p-8 relative overflow-hidden group">
+              <div className="absolute top-0 left-0 w-32 h-32 bg-[var(--warning)]/5 rounded-full blur-[50px] group-hover:bg-[var(--warning)]/10 transition-all duration-700 pointer-events-none" />
+              <div className="relative z-10">
+                <div className="w-12 h-12 rounded-2xl bg-[var(--warning)]/10 flex items-center justify-center mb-5">
+                  <Target className="w-6 h-6 text-[var(--warning)]" />
+                </div>
+                <h3 className="text-xl font-bold mb-3">Presupuestos</h3>
+                <p className="text-[var(--brand-gray)] text-sm leading-relaxed">
+                  Planifica por categoria y compara con la realidad. Detecta desviaciones antes de que sean un problema.
+                </p>
+              </div>
+            </div>
+
+            {/* Card 4 - Ahorro */}
+            <div className="reveal reveal-delay-2 bento-card rounded-3xl border border-[var(--border)] bg-[var(--background)] p-7 sm:p-8 relative overflow-hidden group">
+              <div className="absolute bottom-0 right-0 w-32 h-32 bg-[var(--brand-cyan)]/5 rounded-full blur-[50px] group-hover:bg-[var(--brand-cyan)]/10 transition-all duration-700 pointer-events-none" />
+              <div className="relative z-10">
+                <div className="w-12 h-12 rounded-2xl bg-[var(--brand-cyan)]/10 flex items-center justify-center mb-5">
+                  <PiggyBank className="w-6 h-6 text-[var(--brand-cyan)]" />
+                </div>
+                <h3 className="text-xl font-bold mb-3">Metas de ahorro</h3>
+                <p className="text-[var(--brand-gray)] text-sm leading-relaxed">
+                  Define objetivos, haz seguimiento visual del progreso y recibe sugerencias para alcanzarlos antes.
+                </p>
+                <div className="mt-5 flex items-center gap-2">
+                  <Crown className="w-4 h-4 text-[var(--brand-purple)]" />
+                  <span className="text-xs font-medium text-[var(--brand-purple)]">Incluido en Pro</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Card 5 - Large: Workflow */}
+            <div className="reveal reveal-delay-3 lg:col-span-2 bento-card rounded-3xl border border-[var(--brand-purple)]/20 bg-gradient-to-br from-[var(--brand-purple)]/[0.03] to-[var(--brand-cyan)]/[0.03] p-7 sm:p-8 relative overflow-hidden group">
+              <div className="relative z-10">
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[var(--brand-purple)]/10 to-[var(--brand-cyan)]/10 flex items-center justify-center">
+                    <Zap className="w-6 h-6 text-[var(--brand-purple)]" />
                   </div>
-                  <div className="p-3 rounded-xl border border-[var(--border)] bg-[var(--background)]/80">
-                    <p className="font-semibold mb-1">Usuarios que ejecutan decisiones rapido</p>
-                    <p className="text-[var(--brand-gray)]">No solo ver datos, sino actuar cada semana.</p>
-                  </div>
-                  <div className="p-3 rounded-xl border border-[var(--border)] bg-[var(--background)]/80">
-                    <p className="font-semibold mb-1">Perfil proactivo</p>
-                    <p className="text-[var(--brand-gray)]">Quien mide progreso y quiere mejorar mes a mes.</p>
+                  <div>
+                    <h3 className="text-xl sm:text-2xl font-bold">Flujo de trabajo integrado</h3>
+                    <p className="text-sm text-[var(--brand-gray)]">De la operacion a la decision en 3 pasos</p>
                   </div>
                 </div>
+
+                <div className="grid sm:grid-cols-3 gap-4">
+                  {[
+                    { step: "01", title: "Captura", desc: "Texto, voz o importacion automatica de movimientos.", color: "var(--brand-cyan)" },
+                    { step: "02", title: "Contexto", desc: "Dashboard y modulos conectados muestran el impacto real.", color: "var(--brand-purple)" },
+                    { step: "03", title: "Accion", desc: "FinyBot propone ajustes y te lleva al modulo correcto.", color: "var(--success)" },
+                  ].map((item) => (
+                    <div key={item.step} className="p-4 rounded-2xl border border-[var(--border)] bg-[var(--background)]/80 backdrop-blur-sm">
+                      <span className="text-xs font-bold mb-3 block" style={{ color: item.color }}>{item.step}</span>
+                      <h4 className="font-bold mb-1.5">{item.title}</h4>
+                      <p className="text-sm text-[var(--brand-gray)] leading-relaxed">{item.desc}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Small cards row */}
+            <div className="reveal reveal-delay-1 bento-card rounded-3xl border border-[var(--border)] bg-[var(--background)] p-7 sm:p-8 relative overflow-hidden group">
+              <div className="relative z-10">
+                <div className="w-12 h-12 rounded-2xl bg-[var(--danger)]/10 flex items-center justify-center mb-5">
+                  <CreditCard className="w-6 h-6 text-[var(--danger)]" />
+                </div>
+                <h3 className="text-xl font-bold mb-3">Gestion de deudas</h3>
+                <p className="text-[var(--brand-gray)] text-sm leading-relaxed">
+                  Visualiza tus deudas, intereses y plan de pago. Sigue el progreso hasta la libertad financiera.
+                </p>
+              </div>
+            </div>
+
+            <div className="reveal reveal-delay-2 bento-card rounded-3xl border border-[var(--border)] bg-[var(--background)] p-7 sm:p-8 relative overflow-hidden group">
+              <div className="relative z-10">
+                <div className="w-12 h-12 rounded-2xl bg-[var(--success)]/10 flex items-center justify-center mb-5">
+                  <Calendar className="w-6 h-6 text-[var(--success)]" />
+                </div>
+                <h3 className="text-xl font-bold mb-3">Calendario financiero</h3>
+                <p className="text-[var(--brand-gray)] text-sm leading-relaxed">
+                  Visualiza operaciones por fecha, planifica pagos futuros y no te pierdas ninguna fecha importante.
+                </p>
+              </div>
+            </div>
+
+            <div className="reveal reveal-delay-3 bento-card rounded-3xl border border-[var(--border)] bg-[var(--background)] p-7 sm:p-8 relative overflow-hidden group">
+              <div className="relative z-10">
+                <div className="w-12 h-12 rounded-2xl bg-[var(--info)]/10 flex items-center justify-center mb-5">
+                  <BarChart3 className="w-6 h-6 text-[var(--info)]" />
+                </div>
+                <h3 className="text-xl font-bold mb-3">Exportacion de datos</h3>
+                <p className="text-[var(--brand-gray)] text-sm leading-relaxed">
+                  Descarga tus datos en CSV o JSON. Tus finanzas son tuyas, siempre accesibles y portables.
+                </p>
               </div>
             </div>
           </div>
         </div>
       </section>
-      {/* Finy AI Interactive Demo */}
-      <section className="py-16 sm:py-24 px-4 sm:px-6 relative overflow-hidden">
+
+      {/* Section divider */}
+      <div className="section-divider" />
+
+      {/* ───── FINY AI INTERACTIVE DEMO ───── */}
+      <section id="demo" className="py-24 sm:py-32 px-4 sm:px-8 relative overflow-hidden">
         <GridBackground />
-        {/* Ambient glow orbs */}
-        <div className="absolute top-1/4 left-0 w-72 h-72 bg-[var(--brand-cyan)]/10 rounded-full blur-[100px] pointer-events-none" />
-        <div className="absolute bottom-1/4 right-0 w-72 h-72 bg-[var(--brand-purple)]/10 rounded-full blur-[100px] pointer-events-none" />
+        <div className="absolute top-1/4 left-0 w-96 h-96 bg-[var(--brand-cyan)]/8 rounded-full blur-[120px] pointer-events-none" />
+        <div className="absolute bottom-1/4 right-0 w-96 h-96 bg-[var(--brand-purple)]/8 rounded-full blur-[120px] pointer-events-none" />
 
         <div className="max-w-6xl mx-auto relative z-10">
-          <div className="text-center mb-10 sm:mb-14">
+          <div className="text-center mb-12 sm:mb-16 reveal">
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[var(--brand-cyan)]/10 border border-[var(--brand-cyan)]/20 text-[var(--brand-cyan)] text-sm font-medium mb-6">
               <Sparkles className="w-4 h-4" />
-              Finy AI en acción
+              Finy AI en accion
             </div>
-            <h2 className="text-2xl sm:text-3xl md:text-5xl font-bold mb-3 sm:mb-4">
-              De caos financiero a <span className="gradient-brand-text">claridad total</span>
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold mb-5 tracking-tight">
+              De caos financiero a{" "}
+              <span className="gradient-brand-text">claridad total</span>
             </h2>
-            <p className="text-[var(--brand-gray)] max-w-2xl mx-auto text-sm sm:text-lg">
-              Tus movimientos transformados en decisiones financieras inteligentes. En milisegundos.
+            <p className="text-[var(--brand-gray)] max-w-2xl mx-auto text-base sm:text-lg leading-relaxed">
+              Tus movimientos bancarios transformados en decisiones financieras inteligentes. Automatico. En milisegundos.
             </p>
           </div>
 
-          <FinyAIDemo />
+          <div className="reveal-scale">
+            <FinyAIDemo />
+          </div>
         </div>
       </section>
 
-      {/* Pricing Section */}
-      <section id="pricing" className="py-20 px-6 relative">
+      {/* Section divider */}
+      <div className="section-divider" />
+
+      {/* ───── PRICING ───── */}
+      <section id="pricing" className="py-24 sm:py-32 px-6 sm:px-8 relative overflow-hidden">
         <GridBackground />
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[400px] bg-[var(--brand-purple)]/5 rounded-full blur-[120px] pointer-events-none" />
 
         <div className="max-w-5xl mx-auto relative z-10">
-          <div className="text-center mb-12">
+          <div className="text-center mb-14 reveal">
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[var(--brand-purple)]/10 border border-[var(--brand-purple)]/20 text-[var(--brand-purple)] text-sm font-medium mb-6">
               <Crown className="w-4 h-4" />
               Planes y precios
             </div>
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">
-              Elige tu <span className="gradient-brand-text">plan</span>
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold mb-5 tracking-tight">
+              Un precio justo para <span className="gradient-brand-text">tu control financiero</span>
             </h2>
-            <p className="text-[var(--brand-gray)] max-w-2xl mx-auto text-lg">
+            <p className="text-[var(--brand-gray)] max-w-2xl mx-auto text-lg leading-relaxed">
               {hasUsedTrial
                 ? "Plan Basic gratis para siempre. Desbloquea todo con Pro."
-                : "Empieza gratis con 15 días de prueba Pro. Sin tarjeta de crédito."}
+                : "Empieza gratis con 15 dias de prueba Pro. Sin tarjeta de credito."}
             </p>
           </div>
 
-          {/* Billing Toggle */}
-          <PricingToggle isLoggedIn={isLoggedIn} hasUsedTrial={hasUsedTrial} />
+          <div className="reveal reveal-delay-2">
+            <PricingToggle isLoggedIn={isLoggedIn} hasUsedTrial={hasUsedTrial} />
+          </div>
         </div>
       </section>
 
-      {/* Final CTA */}
-      <section className="py-16 px-6">
-        <div className="max-w-3xl mx-auto text-center">
-          <h2 className="text-3xl md:text-4xl font-bold mb-4">
-            ¿Listo para tomar el control?
-          </h2>
-          <p className="text-[var(--brand-gray)] mb-8 text-lg">
-            {isLoggedIn
-              ? "Vuelve a tu dashboard y sigue gestionando tus finanzas."
-              : "Únete gratis y empieza a gestionar tus finanzas hoy mismo."}
-          </p>
-          <Link
-            href={isLoggedIn ? "/dashboard" : "/register"}
-            className="group inline-flex items-center justify-center gap-2 px-8 py-4 rounded-xl bg-gradient-to-r from-[var(--brand-purple)] to-[var(--brand-cyan)] text-white font-semibold hover:opacity-90 transition-all hover:scale-105 active:scale-95 shadow-xl shadow-[var(--brand-purple)]/30"
-          >
-            {isLoggedIn ? (
-              <>
-                <LayoutDashboard className="w-5 h-5" />
-                Ir al Dashboard
-              </>
-            ) : (
-              <>
-                Crear cuenta gratis
-                <ArrowRight className="w-5 h-5 transition-transform group-hover:translate-x-1" />
-              </>
-            )}
-          </Link>
-        </div>
-      </section>
+      {/* ───── FINAL CTA ───── */}
+      <section className="relative py-24 sm:py-32 px-6 sm:px-8 overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-[var(--brand-purple)]/[0.04] via-transparent to-[var(--brand-cyan)]/[0.04]" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-[var(--brand-cyan)]/5 rounded-full blur-[120px] pointer-events-none" />
 
-      {/* Newsletter Section */}
-      <section id="newsletter" className="py-20 px-6 bg-[var(--background)]">
-        <div className="max-w-3xl mx-auto text-center">
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[var(--brand-cyan)]/10 text-[var(--brand-cyan)] text-sm font-medium mb-6">
+        <div className="max-w-3xl mx-auto relative z-10 text-center reveal">
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[var(--brand-cyan)]/10 border border-[var(--brand-cyan)]/20 text-[var(--brand-cyan)] text-sm font-medium mb-8">
             <Sparkles className="w-4 h-4" />
+            Empieza hoy
+          </div>
+          <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold mb-6 tracking-tight">
+            ¿Listo para tomar el
+            <br />
+            <span className="gradient-brand-text">control de tu dinero?</span>
+          </h2>
+          <p className="text-[var(--brand-gray)] mb-10 text-lg leading-relaxed max-w-xl mx-auto">
+            {isLoggedIn
+              ? "Vuelve a tu dashboard y sigue gestionando tus finanzas con inteligencia."
+              : "Unite gratis y empieza a gestionar tus finanzas con inteligencia artificial hoy mismo."}
+          </p>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+            <Link
+              href={isLoggedIn ? "/dashboard" : "/register"}
+              className="group inline-flex items-center justify-center gap-2.5 px-10 py-4.5 rounded-2xl bg-gradient-to-r from-[var(--brand-purple)] to-[var(--brand-cyan)] text-white font-bold text-base hover:opacity-90 transition-all hover:scale-[1.03] active:scale-[0.97] shadow-2xl shadow-[var(--brand-purple)]/25 animate-cta-glow"
+            >
+              {isLoggedIn ? (
+                <>
+                  <LayoutDashboard className="w-5 h-5" />
+                  Ir al Dashboard
+                </>
+              ) : (
+                <>
+                  Crear cuenta gratis
+                  <ArrowRight className="w-5 h-5 transition-transform group-hover:translate-x-1" />
+                </>
+              )}
+            </Link>
+            {!isLoggedIn && (
+              <p className="text-sm text-[var(--brand-gray)]">
+                Sin tarjeta de credito requerida
+              </p>
+            )}
+          </div>
+        </div>
+      </section>
+
+      {/* ───── NEWSLETTER ───── */}
+      <section id="newsletter" className="py-24 sm:py-28 px-6 sm:px-8 bg-[var(--background-secondary)] border-t border-[var(--border)]">
+        <div className="max-w-2xl mx-auto text-center reveal">
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[var(--brand-cyan)]/10 border border-[var(--brand-cyan)]/20 text-[var(--brand-cyan)] text-sm font-medium mb-6">
+            <Mail className="w-4 h-4" />
             Newsletter
           </div>
-          <h2 className="text-3xl md:text-4xl font-bold mb-4">
+          <h2 className="text-3xl sm:text-4xl font-extrabold mb-4 tracking-tight">
             Consejos financieros cada semana
           </h2>
-          <p className="text-lg text-[var(--brand-gray)] mb-8">
-            Suscríbete y recibe trucos de ahorro, novedades de FinyBuddy y consejos para mejorar tus finanzas personales.
+          <p className="text-lg text-[var(--brand-gray)] mb-10 leading-relaxed">
+            Recibe trucos de ahorro, novedades de FinyBuddy y consejos para mejorar tus finanzas personales.
           </p>
           <NewsletterForm />
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="py-12 px-6 border-t border-[var(--border)] bg-[var(--background-secondary)]">
+      {/* ───── FOOTER ───── */}
+      <footer className="py-16 px-6 sm:px-8 border-t border-[var(--border)] bg-[var(--background)]">
         <div className="max-w-7xl mx-auto">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-            <div className="flex items-center">
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-12 mb-12">
+            {/* Brand column */}
+            <div className="md:col-span-5">
               <Image
                 src="/assets/logo-finybuddy-wordmark.png"
                 alt="FinyBuddy"
-                width={120}
-                height={28}
-                className="object-contain"
+                width={130}
+                height={32}
+                className="object-contain mb-5"
               />
+              <p className="text-sm text-[var(--brand-gray)] leading-relaxed max-w-sm mb-6">
+                Tu asistente financiero personal con IA. Controla tus finanzas de forma inteligente desde un solo lugar.
+              </p>
+              <div className="flex items-center gap-3">
+                {[
+                  { icon: Shield, text: "Privado" },
+                  { icon: Zap, text: "IA" },
+                  { icon: CheckCircle, text: "Gratis" },
+                ].map((badge) => (
+                  <div key={badge.text} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[var(--border)] bg-[var(--background-secondary)] text-xs font-medium text-[var(--brand-gray)]">
+                    <badge.icon className="w-3 h-3 text-[var(--brand-cyan)]" />
+                    {badge.text}
+                  </div>
+                ))}
+              </div>
             </div>
 
-            <div className="flex flex-wrap items-center gap-4 text-sm text-[var(--brand-gray)]">
-              <Link href="/terms" className="hover:text-[var(--foreground)] transition-colors">
-                Términos
-              </Link>
-              <Link href="/privacy" className="hover:text-[var(--foreground)] transition-colors">
-                Privacidad
-              </Link>
-              <a href="mailto:soporte@finybuddy.com" className="hover:text-[var(--foreground)] transition-colors">
-                Soporte
-              </a>
-              <button
-                onClick={toggleTheme}
-                className="flex items-center gap-2 hover:text-[var(--foreground)] transition-colors"
-              >
-                {theme === "light" ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
-                {theme === "light" ? "Modo oscuro" : "Modo claro"}
-              </button>
+            {/* Links columns */}
+            <div className="md:col-span-7 grid grid-cols-2 sm:grid-cols-3 gap-8">
+              <div>
+                <h4 className="text-sm font-semibold mb-4">Producto</h4>
+                <ul className="space-y-3 text-sm text-[var(--brand-gray)]">
+                  <li><a href="#features" className="hover:text-[var(--foreground)] transition-colors">Funciones</a></li>
+                  <li><a href="#demo" className="hover:text-[var(--foreground)] transition-colors">Demo IA</a></li>
+                  <li><a href="#pricing" className="hover:text-[var(--foreground)] transition-colors">Planes</a></li>
+                  <li><a href="#newsletter" className="hover:text-[var(--foreground)] transition-colors">Newsletter</a></li>
+                </ul>
+              </div>
+              <div>
+                <h4 className="text-sm font-semibold mb-4">Legal</h4>
+                <ul className="space-y-3 text-sm text-[var(--brand-gray)]">
+                  <li><Link href="/terms" className="hover:text-[var(--foreground)] transition-colors">Terminos de uso</Link></li>
+                  <li><Link href="/privacy" className="hover:text-[var(--foreground)] transition-colors">Privacidad</Link></li>
+                </ul>
+              </div>
+              <div>
+                <h4 className="text-sm font-semibold mb-4">Soporte</h4>
+                <ul className="space-y-3 text-sm text-[var(--brand-gray)]">
+                  <li><a href="mailto:soporte@finybuddy.com" className="hover:text-[var(--foreground)] transition-colors">soporte@finybuddy.com</a></li>
+                  <li>
+                    <button
+                      onClick={toggleTheme}
+                      className="flex items-center gap-2 hover:text-[var(--foreground)] transition-colors"
+                    >
+                      {theme === "light" ? <Moon className="w-3.5 h-3.5" /> : <Sun className="w-3.5 h-3.5" />}
+                      {theme === "light" ? "Modo oscuro" : "Modo claro"}
+                    </button>
+                  </li>
+                </ul>
+              </div>
             </div>
+          </div>
 
+          {/* Bottom bar */}
+          <div className="pt-8 border-t border-[var(--border)] flex flex-col sm:flex-row items-center justify-between gap-4">
             <p className="text-sm text-[var(--brand-gray)]">
               © {new Date().getFullYear()} FinyBuddy. Todos los derechos reservados.
+            </p>
+            <p className="text-xs text-[var(--brand-gray)]/60">
+              Hecho con cuidado para tus finanzas personales.
             </p>
           </div>
         </div>
