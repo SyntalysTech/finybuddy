@@ -39,6 +39,13 @@ import {
   Gift,
 } from "lucide-react";
 
+// ─── Testimonials ───
+const TESTIMONIALS = [
+  { name: "Maria Lopez", role: "Freelance / Disenadora", quote: "Antes usaba una hoja de Excel enorme. Con FinyBuddy tengo todo controlado en 5 minutos al dia. Finy me aviso cuando me estaba pasando en restaurantes y ajuste a tiempo.", avatar: "ML", color: "#EC4899" },
+  { name: "Carlos Ruiz", role: "Ingeniero de Software", quote: "La demo de IA me convencio al instante. Subi mi extracto y en segundos tenia todo categorizado con la regla 50/30/20. Llevo 4 meses ahorrando un 22% de mi sueldo.", avatar: "CR", color: "#3B82F6" },
+  { name: "Ana Torres", role: "Emprendedora", quote: "Lo que mas me gusta es que FinyBot no solo te dice donde gastas, sino que te dice que hacer. Es como tener un asesor financiero 24/7 por menos de un cafe al mes.", avatar: "AT", color: "#10B981" },
+];
+
 // Newsletter subscription form
 function NewsletterForm() {
   const [email, setEmail] = useState("");
@@ -809,9 +816,9 @@ export default function HomePage() {
   return (
     <div className="min-h-screen bg-[var(--background)] overflow-x-hidden transition-colors duration-300">
       {/* ───── HEADER ───── */}
-      <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${headerScrolled ? "bg-[var(--background)]/85 backdrop-blur-2xl border-b border-[var(--border)] shadow-sm" : "bg-transparent border-b border-transparent"}`}>
-        <div className="max-w-7xl mx-auto px-6 sm:px-8 h-16 sm:h-[72px] flex items-center justify-between">
-          <Link href="/" className="relative z-10">
+      <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${headerScrolled ? "bg-[var(--background)]/80 backdrop-blur-2xl border-b border-[var(--border)]/60 shadow-[0_1px_3px_rgba(0,0,0,0.04)]" : "bg-transparent"}`}>
+        <div className="max-w-7xl mx-auto px-6 sm:px-8 h-[68px] flex items-center justify-between">
+          <Link href="/" className="relative z-10 shrink-0">
             <Image
               src="/assets/logo-finybuddy-wordmark.png"
               alt="FinyBuddy"
@@ -821,17 +828,18 @@ export default function HomePage() {
             />
           </Link>
 
-          <nav className="hidden md:flex items-center gap-1">
+          {/* Pill-style nav */}
+          <nav className="hidden lg:flex items-center gap-0.5 px-1.5 py-1.5 rounded-2xl bg-[var(--background-secondary)]/60 backdrop-blur-xl border border-[var(--border)]/50">
             {[
               { label: "Funciones", href: "#features" },
               { label: "Demo IA", href: "#demo" },
+              { label: "Testimonios", href: "#testimonials" },
               { label: "Planes", href: "#pricing" },
-              { label: "Newsletter", href: "#newsletter" },
             ].map((link) => (
               <a
                 key={link.href}
                 href={link.href}
-                className="px-4 py-2 rounded-lg text-sm font-medium text-[var(--brand-gray)] hover:text-[var(--foreground)] hover:bg-[var(--background-secondary)] transition-all"
+                className="px-4 py-2 rounded-xl text-sm font-medium text-[var(--brand-gray)] hover:text-[var(--foreground)] hover:bg-[var(--background)] transition-all"
               >
                 {link.label}
               </a>
@@ -931,32 +939,31 @@ export default function HomePage() {
       </header>
 
       {/* ───── HERO ───── */}
-      <section className="relative min-h-screen flex items-center pt-24 pb-20 px-6 sm:px-8 overflow-hidden noise-overlay">
-        <GridBackground />
+      <section className="relative min-h-screen flex flex-col items-center justify-center pt-24 pb-16 px-6 sm:px-8 overflow-hidden noise-overlay">
+        <div className="hero-beam" />
         <FloatingParticles />
 
         {/* Mesh gradient blobs */}
-        <div className="absolute top-[-10%] left-[-15%] w-[600px] h-[600px] rounded-full bg-[var(--brand-cyan)]/20 blur-[120px] animate-mesh-1 pointer-events-none" />
-        <div className="absolute top-[50%] right-[-10%] w-[500px] h-[500px] rounded-full bg-[var(--brand-purple)]/20 blur-[120px] animate-mesh-2 pointer-events-none" />
-        <div className="absolute bottom-[-10%] left-[30%] w-[400px] h-[400px] rounded-full bg-[var(--brand-yellow)]/10 blur-[100px] animate-mesh-3 pointer-events-none" />
+        <div className="absolute top-[-10%] left-[-15%] w-[700px] h-[700px] rounded-full bg-[var(--brand-cyan)]/15 blur-[150px] animate-mesh-1 pointer-events-none" />
+        <div className="absolute top-[40%] right-[-10%] w-[500px] h-[500px] rounded-full bg-[var(--brand-purple)]/15 blur-[130px] animate-mesh-2 pointer-events-none" />
+        <div className="absolute bottom-[-5%] left-[30%] w-[400px] h-[400px] rounded-full bg-[var(--brand-yellow)]/8 blur-[100px] animate-mesh-3 pointer-events-none" />
 
-        <div className="max-w-7xl mx-auto relative z-10 w-full">
-          <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
-            {/* Left - Copy */}
-            <div className={`transition-all duration-1000 ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"}`}>
-              <div className="inline-flex items-center gap-2.5 px-4 py-2 rounded-full bg-[var(--brand-purple)]/10 border border-[var(--brand-purple)]/20 text-[var(--brand-purple)] text-sm font-medium mb-8">
+        <div className="max-w-5xl mx-auto relative z-10 w-full">
+          {/* Centered hero content */}
+          <div className={`text-center transition-all duration-1000 ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-12"}`}>
+              <div className="inline-flex items-center gap-2.5 px-5 py-2.5 rounded-full bg-[var(--brand-purple)]/10 border border-[var(--brand-purple)]/20 text-[var(--brand-purple)] text-sm font-semibold mb-8 backdrop-blur-sm">
                 <div className="w-2 h-2 rounded-full bg-[var(--brand-purple)] animate-pulse" />
                 Inteligencia financiera personal
               </div>
 
-              <h1 className="text-[2.75rem] sm:text-5xl md:text-[3.5rem] lg:text-6xl xl:text-[4rem] font-extrabold leading-[1.1] tracking-tight mb-7">
-                Tu asistente{" "}
+              <h1 className="text-[2.75rem] sm:text-[3.5rem] md:text-[4.25rem] lg:text-[5rem] font-black leading-[1.05] tracking-[-0.03em] mb-7 mx-auto max-w-4xl">
+                Tus finanzas con{" "}
                 <span className="relative inline-block">
                   <span className="text-transparent bg-clip-text bg-gradient-to-r from-[var(--brand-cyan)] via-[var(--brand-purple)] to-[var(--brand-cyan)] bg-[length:200%_auto] animate-gradient">
-                    financiero
+                    claridad total
                   </span>
-                  <svg className="absolute -bottom-1.5 left-0 w-full" viewBox="0 0 200 8" fill="none">
-                    <path d="M1 5.5Q50 1 100 5.5T199 5.5" stroke="url(#underline-gradient)" strokeWidth="3" strokeLinecap="round" className="animate-draw" />
+                  <svg className="absolute -bottom-1 left-0 w-full" viewBox="0 0 200 8" fill="none">
+                    <path d="M1 5.5Q50 1 100 5.5T199 5.5" stroke="url(#underline-gradient)" strokeWidth="2.5" strokeLinecap="round" className="animate-draw" />
                     <defs>
                       <linearGradient id="underline-gradient" x1="0" y1="0" x2="200" y2="0">
                         <stop offset="0%" stopColor="var(--brand-cyan)" />
@@ -965,16 +972,14 @@ export default function HomePage() {
                     </defs>
                   </svg>
                 </span>
-                <br />
-                <span className="text-[var(--foreground)]">personal con IA</span>
               </h1>
 
-              <p className="text-lg sm:text-xl text-[var(--brand-gray)] mb-10 max-w-xl leading-relaxed">
+              <p className="text-lg sm:text-xl md:text-[1.35rem] text-[var(--brand-gray)] mb-10 max-w-2xl mx-auto leading-relaxed">
                 Controla ingresos, gastos, ahorros y deudas desde un solo lugar.
-                La <span className="font-semibold text-[var(--foreground)]">IA de Finy</span> analiza, categoriza y te recomienda acciones concretas para mejorar tu economia.
+                La IA de Finy analiza, categoriza y recomienda acciones concretas.
               </p>
 
-              <div className="flex flex-col sm:flex-row gap-4 mb-5">
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-5">
                 {isLoggedIn ? (
                   <Link
                     href="/dashboard"
@@ -1008,25 +1013,11 @@ export default function HomePage() {
                 </p>
               )}
 
-              {/* Trust signals */}
-              <div className="mt-10 pt-8 border-t border-[var(--border)]">
-                <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
-                  {[
-                    { icon: Shield, text: "Datos 100% privados" },
-                    { icon: Zap, text: "IA en tiempo real" },
-                    { icon: CheckCircle, text: "Gratis para siempre" },
-                  ].map((item) => (
-                    <div key={item.text} className="flex items-center gap-2 text-sm text-[var(--brand-gray)]">
-                      <item.icon className="w-4 h-4 text-[var(--brand-cyan)]" />
-                      <span>{item.text}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
+            {isLoggedIn && <div className="mb-12" />}
+          </div>
 
-            {/* Right - Mascot */}
-            <div className={`relative flex justify-center transition-all duration-1000 delay-300 ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"}`}>
+          {/* Mascot + floating cards - centered below */}
+          <div className={`relative flex justify-center mt-4 transition-all duration-1000 delay-500 ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-16"}`}>
               <div className="absolute inset-0 flex items-center justify-center">
                 <div className="w-56 h-56 sm:w-72 sm:h-72 md:w-[380px] md:h-[380px] rounded-full border border-[var(--brand-cyan)]/15 animate-spin-slow" />
                 <div className="absolute w-48 h-48 sm:w-64 sm:h-64 md:w-80 md:h-80 rounded-full border border-[var(--brand-purple)]/15 animate-spin-reverse" />
@@ -1073,22 +1064,33 @@ export default function HomePage() {
               <Image
                 src="/assets/finybuddy-mascot.png"
                 alt="FinyBuddy Mascot"
-                width={350}
-                height={350}
-                className="relative z-10 drop-shadow-2xl animate-bounce-subtle w-[220px] h-[220px] sm:w-[280px] sm:h-[280px] md:w-[350px] md:h-[350px]"
-                style={{ transform: `translateY(${scrollY * 0.08}px)` }}
+                width={300}
+                height={300}
+                className="relative z-10 drop-shadow-2xl animate-bounce-subtle w-[180px] h-[180px] sm:w-[240px] sm:h-[240px] md:w-[300px] md:h-[300px]"
+                style={{ transform: `translateY(${scrollY * 0.06}px)` }}
                 priority
               />
             </div>
+
+          {/* Trust signals */}
+          <div className={`mt-14 sm:mt-16 flex flex-wrap items-center justify-center gap-x-8 gap-y-4 transition-all duration-1000 delay-700 ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"}`}>
+            {[
+              { icon: Shield, text: "Datos 100% privados" },
+              { icon: Zap, text: "IA en tiempo real" },
+              { icon: CheckCircle, text: "Gratis para siempre" },
+              { icon: Sparkles, text: "Sin tarjeta requerida" },
+            ].map((item) => (
+              <div key={item.text} className="flex items-center gap-2 text-sm text-[var(--brand-gray)]">
+                <item.icon className="w-4 h-4 text-[var(--brand-cyan)]" />
+                <span>{item.text}</span>
+              </div>
+            ))}
           </div>
         </div>
 
         {/* Scroll indicator */}
-        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 animate-bounce">
-          <div className="flex flex-col items-center gap-2">
-            <span className="text-xs text-[var(--brand-gray)] font-medium tracking-wide">Descubre mas</span>
-            <ChevronDown className="w-5 h-5 text-[var(--brand-gray)]" />
-          </div>
+        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 animate-bounce">
+          <ChevronDown className="w-5 h-5 text-[var(--brand-gray)]/60" />
         </div>
       </section>
 
@@ -1109,7 +1111,7 @@ export default function HomePage() {
             ].map((stat) => (
               <div key={stat.label} className="text-center p-5 sm:p-6 rounded-2xl bg-white/10 backdrop-blur-sm border border-white/15">
                 <stat.icon className="w-5 h-5 text-white/70 mx-auto mb-3" />
-                <p className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-white mb-1.5 tracking-tight">
+                <p className="text-3xl sm:text-4xl md:text-5xl font-black text-white mb-1.5 tracking-tight">
                   <AnimatedNumber value={stat.value} suffix={stat.suffix} />
                 </p>
                 <p className="text-white/70 text-xs sm:text-sm font-medium">{stat.label}</p>
@@ -1129,7 +1131,7 @@ export default function HomePage() {
               <LayoutDashboard className="w-4 h-4" />
               Vista previa
             </div>
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold mb-5 tracking-tight">
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-black mb-5 tracking-tight">
               Todo en un <span className="gradient-brand-text">vistazo</span>
             </h2>
             <p className="text-[var(--brand-gray)] max-w-2xl mx-auto text-lg leading-relaxed">
@@ -1300,7 +1302,7 @@ export default function HomePage() {
               <Zap className="w-4 h-4" />
               Funcionalidades
             </div>
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold mb-5 tracking-tight">
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-black mb-5 tracking-tight">
               Todo lo que necesitas, <br className="hidden sm:block" /><span className="gradient-brand-text">nada que no</span>
             </h2>
             <p className="text-[var(--brand-gray)] max-w-2xl mx-auto text-lg leading-relaxed">
@@ -1311,7 +1313,7 @@ export default function HomePage() {
           {/* Bento Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
             {/* Card 1 - Large: Dashboard */}
-            <div className="reveal reveal-delay-1 lg:col-span-2 bento-card rounded-3xl border border-[var(--border)] bg-[var(--background)] p-7 sm:p-8 relative overflow-hidden group">
+            <div className="reveal reveal-delay-1 lg:col-span-2 feature-card rounded-3xl border border-[var(--border)] bg-[var(--background)] p-7 sm:p-8 relative overflow-hidden group">
               <div className="absolute top-0 right-0 w-40 h-40 bg-[var(--brand-cyan)]/5 rounded-full blur-[60px] group-hover:bg-[var(--brand-cyan)]/10 transition-all duration-700 pointer-events-none" />
               <div className="relative z-10">
                 <div className="w-12 h-12 rounded-2xl bg-[var(--brand-cyan)]/10 flex items-center justify-center mb-5">
@@ -1330,7 +1332,7 @@ export default function HomePage() {
             </div>
 
             {/* Card 2 - FinyBot AI */}
-            <div className="reveal reveal-delay-2 bento-card rounded-3xl border border-[var(--border)] bg-[var(--background)] p-7 sm:p-8 relative overflow-hidden group">
+            <div className="reveal reveal-delay-2 feature-card rounded-3xl border border-[var(--border)] bg-[var(--background)] p-7 sm:p-8 relative overflow-hidden group">
               <div className="absolute bottom-0 left-0 w-32 h-32 bg-[var(--brand-purple)]/5 rounded-full blur-[50px] group-hover:bg-[var(--brand-purple)]/10 transition-all duration-700 pointer-events-none" />
               <div className="relative z-10">
                 <div className="w-12 h-12 rounded-2xl bg-[var(--brand-purple)]/10 flex items-center justify-center mb-5">
@@ -1348,7 +1350,7 @@ export default function HomePage() {
             </div>
 
             {/* Card 3 - Prevision */}
-            <div className="reveal reveal-delay-1 bento-card rounded-3xl border border-[var(--border)] bg-[var(--background)] p-7 sm:p-8 relative overflow-hidden group">
+            <div className="reveal reveal-delay-1 feature-card rounded-3xl border border-[var(--border)] bg-[var(--background)] p-7 sm:p-8 relative overflow-hidden group">
               <div className="absolute top-0 left-0 w-32 h-32 bg-[var(--warning)]/5 rounded-full blur-[50px] group-hover:bg-[var(--warning)]/10 transition-all duration-700 pointer-events-none" />
               <div className="relative z-10">
                 <div className="w-12 h-12 rounded-2xl bg-[var(--warning)]/10 flex items-center justify-center mb-5">
@@ -1362,7 +1364,7 @@ export default function HomePage() {
             </div>
 
             {/* Card 4 - Ahorro */}
-            <div className="reveal reveal-delay-2 bento-card rounded-3xl border border-[var(--border)] bg-[var(--background)] p-7 sm:p-8 relative overflow-hidden group">
+            <div className="reveal reveal-delay-2 feature-card rounded-3xl border border-[var(--border)] bg-[var(--background)] p-7 sm:p-8 relative overflow-hidden group">
               <div className="absolute bottom-0 right-0 w-32 h-32 bg-[var(--brand-cyan)]/5 rounded-full blur-[50px] group-hover:bg-[var(--brand-cyan)]/10 transition-all duration-700 pointer-events-none" />
               <div className="relative z-10">
                 <div className="w-12 h-12 rounded-2xl bg-[var(--brand-cyan)]/10 flex items-center justify-center mb-5">
@@ -1380,7 +1382,7 @@ export default function HomePage() {
             </div>
 
             {/* Card 5 - Large: Workflow */}
-            <div className="reveal reveal-delay-3 lg:col-span-2 bento-card rounded-3xl border border-[var(--brand-purple)]/20 bg-gradient-to-br from-[var(--brand-purple)]/[0.03] to-[var(--brand-cyan)]/[0.03] p-7 sm:p-8 relative overflow-hidden group">
+            <div className="reveal reveal-delay-3 lg:col-span-2 feature-card rounded-3xl border border-[var(--brand-purple)]/20 bg-gradient-to-br from-[var(--brand-purple)]/[0.03] to-[var(--brand-cyan)]/[0.03] p-7 sm:p-8 relative overflow-hidden group">
               <div className="relative z-10">
                 <div className="flex items-center gap-3 mb-6">
                   <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[var(--brand-purple)]/10 to-[var(--brand-cyan)]/10 flex items-center justify-center">
@@ -1409,7 +1411,7 @@ export default function HomePage() {
             </div>
 
             {/* Small cards row */}
-            <div className="reveal reveal-delay-1 bento-card rounded-3xl border border-[var(--border)] bg-[var(--background)] p-7 sm:p-8 relative overflow-hidden group">
+            <div className="reveal reveal-delay-1 feature-card rounded-3xl border border-[var(--border)] bg-[var(--background)] p-7 sm:p-8 relative overflow-hidden group">
               <div className="relative z-10">
                 <div className="w-12 h-12 rounded-2xl bg-[var(--danger)]/10 flex items-center justify-center mb-5">
                   <CreditCard className="w-6 h-6 text-[var(--danger)]" />
@@ -1421,7 +1423,7 @@ export default function HomePage() {
               </div>
             </div>
 
-            <div className="reveal reveal-delay-2 bento-card rounded-3xl border border-[var(--border)] bg-[var(--background)] p-7 sm:p-8 relative overflow-hidden group">
+            <div className="reveal reveal-delay-2 feature-card rounded-3xl border border-[var(--border)] bg-[var(--background)] p-7 sm:p-8 relative overflow-hidden group">
               <div className="relative z-10">
                 <div className="w-12 h-12 rounded-2xl bg-[var(--success)]/10 flex items-center justify-center mb-5">
                   <Calendar className="w-6 h-6 text-[var(--success)]" />
@@ -1433,7 +1435,7 @@ export default function HomePage() {
               </div>
             </div>
 
-            <div className="reveal reveal-delay-3 bento-card rounded-3xl border border-[var(--border)] bg-[var(--background)] p-7 sm:p-8 relative overflow-hidden group">
+            <div className="reveal reveal-delay-3 feature-card rounded-3xl border border-[var(--border)] bg-[var(--background)] p-7 sm:p-8 relative overflow-hidden group">
               <div className="relative z-10">
                 <div className="w-12 h-12 rounded-2xl bg-[var(--info)]/10 flex items-center justify-center mb-5">
                   <BarChart3 className="w-6 h-6 text-[var(--info)]" />
@@ -1463,7 +1465,7 @@ export default function HomePage() {
               <Sparkles className="w-4 h-4" />
               Finy AI en accion
             </div>
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold mb-5 tracking-tight">
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-black mb-5 tracking-tight">
               De caos financiero a{" "}
               <span className="gradient-brand-text">claridad total</span>
             </h2>
@@ -1481,6 +1483,45 @@ export default function HomePage() {
       {/* Section divider */}
       <div className="section-divider" />
 
+      {/* ───── TESTIMONIALS ───── */}
+      <section id="testimonials" className="py-28 sm:py-36 px-6 sm:px-8 bg-[var(--background-secondary)] relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-[var(--brand-purple)]/[0.03] rounded-full blur-[140px] pointer-events-none" />
+        <div className="max-w-6xl mx-auto relative z-10">
+          <div className="text-center mb-16 reveal">
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[var(--brand-purple)]/10 border border-[var(--brand-purple)]/20 text-[var(--brand-purple)] text-sm font-semibold mb-6">
+              <CheckCircle className="w-4 h-4" />
+              Testimonios
+            </div>
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-black mb-5 tracking-[-0.02em]">
+              Lo que dicen nuestros <span className="gradient-brand-text">usuarios</span>
+            </h2>
+            <p className="text-[var(--brand-gray)] max-w-2xl mx-auto text-lg leading-relaxed">
+              Personas reales que han transformado su relacion con el dinero usando FinyBuddy.
+            </p>
+          </div>
+          <div className="grid md:grid-cols-3 gap-6">
+            {TESTIMONIALS.map((t, i) => (
+              <div key={t.name} className={`reveal reveal-delay-${i + 1} testimonial-card p-7 sm:p-8`}>
+                <div className="flex gap-1 mb-5">
+                  {[...Array(5)].map((_, j) => (
+                    <svg key={j} className="w-4 h-4 star-gold" fill="currentColor" viewBox="0 0 20 20">
+                      <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                    </svg>
+                  ))}
+                </div>
+                <p className="text-[15px] leading-relaxed mb-7">&ldquo;{t.quote}&rdquo;</p>
+                <div className="flex items-center gap-3 pt-5 border-t border-[var(--border)]">
+                  <div className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-sm" style={{ backgroundColor: t.color }}>{t.avatar}</div>
+                  <div><p className="text-sm font-semibold">{t.name}</p><p className="text-xs text-[var(--brand-gray)]">{t.role}</p></div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <div className="section-divider" />
+
       {/* ───── PRICING ───── */}
       <section id="pricing" className="py-24 sm:py-32 px-6 sm:px-8 relative overflow-hidden">
         <GridBackground />
@@ -1492,7 +1533,7 @@ export default function HomePage() {
               <Crown className="w-4 h-4" />
               Planes y precios
             </div>
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold mb-5 tracking-tight">
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-black mb-5 tracking-tight">
               Un precio justo para <span className="gradient-brand-text">tu control financiero</span>
             </h2>
             <p className="text-[var(--brand-gray)] max-w-2xl mx-auto text-lg leading-relaxed">
@@ -1518,7 +1559,8 @@ export default function HomePage() {
             <Sparkles className="w-4 h-4" />
             Empieza hoy
           </div>
-          <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold mb-6 tracking-tight">
+          <Image src="/assets/finy-mascota-minimalista.png" alt="Finy" width={56} height={56} className="object-contain mx-auto mb-8" />
+          <h2 className="text-3xl sm:text-4xl md:text-5xl font-black mb-6 tracking-[-0.02em]">
             ¿Listo para tomar el
             <br />
             <span className="gradient-brand-text">control de tu dinero?</span>
@@ -1561,7 +1603,7 @@ export default function HomePage() {
             <Mail className="w-4 h-4" />
             Newsletter
           </div>
-          <h2 className="text-3xl sm:text-4xl font-extrabold mb-4 tracking-tight">
+          <h2 className="text-3xl sm:text-4xl font-black mb-4 tracking-tight">
             Consejos financieros cada semana
           </h2>
           <p className="text-lg text-[var(--brand-gray)] mb-10 leading-relaxed">

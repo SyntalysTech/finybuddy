@@ -1228,8 +1228,8 @@ body {
 
 .reveal {
   opacity: 0;
-  transform: translateY(40px);
-  transition: opacity 0.9s cubic-bezier(0.16, 1, 0.3, 1), transform 0.9s cubic-bezier(0.16, 1, 0.3, 1);
+  transform: translateY(32px);
+  transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1), transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .reveal.revealed {
@@ -1237,32 +1237,10 @@ body {
   transform: translateY(0);
 }
 
-.reveal-left {
-  opacity: 0;
-  transform: translateX(-40px);
-  transition: opacity 0.9s cubic-bezier(0.16, 1, 0.3, 1), transform 0.9s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.reveal-left.revealed {
-  opacity: 1;
-  transform: translateX(0);
-}
-
-.reveal-right {
-  opacity: 0;
-  transform: translateX(40px);
-  transition: opacity 0.9s cubic-bezier(0.16, 1, 0.3, 1), transform 0.9s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.reveal-right.revealed {
-  opacity: 1;
-  transform: translateX(0);
-}
-
 .reveal-scale {
   opacity: 0;
-  transform: scale(0.95);
-  transition: opacity 0.9s cubic-bezier(0.16, 1, 0.3, 1), transform 0.9s cubic-bezier(0.16, 1, 0.3, 1);
+  transform: scale(0.96);
+  transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1), transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .reveal-scale.revealed {
@@ -1275,93 +1253,203 @@ body {
 .reveal-delay-3 { transition-delay: 0.3s; }
 .reveal-delay-4 { transition-delay: 0.4s; }
 .reveal-delay-5 { transition-delay: 0.5s; }
+.reveal-delay-6 { transition-delay: 0.6s; }
 
-/* Landing hero mesh gradient */
+/* ========================================
+   LANDING - HERO
+   ======================================== */
+
+/* Mesh gradient blobs */
 @keyframes mesh-float {
-  0%, 100% {
-    transform: translate(0, 0) scale(1);
-  }
-  33% {
-    transform: translate(30px, -30px) scale(1.05);
-  }
-  66% {
-    transform: translate(-20px, 20px) scale(0.95);
-  }
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33%      { transform: translate(30px, -30px) scale(1.05); }
+  66%      { transform: translate(-20px, 20px) scale(0.95); }
 }
-
 .animate-mesh-1 { animation: mesh-float 8s ease-in-out infinite; }
 .animate-mesh-2 { animation: mesh-float 10s ease-in-out infinite reverse; }
 .animate-mesh-3 { animation: mesh-float 12s ease-in-out infinite; animation-delay: -4s; }
+
+/* Beam / radial spotlight that sits behind the hero text */
+.hero-beam {
+  position: absolute;
+  top: -20%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 140%;
+  height: 600px;
+  background: radial-gradient(ellipse 50% 80% at 50% 0%, rgba(2,234,255,0.12) 0%, transparent 70%),
+              radial-gradient(ellipse 40% 60% at 60% 0%, rgba(59,130,246,0.10) 0%, transparent 60%);
+  pointer-events: none;
+}
+.dark .hero-beam {
+  background: radial-gradient(ellipse 50% 80% at 50% 0%, rgba(2,234,255,0.18) 0%, transparent 70%),
+              radial-gradient(ellipse 40% 60% at 60% 0%, rgba(59,130,246,0.14) 0%, transparent 60%);
+}
 
 /* Noise texture overlay */
 .noise-overlay::after {
   content: '';
   position: absolute;
   inset: 0;
-  opacity: 0.015;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+  opacity: 0.02;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
   pointer-events: none;
   z-index: 1;
 }
 
-/* Dashboard perspective tilt */
+/* ========================================
+   LANDING - FEATURE CARDS
+   ======================================== */
+
+/* Animated gradient border on hover (conic gradient trick) */
+.feature-card {
+  position: relative;
+  border-radius: 24px;
+  background: var(--background);
+  transition: transform 0.5s cubic-bezier(0.16,1,0.3,1), box-shadow 0.5s cubic-bezier(0.16,1,0.3,1);
+  overflow: hidden;
+}
+
+.feature-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(135deg, var(--brand-cyan), var(--brand-purple), var(--brand-yellow), var(--brand-cyan));
+  background-size: 300% 300%;
+  animation: gradient 4s ease infinite;
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  opacity: 0;
+  transition: opacity 0.5s;
+  z-index: 1;
+}
+
+.feature-card:hover::before {
+  opacity: 1;
+}
+
+.feature-card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 25px 50px -12px rgba(2,234,255,0.10), 0 12px 24px -8px rgba(0,0,0,0.08);
+}
+
+.dark .feature-card:hover {
+  box-shadow: 0 25px 50px -12px rgba(2,234,255,0.15), 0 12px 24px -8px rgba(0,0,0,0.25);
+}
+
+/* Inner spotlight glow that follows the card position */
+.feature-card .card-glow {
+  position: absolute;
+  width: 300px;
+  height: 300px;
+  border-radius: 50%;
+  filter: blur(80px);
+  opacity: 0;
+  transition: opacity 0.5s;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.feature-card:hover .card-glow {
+  opacity: 1;
+}
+
+/* ========================================
+   LANDING - DASHBOARD PREVIEW
+   ======================================== */
+
 .perspective-container {
-  perspective: 1200px;
+  perspective: 2000px;
 }
 
 .perspective-tilt {
-  transform: rotateX(2deg) rotateY(-1deg);
-  transition: transform 0.5s ease;
+  transform: rotateX(4deg);
+  transition: transform 0.6s cubic-bezier(0.16,1,0.3,1);
 }
 
 .perspective-tilt:hover {
-  transform: rotateX(0deg) rotateY(0deg);
+  transform: rotateX(0deg);
 }
 
-/* Bento card hover */
-.bento-card {
-  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+/* Glow line under the dashboard preview */
+.dashboard-glow {
+  position: absolute;
+  bottom: -40px;
+  left: 10%;
+  right: 10%;
+  height: 80px;
+  background: linear-gradient(90deg, transparent, var(--brand-cyan), var(--brand-purple), transparent);
+  opacity: 0.15;
+  filter: blur(40px);
+  pointer-events: none;
 }
 
-.bento-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 20px 60px -15px rgba(0, 0, 0, 0.15);
-  border-color: var(--brand-cyan);
-}
+/* ========================================
+   LANDING - SECTION DIVIDERS
+   ======================================== */
 
-.dark .bento-card:hover {
-  box-shadow: 0 20px 60px -15px rgba(2, 234, 255, 0.1);
-}
-
-/* Section divider gradient line */
 .section-divider {
   height: 1px;
   background: linear-gradient(90deg, transparent, var(--brand-cyan), var(--brand-purple), transparent);
-  opacity: 0.3;
+  opacity: 0.2;
 }
 
-/* Marquee animation for trust logos */
-@keyframes marquee {
-  0% { transform: translateX(0); }
-  100% { transform: translateX(-50%); }
-}
+/* ========================================
+   LANDING - CTA GLOW
+   ======================================== */
 
-.animate-marquee {
-  animation: marquee 30s linear infinite;
-}
-
-/* CTA glow pulse */
 @keyframes cta-glow {
   0%, 100% {
-    box-shadow: 0 0 20px rgba(59, 130, 246, 0.3), 0 0 60px rgba(2, 234, 255, 0.1);
+    box-shadow: 0 0 20px rgba(59,130,246,0.25), 0 0 60px rgba(2,234,255,0.08);
   }
   50% {
-    box-shadow: 0 0 30px rgba(59, 130, 246, 0.5), 0 0 80px rgba(2, 234, 255, 0.2);
+    box-shadow: 0 0 30px rgba(59,130,246,0.40), 0 0 80px rgba(2,234,255,0.15);
   }
 }
 
 .animate-cta-glow {
   animation: cta-glow 3s ease-in-out infinite;
+}
+
+/* ========================================
+   LANDING - TESTIMONIALS
+   ======================================== */
+
+.testimonial-card {
+  position: relative;
+  border-radius: 24px;
+  background: var(--background);
+  border: 1px solid var(--border);
+  transition: all 0.4s cubic-bezier(0.16,1,0.3,1);
+}
+
+.testimonial-card:hover {
+  transform: translateY(-4px);
+  border-color: var(--brand-cyan);
+  box-shadow: 0 20px 40px -10px rgba(2,234,255,0.08), 0 8px 16px -6px rgba(0,0,0,0.06);
+}
+
+.dark .testimonial-card:hover {
+  box-shadow: 0 20px 40px -10px rgba(2,234,255,0.12), 0 8px 16px -6px rgba(0,0,0,0.20);
+}
+
+/* Star rating gold */
+.star-gold { color: #F59E0B; }
+
+/* ========================================
+   LANDING - MARQUEE
+   ======================================== */
+
+@keyframes marquee {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+.animate-marquee {
+  animation: marquee 25s linear infinite;
 }
 
 /* Gradient text animation */
