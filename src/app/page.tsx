@@ -759,6 +759,7 @@ function PricingToggle({ isLoggedIn, hasUsedTrial }: { isLoggedIn: boolean; hasU
   );
 }
 
+
 export default function HomePage() {
   const [theme, setTheme] = useState<"light" | "dark">("light");
   const [scrollY, setScrollY] = useState(0);
@@ -774,47 +775,23 @@ export default function HomePage() {
     const initialTheme = saved ? (saved as "light" | "dark") : prefersDark ? "dark" : "light";
     setTheme(initialTheme);
     document.documentElement.classList.toggle("dark", initialTheme === "dark");
-
     const supabase = createClient();
     supabase.auth.getUser().then(async ({ data: { user } }) => {
       if (user) {
         setIsLoggedIn(true);
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("trial_ends_at, subscription_status")
-          .eq("id", user.id)
-          .single();
-        if (profile?.trial_ends_at) {
-          setHasUsedTrial(true);
-        }
+        const { data: profile } = await supabase.from("profiles").select("trial_ends_at, subscription_status").eq("id", user.id).single();
+        if (profile?.trial_ends_at) setHasUsedTrial(true);
       }
     });
-
     setIsVisible(true);
-
-    const handleScroll = () => {
-      setScrollY(window.scrollY);
-      setHeaderScrolled(window.scrollY > 20);
-    };
+    const handleScroll = () => { setScrollY(window.scrollY); setHeaderScrolled(window.scrollY > 20); };
     window.addEventListener("scroll", handleScroll);
-
-    // Scroll reveal observer
     const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach(entry => {
-          if (entry.isIntersecting) {
-            entry.target.classList.add("revealed");
-          }
-        });
-      },
-      { threshold: 0.08, rootMargin: "0px 0px -40px 0px" }
+      (entries) => entries.forEach(e => { if (e.isIntersecting) e.target.classList.add("revealed"); }),
+      { threshold: 0.06, rootMargin: "0px 0px -60px 0px" }
     );
-    document.querySelectorAll(".reveal, .reveal-left, .reveal-right, .reveal-scale").forEach(el => observer.observe(el));
-
-    return () => {
-      window.removeEventListener("scroll", handleScroll);
-      observer.disconnect();
-    };
+    setTimeout(() => { document.querySelectorAll(".reveal, .reveal-scale").forEach(el => observer.observe(el)); }, 100);
+    return () => { window.removeEventListener("scroll", handleScroll); observer.disconnect(); };
   }, []);
 
   const toggleTheme = () => {
@@ -826,122 +803,42 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-[var(--background)] overflow-x-hidden transition-colors duration-300">
-      {/* ───── HEADER ───── */}
-      <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${headerScrolled ? "bg-[var(--background)]/80 backdrop-blur-2xl border-b border-[var(--border)]/60 shadow-[0_1px_3px_rgba(0,0,0,0.04)]" : "bg-transparent"}`}>
-        <div className="max-w-7xl mx-auto px-6 sm:px-8 h-[68px] flex items-center justify-between">
-          <Link href="/" className="relative z-10 shrink-0">
-            <Image
-              src="/assets/logo-finybuddy-wordmark.png"
-              alt="FinyBuddy"
-              width={130}
-              height={32}
-              className="object-contain"
-            />
-          </Link>
 
-          {/* Pill-style nav */}
+      {/* HEADER */}
+      <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${headerScrolled ? "bg-[var(--background)]/80 backdrop-blur-2xl border-b border-[var(--border)]/60 shadow-[0_1px_3px_rgba(0,0,0,0.04)]" : "bg-transparent"}`}>
+        <div className="max-w-7xl mx-auto px-5 sm:px-8 h-[64px] sm:h-[68px] flex items-center justify-between">
+          <Link href="/" className="shrink-0"><Image src="/assets/logo-finybuddy-wordmark.png" alt="FinyBuddy" width={120} height={30} className="object-contain sm:w-[130px]" /></Link>
           <nav className="hidden lg:flex items-center gap-0.5 px-1.5 py-1.5 rounded-2xl bg-[var(--background-secondary)]/60 backdrop-blur-xl border border-[var(--border)]/50">
-            {[
-              { label: "Funciones", href: "#features" },
-              { label: "Demo IA", href: "#demo" },
-              { label: "Testimonios", href: "#testimonials" },
-              { label: "Planes", href: "#pricing" },
-            ].map((link) => (
-              <a
-                key={link.href}
-                href={link.href}
-                className="px-4 py-2 rounded-xl text-sm font-medium text-[var(--brand-gray)] hover:text-[var(--foreground)] hover:bg-[var(--background)] transition-all"
-              >
-                {link.label}
-              </a>
+            {[{ l: "Metodo", h: "#method" }, { l: "Demo", h: "#demo" }, { l: "Testimonios", h: "#testimonials" }, { l: "Planes", h: "#pricing" }].map((link) => (
+              <a key={link.h} href={link.h} className="px-4 py-2 rounded-xl text-sm font-medium text-[var(--brand-gray)] hover:text-[var(--foreground)] hover:bg-[var(--background)] transition-all">{link.l}</a>
             ))}
           </nav>
-
-          <div className="flex items-center gap-2 sm:gap-3">
-            <button
-              onClick={toggleTheme}
-              className="p-2.5 rounded-xl border border-[var(--border)] hover:bg-[var(--background-secondary)] transition-all hover:scale-105 active:scale-95"
-              aria-label="Cambiar tema"
-            >
-              {theme === "light" ? (
-                <Moon className="w-[18px] h-[18px] text-[var(--brand-gray)]" />
-              ) : (
-                <Sun className="w-[18px] h-[18px] text-[var(--brand-yellow)]" />
-              )}
+          <div className="flex items-center gap-2">
+            <button onClick={toggleTheme} className="p-2 sm:p-2.5 rounded-xl border border-[var(--border)]/60 hover:bg-[var(--background-secondary)] transition-all" aria-label="Tema">
+              {theme === "light" ? <Moon className="w-[18px] h-[18px] text-[var(--brand-gray)]" /> : <Sun className="w-[18px] h-[18px] text-[var(--brand-yellow)]" />}
             </button>
-
             {isLoggedIn ? (
-              <Link
-                href="/dashboard"
-                className="hidden md:inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-[var(--brand-purple)] to-[var(--brand-cyan)] text-white font-semibold text-sm hover:opacity-90 transition-all hover:scale-[1.03] active:scale-[0.97] shadow-lg shadow-[var(--brand-purple)]/20"
-              >
-                <LayoutDashboard className="w-4 h-4" />
-                Mi Dashboard
-              </Link>
+              <Link href="/dashboard" className="hidden md:inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-[var(--brand-purple)] to-[var(--brand-cyan)] text-white font-semibold text-sm shadow-lg shadow-[var(--brand-purple)]/20 transition-all hover:scale-[1.02]"><LayoutDashboard className="w-4 h-4" />Dashboard</Link>
             ) : (
               <>
-                <Link
-                  href="/login"
-                  className="hidden md:inline-flex px-5 py-2.5 rounded-xl text-sm font-medium text-[var(--brand-gray)] hover:text-[var(--foreground)] hover:bg-[var(--background-secondary)] transition-all"
-                >
-                  Iniciar sesion
-                </Link>
-                <Link
-                  href="/register"
-                  className="hidden md:inline-flex px-5 py-2.5 rounded-xl bg-gradient-to-r from-[var(--brand-purple)] to-[var(--brand-cyan)] text-white font-semibold text-sm hover:opacity-90 transition-all hover:scale-[1.03] active:scale-[0.97] shadow-lg shadow-[var(--brand-purple)]/20"
-                >
-                  Empezar gratis
-                </Link>
+                <Link href="/login" className="hidden md:inline-flex px-4 py-2.5 rounded-xl text-sm font-medium text-[var(--brand-gray)] hover:text-[var(--foreground)] transition-all">Entrar</Link>
+                <Link href="/register" className="hidden md:inline-flex px-5 py-2.5 rounded-xl bg-gradient-to-r from-[var(--brand-purple)] to-[var(--brand-cyan)] text-white font-semibold text-sm shadow-lg shadow-[var(--brand-purple)]/20 transition-all hover:scale-[1.02]">Empezar gratis</Link>
               </>
             )}
-
-            <button
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="md:hidden p-2.5 rounded-xl border border-[var(--border)] hover:bg-[var(--background-secondary)] transition-all"
-              aria-label="Menu"
-            >
+            <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="lg:hidden p-2 rounded-xl border border-[var(--border)]/60 hover:bg-[var(--background-secondary)] transition-all" aria-label="Menu">
               {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
             </button>
           </div>
         </div>
-
         {mobileMenuOpen && (
-          <div className="md:hidden border-t border-[var(--border)] bg-[var(--background)]/98 backdrop-blur-2xl">
-            <div className="px-6 py-5 space-y-1">
-              {[
-                { label: "Funciones", href: "#features" },
-                { label: "Demo IA", href: "#demo" },
-                { label: "Planes", href: "#pricing" },
-                { label: "Newsletter", href: "#newsletter" },
-              ].map((link) => (
-                <a
-                  key={link.href}
-                  href={link.href}
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="block px-4 py-3 rounded-xl text-sm font-medium text-[var(--brand-gray)] hover:text-[var(--foreground)] hover:bg-[var(--background-secondary)] transition-colors"
-                >
-                  {link.label}
-                </a>
-              ))}
-              <div className="pt-4 mt-4 border-t border-[var(--border)] space-y-2">
+          <div className="lg:hidden border-t border-[var(--border)] bg-[var(--background)]/98 backdrop-blur-2xl">
+            <div className="px-5 py-4 space-y-1">
+              {["Metodo:#method","Demo:#demo","Testimonios:#testimonials","Planes:#pricing"].map((s) => { const [l,h] = s.split(":"); return <a key={h} href={h} onClick={() => setMobileMenuOpen(false)} className="block px-4 py-3 rounded-xl text-sm font-medium text-[var(--brand-gray)] hover:bg-[var(--background-secondary)] transition-colors">{l}</a>; })}
+              <div className="pt-3 mt-3 border-t border-[var(--border)] space-y-2">
                 {isLoggedIn ? (
-                  <Link
-                    href="/dashboard"
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="flex items-center justify-center gap-2 w-full px-4 py-3.5 rounded-xl bg-gradient-to-r from-[var(--brand-purple)] to-[var(--brand-cyan)] text-white text-sm font-semibold"
-                  >
-                    <LayoutDashboard className="w-4 h-4" />
-                    Mi Dashboard
-                  </Link>
+                  <Link href="/dashboard" onClick={() => setMobileMenuOpen(false)} className="flex items-center justify-center gap-2 w-full px-4 py-3.5 rounded-xl bg-gradient-to-r from-[var(--brand-purple)] to-[var(--brand-cyan)] text-white text-sm font-semibold"><LayoutDashboard className="w-4 h-4" />Dashboard</Link>
                 ) : (
-                  <>
-                    <Link href="/login" onClick={() => setMobileMenuOpen(false)} className="block w-full text-center px-4 py-3 rounded-xl border border-[var(--border)] text-sm font-medium hover:bg-[var(--background-secondary)] transition-all">
-                      Iniciar sesion
-                    </Link>
-                    <Link href="/register" onClick={() => setMobileMenuOpen(false)} className="block w-full text-center px-4 py-3.5 rounded-xl bg-gradient-to-r from-[var(--brand-purple)] to-[var(--brand-cyan)] text-white text-sm font-semibold">
-                      Empezar gratis
-                    </Link>
-                  </>
+                  <><Link href="/login" onClick={() => setMobileMenuOpen(false)} className="block w-full text-center px-4 py-3 rounded-xl border border-[var(--border)] text-sm font-medium">Entrar</Link><Link href="/register" onClick={() => setMobileMenuOpen(false)} className="block w-full text-center px-4 py-3.5 rounded-xl bg-gradient-to-r from-[var(--brand-purple)] to-[var(--brand-cyan)] text-white text-sm font-semibold">Empezar gratis</Link></>
                 )}
               </div>
             </div>
@@ -949,581 +846,124 @@ export default function HomePage() {
         )}
       </header>
 
-      {/* ───── HERO ───── */}
-      <section className="relative min-h-screen flex flex-col items-center justify-center pt-24 pb-16 px-6 sm:px-8 overflow-hidden noise-overlay">
+      {/* HERO - DOLOR + PROMESA */}
+      <section className="relative min-h-screen flex flex-col items-center justify-center pt-20 sm:pt-24 pb-12 sm:pb-16 px-5 sm:px-8 overflow-hidden noise-overlay">
         <div className="hero-beam" />
         <FloatingParticles />
+        <div className="absolute top-[-10%] left-[-15%] w-[600px] h-[600px] rounded-full bg-[var(--brand-cyan)]/15 blur-[150px] animate-mesh-1 pointer-events-none" />
+        <div className="absolute top-[40%] right-[-10%] w-[400px] h-[400px] rounded-full bg-[var(--brand-purple)]/15 blur-[130px] animate-mesh-2 pointer-events-none" />
+        <div className="absolute bottom-[-5%] left-[30%] w-[350px] h-[350px] rounded-full bg-[var(--brand-yellow)]/8 blur-[100px] animate-mesh-3 pointer-events-none" />
 
-        {/* Mesh gradient blobs */}
-        <div className="absolute top-[-10%] left-[-15%] w-[700px] h-[700px] rounded-full bg-[var(--brand-cyan)]/15 blur-[150px] animate-mesh-1 pointer-events-none" />
-        <div className="absolute top-[40%] right-[-10%] w-[500px] h-[500px] rounded-full bg-[var(--brand-purple)]/15 blur-[130px] animate-mesh-2 pointer-events-none" />
-        <div className="absolute bottom-[-5%] left-[30%] w-[400px] h-[400px] rounded-full bg-[var(--brand-yellow)]/8 blur-[100px] animate-mesh-3 pointer-events-none" />
-
-        <div className="max-w-5xl mx-auto relative z-10 w-full">
-          {/* Centered hero content */}
+        <div className="max-w-4xl mx-auto relative z-10 w-full">
           <div className={`text-center transition-all duration-1000 ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-12"}`}>
-              <div className="inline-flex items-center gap-2.5 px-5 py-2.5 rounded-full bg-[var(--brand-purple)]/10 border border-[var(--brand-purple)]/20 text-[var(--brand-purple)] text-sm font-semibold mb-8 backdrop-blur-sm">
-                <div className="w-2 h-2 rounded-full bg-[var(--brand-purple)] animate-pulse" />
-                Inteligencia financiera personal
-              </div>
-
-              <h1 className="text-[2.75rem] sm:text-[3.5rem] md:text-[4.25rem] lg:text-[5rem] font-black leading-[1.05] tracking-[-0.03em] mb-7 mx-auto max-w-4xl">
-                Tus finanzas con{" "}
-                <span className="relative inline-block">
-                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-[var(--brand-cyan)] via-[var(--brand-purple)] to-[var(--brand-cyan)] bg-[length:200%_auto] animate-gradient">
-                    claridad total
-                  </span>
-                  <svg className="absolute -bottom-1 left-0 w-full" viewBox="0 0 200 8" fill="none">
-                    <path d="M1 5.5Q50 1 100 5.5T199 5.5" stroke="url(#underline-gradient)" strokeWidth="2.5" strokeLinecap="round" className="animate-draw" />
-                    <defs>
-                      <linearGradient id="underline-gradient" x1="0" y1="0" x2="200" y2="0">
-                        <stop offset="0%" stopColor="var(--brand-cyan)" />
-                        <stop offset="100%" stopColor="var(--brand-purple)" />
-                      </linearGradient>
-                    </defs>
-                  </svg>
-                </span>
-              </h1>
-
-              <p className="text-lg sm:text-xl md:text-[1.35rem] text-[var(--brand-gray)] mb-10 max-w-2xl mx-auto leading-relaxed">
-                Controla ingresos, gastos, ahorros y deudas desde un solo lugar.
-                La IA de Finy analiza, categoriza y recomienda acciones concretas.
-              </p>
-
-              <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-5">
-                {isLoggedIn ? (
-                  <Link
-                    href="/dashboard"
-                    className="group inline-flex items-center justify-center gap-2.5 px-8 py-4 rounded-2xl bg-gradient-to-r from-[var(--brand-purple)] to-[var(--brand-cyan)] text-white font-bold text-base hover:opacity-90 transition-all hover:scale-[1.03] active:scale-[0.97] shadow-2xl shadow-[var(--brand-purple)]/30 animate-cta-glow"
-                  >
-                    <LayoutDashboard className="w-5 h-5" />
-                    Ir al Dashboard
-                  </Link>
-                ) : (
-                  <Link
-                    href="/register"
-                    className="group inline-flex items-center justify-center gap-2.5 px-8 py-4 rounded-2xl bg-gradient-to-r from-[var(--brand-purple)] to-[var(--brand-cyan)] text-white font-bold text-base hover:opacity-90 transition-all hover:scale-[1.03] active:scale-[0.97] shadow-2xl shadow-[var(--brand-purple)]/30 animate-cta-glow"
-                  >
-                    {hasUsedTrial ? "Crear cuenta gratis" : "Prueba gratis 15 dias"}
-                    <ArrowRight className="w-5 h-5 transition-transform group-hover:translate-x-1" />
-                  </Link>
-                )}
-                <a
-                  href="#demo"
-                  className="inline-flex items-center justify-center gap-2.5 px-8 py-4 rounded-2xl border border-[var(--border)] font-semibold hover:bg-[var(--background-secondary)] transition-all hover:scale-[1.03] hover:border-[var(--brand-cyan)]/40"
-                >
-                  <Play className="w-4 h-4 text-[var(--brand-cyan)]" />
-                  Ver demo IA
-                </a>
-              </div>
-              {!isLoggedIn && (
-                <p className="text-sm text-[var(--brand-gray)]">
-                  {hasUsedTrial
-                    ? "Plan Basic gratuito para siempre. Actualiza a Pro cuando quieras."
-                    : "Sin tarjeta de credito. Acceso Pro completo durante 15 dias."}
-                </p>
-              )}
-
-            {isLoggedIn && <div className="mb-12" />}
-          </div>
-
-          {/* Mascot + floating cards - centered below */}
-          <div className={`relative flex justify-center mt-4 transition-all duration-1000 delay-500 ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-16"}`}>
-              <div className="absolute inset-0 flex items-center justify-center">
-                <div className="w-56 h-56 sm:w-72 sm:h-72 md:w-[380px] md:h-[380px] rounded-full border border-[var(--brand-cyan)]/15 animate-spin-slow" />
-                <div className="absolute w-48 h-48 sm:w-64 sm:h-64 md:w-80 md:h-80 rounded-full border border-[var(--brand-purple)]/15 animate-spin-reverse" />
-                <div className="absolute w-40 h-40 sm:w-56 sm:h-56 md:w-72 md:h-72 rounded-full border-2 border-dashed border-[var(--brand-yellow)]/20 animate-spin-slower" />
-              </div>
-
-              {/* Floating stat cards - glassmorphism */}
-              <div className="absolute -top-2 sm:top-2 right-0 md:right-6 p-3 sm:p-3.5 rounded-2xl bg-[var(--background)]/90 backdrop-blur-xl border border-[var(--border)] shadow-xl animate-float z-20">
-                <div className="flex items-center gap-2.5">
-                  <div className="w-8 h-8 rounded-lg bg-[var(--success)]/10 flex items-center justify-center">
-                    <TrendingUp className="w-4 h-4 text-[var(--success)]" />
-                  </div>
-                  <div>
-                    <p className="text-[10px] text-[var(--brand-gray)] font-medium">Ingresos</p>
-                    <p className="text-sm font-bold text-[var(--success)]">+2.850 €</p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="absolute bottom-6 sm:bottom-12 left-0 md:left-2 p-3 sm:p-3.5 rounded-2xl bg-[var(--background)]/90 backdrop-blur-xl border border-[var(--border)] shadow-xl animate-float-delayed z-20">
-                <div className="flex items-center gap-2.5">
-                  <div className="w-8 h-8 rounded-lg bg-[var(--brand-cyan)]/10 flex items-center justify-center">
-                    <PiggyBank className="w-4 h-4 text-[var(--brand-cyan)]" />
-                  </div>
-                  <div>
-                    <p className="text-[10px] text-[var(--brand-gray)] font-medium">Ahorrado</p>
-                    <p className="text-sm font-bold">570 €</p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="absolute top-1/3 left-0 md:-left-8 p-3 sm:p-3.5 rounded-2xl bg-[var(--background)]/90 backdrop-blur-xl border border-[var(--border)] shadow-xl animate-float-slow z-20">
-                <div className="flex items-center gap-2.5">
-                  <div className="w-8 h-8 rounded-lg bg-[var(--brand-purple)]/10 flex items-center justify-center">
-                    <Target className="w-4 h-4 text-[var(--brand-purple)]" />
-                  </div>
-                  <div>
-                    <p className="text-[10px] text-[var(--brand-gray)] font-medium">Meta</p>
-                    <p className="text-sm font-bold">85% <span className="text-[var(--success)] text-xs">&#x2191;</span></p>
-                  </div>
-                </div>
-              </div>
-
-              <Image
-                src="/assets/finybuddy-mascot.png"
-                alt="FinyBuddy Mascot"
-                width={300}
-                height={300}
-                className="relative z-10 drop-shadow-2xl animate-bounce-subtle w-[180px] h-[180px] sm:w-[240px] sm:h-[240px] md:w-[300px] md:h-[300px]"
-                style={{ transform: `translateY(${scrollY * 0.06}px)` }}
-                priority
-              />
+            <div className="inline-flex items-center gap-2.5 px-5 py-2.5 rounded-full bg-[var(--brand-purple)]/10 border border-[var(--brand-purple)]/20 text-[var(--brand-purple)] text-sm font-semibold mb-8 backdrop-blur-sm">
+              <div className="w-2 h-2 rounded-full bg-[var(--brand-purple)] animate-pulse" />
+              El metodo 3Finy
             </div>
 
-          {/* Trust signals */}
-          <div className={`mt-14 sm:mt-16 flex flex-wrap items-center justify-center gap-x-8 gap-y-4 transition-all duration-1000 delay-700 ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"}`}>
-            {[
-              { icon: Shield, text: "Datos 100% privados" },
-              { icon: Zap, text: "IA en tiempo real" },
-              { icon: CheckCircle, text: "Gratis para siempre" },
-              { icon: Sparkles, text: "Sin tarjeta requerida" },
-            ].map((item) => (
-              <div key={item.text} className="flex items-center gap-2 text-sm text-[var(--brand-gray)]">
-                <item.icon className="w-4 h-4 text-[var(--brand-cyan)]" />
-                <span>{item.text}</span>
-              </div>
+            <h1 className="text-[1.75rem] sm:text-[2.5rem] md:text-[3.25rem] lg:text-[4rem] font-black leading-[1.1] tracking-[-0.03em] mb-4 sm:mb-5">
+              Ganas dinero...{" "}
+              <span className="text-[var(--brand-gray)]">pero no sabes</span>
+              <br />
+              <span className="text-[var(--brand-gray)]">donde se te va.</span>
+            </h1>
+            <h2 className="text-[1.5rem] sm:text-[2rem] md:text-[2.5rem] lg:text-[3rem] font-black leading-[1.1] tracking-[-0.03em] mb-7 sm:mb-8">
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-[var(--brand-cyan)] via-[var(--brand-purple)] to-[var(--brand-cyan)] bg-[length:200%_auto] animate-gradient">Este sistema lo organiza por ti.</span>
+            </h2>
+
+            <p className="text-base sm:text-lg md:text-xl text-[var(--brand-gray)] mb-8 sm:mb-10 max-w-2xl mx-auto leading-relaxed px-2">
+              FinyBuddy automatiza tu dinero, detecta fugas y crea un plan para que empieces a <span className="font-semibold text-[var(--foreground)]">ahorrar sin pensar</span> desde el primer mes.
+            </p>
+
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 mb-4 px-2">
+              <Link href={isLoggedIn ? "/dashboard" : "/register"} className="group w-full sm:w-auto inline-flex items-center justify-center gap-2.5 px-8 sm:px-10 py-4 rounded-2xl bg-gradient-to-r from-[var(--brand-purple)] to-[var(--brand-cyan)] text-white font-bold text-base shadow-2xl shadow-[var(--brand-purple)]/25 hover:shadow-[var(--brand-purple)]/40 transition-all hover:scale-[1.03] active:scale-[0.97] animate-cta-glow">
+                {isLoggedIn ? <><LayoutDashboard className="w-5 h-5" />Ir al Dashboard</> : <>{hasUsedTrial ? "Empezar gratis" : "Prueba gratis 15 dias"}<ArrowRight className="w-5 h-5 transition-transform group-hover:translate-x-1" /></>}
+              </Link>
+              <a href="#method" className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 px-8 py-4 rounded-2xl border border-[var(--border)] font-semibold hover:bg-[var(--background-secondary)] transition-all hover:scale-[1.02] hover:border-[var(--brand-cyan)]/40">
+                Como funciona <ChevronDown className="w-4 h-4 text-[var(--brand-cyan)]" />
+              </a>
+            </div>
+            {!isLoggedIn && <p className="text-xs sm:text-sm text-[var(--brand-gray)]">{hasUsedTrial ? "Plan Basic gratuito para siempre." : "Sin tarjeta de credito. Acceso completo 15 dias."}</p>}
+          </div>
+
+          {/* Mascot */}
+          <div className={`relative flex justify-center mt-8 sm:mt-10 transition-all duration-1000 delay-500 ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-16"}`}>
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+              <div className="w-44 h-44 sm:w-60 sm:h-60 md:w-72 md:h-72 rounded-full border border-[var(--brand-cyan)]/10 animate-spin-slow" />
+              <div className="absolute w-36 h-36 sm:w-52 sm:h-52 md:w-64 md:h-64 rounded-full border border-[var(--brand-purple)]/10 animate-spin-reverse" />
+            </div>
+            <div className="absolute -top-2 right-[5%] sm:right-[12%] md:right-[18%] p-2.5 sm:p-3.5 rounded-2xl bg-[var(--background)]/90 backdrop-blur-xl border border-[var(--border)] shadow-2xl shadow-black/5 animate-float z-20">
+              <div className="flex items-center gap-2 sm:gap-3"><div className="w-8 h-8 rounded-xl bg-[var(--success)]/10 flex items-center justify-center"><TrendingUp className="w-4 h-4 text-[var(--success)]" /></div><div><p className="text-[9px] sm:text-[10px] text-[var(--brand-gray)] font-medium uppercase tracking-wider">Ingresos</p><p className="text-xs sm:text-sm font-bold text-[var(--success)]">+2.850 EUR</p></div></div>
+            </div>
+            <div className="absolute bottom-0 left-[5%] sm:left-[12%] md:left-[18%] p-2.5 sm:p-3.5 rounded-2xl bg-[var(--background)]/90 backdrop-blur-xl border border-[var(--border)] shadow-2xl shadow-black/5 animate-float-delayed z-20">
+              <div className="flex items-center gap-2 sm:gap-3"><div className="w-8 h-8 rounded-xl bg-[var(--danger)]/10 flex items-center justify-center"><AlertTriangle className="w-4 h-4 text-[var(--danger)]" /></div><div><p className="text-[9px] sm:text-[10px] text-[var(--brand-gray)] font-medium uppercase tracking-wider">Fugas detectadas</p><p className="text-xs sm:text-sm font-bold text-[var(--danger)]">-220 EUR/mes</p></div></div>
+            </div>
+            <Image src="/assets/finybuddy-mascot.png" alt="FinyBuddy" width={260} height={260} className="relative z-10 drop-shadow-2xl animate-bounce-subtle w-[160px] h-[160px] sm:w-[220px] sm:h-[220px] md:w-[260px] md:h-[260px]" style={{ transform: `translateY(${scrollY * 0.05}px)` }} priority />
+          </div>
+
+          <div className={`mt-10 sm:mt-14 flex flex-wrap items-center justify-center gap-x-6 sm:gap-x-8 gap-y-3 transition-all duration-1000 delay-700 ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"}`}>
+            {[{ icon: Shield, text: "100% privado" }, { icon: Mic, text: "Entrada por voz" }, { icon: CheckCircle, text: "Gratis para siempre" }, { icon: Zap, text: "Automatico" }].map((item) => (
+              <div key={item.text} className="flex items-center gap-2 text-xs sm:text-sm text-[var(--brand-gray)]"><item.icon className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[var(--brand-cyan)]" /><span>{item.text}</span></div>
             ))}
           </div>
         </div>
-
-        {/* Scroll indicator */}
-        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 animate-bounce">
-          <ChevronDown className="w-5 h-5 text-[var(--brand-gray)]/60" />
-        </div>
+        <div className="absolute bottom-4 sm:bottom-6 left-1/2 -translate-x-1/2 animate-bounce"><ChevronDown className="w-5 h-5 text-[var(--brand-gray)]/40" /></div>
       </section>
 
-      {/* ───── STATS STRIP ───── */}
-      <section className="relative py-16 sm:py-20 px-6 sm:px-8 overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-r from-[var(--brand-purple)] to-[var(--brand-cyan)]" />
-        <div className="absolute inset-0 opacity-[0.07]" style={{
-          backgroundImage: "url(\"data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E\")",
-        }} />
-
-        <div className="max-w-6xl mx-auto relative z-10">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6">
+      {/* VOZ - DIFERENCIACION CLAVE */}
+      <section className="relative py-20 sm:py-28 px-5 sm:px-8 overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-[var(--brand-purple)] via-[#1a1a40] to-[var(--brand-cyan)]" />
+        <div className="absolute inset-0 opacity-[0.06]" style={{ backgroundImage: "url(\"data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E\")" }} />
+        <div className="max-w-5xl mx-auto relative z-10 text-center">
+          <p className="text-white/50 text-xs sm:text-sm font-semibold uppercase tracking-widest mb-4 sm:mb-6">La diferencia</p>
+          <h2 className="text-2xl sm:text-3xl md:text-5xl font-black text-white mb-4 sm:mb-6 tracking-[-0.02em] px-2">Olvidate de apuntar gastos<br className="hidden sm:block" /> manualmente</h2>
+          <p className="text-lg sm:text-2xl md:text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-[var(--brand-cyan)] to-[var(--brand-yellow)] mb-8 sm:mb-12 px-2">Hablas. El sistema lo hace todo.</p>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 mb-10 sm:mb-14 px-2">
             {[
-              { value: 100, suffix: "%", label: "Privado y seguro", icon: Shield },
-              { value: 24, suffix: "/7", label: "Finy AI disponible", icon: Sparkles },
-              { value: 6, suffix: "+", label: "Herramientas financieras", icon: Zap },
-              { value: 0, suffix: " €", label: "Para empezar gratis", icon: CheckCircle },
-            ].map((stat) => (
-              <div key={stat.label} className="text-center p-5 sm:p-6 rounded-2xl bg-white/10 backdrop-blur-sm border border-white/15">
-                <stat.icon className="w-5 h-5 text-white/70 mx-auto mb-3" />
-                <p className="text-3xl sm:text-4xl md:text-5xl font-black text-white mb-1.5 tracking-tight">
-                  <AnimatedNumber value={stat.value} suffix={stat.suffix} />
-                </p>
-                <p className="text-white/70 text-xs sm:text-sm font-medium">{stat.label}</p>
+              { icon: Mic, title: "Dile a Finy", desc: "Por voz, chat o llamada. Sin abrir nada, sin escribir nada." },
+              { icon: Sparkles, title: "Se categoriza solo", desc: "La IA entiende el gasto, lo clasifica y lo ubica automaticamente." },
+              { icon: RefreshCw, title: "Tu sistema se actualiza", desc: "Dashboard, presupuesto y alertas se ajustan en tiempo real." },
+            ].map((step, i) => (
+              <div key={step.title} className="p-5 sm:p-7 rounded-2xl bg-white/[0.06] backdrop-blur-sm border border-white/[0.10] hover:bg-white/[0.10] transition-all text-left">
+                <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-white/10 flex items-center justify-center mb-4 sm:mb-5"><step.icon className="w-5 h-5 sm:w-6 sm:h-6 text-[var(--brand-cyan)]" /></div>
+                <p className="text-white/40 text-xs font-bold mb-2 tracking-wider">0{i + 1}</p>
+                <h3 className="text-white text-lg sm:text-xl font-bold mb-2">{step.title}</h3>
+                <p className="text-white/60 text-sm leading-relaxed">{step.desc}</p>
               </div>
             ))}
           </div>
-        </div>
-      </section>
-
-      {/* ───── DASHBOARD PREVIEW ───── */}
-      <section className="py-24 sm:py-32 px-6 sm:px-8 bg-[var(--background-secondary)] relative overflow-hidden">
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-[var(--brand-cyan)]/5 rounded-full blur-[120px] pointer-events-none" />
-
-        <div className="max-w-7xl mx-auto relative z-10">
-          <div className="text-center mb-14 reveal">
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[var(--brand-cyan)]/10 border border-[var(--brand-cyan)]/20 text-[var(--brand-cyan)] text-sm font-medium mb-6">
-              <LayoutDashboard className="w-4 h-4" />
-              Vista previa
-            </div>
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-black mb-5 tracking-tight">
-              Todo en un <span className="gradient-brand-text">vistazo</span>
-            </h2>
-            <p className="text-[var(--brand-gray)] max-w-2xl mx-auto text-lg leading-relaxed">
-              Una preview fiel al dashboard real: control diario, seguimiento por modulos y decisiones accionables.
-            </p>
-          </div>
-
-          <div className="reveal-scale perspective-container">
-            <div className="relative rounded-3xl border border-[var(--border)] bg-[var(--background)]/95 backdrop-blur-xl shadow-2xl overflow-hidden perspective-tilt">
-              {/* Browser chrome */}
-              <div className="flex items-center justify-between px-5 sm:px-6 py-3.5 border-b border-[var(--border)] bg-[var(--background-secondary)]/80">
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full bg-[#FF5F57]" />
-                  <div className="w-3 h-3 rounded-full bg-[#FFBD2E]" />
-                  <div className="w-3 h-3 rounded-full bg-[#28CA41]" />
-                </div>
-                <div className="flex-1 max-w-sm mx-4 hidden sm:block">
-                  <div className="flex items-center gap-2 px-4 py-1.5 rounded-lg bg-[var(--background)] border border-[var(--border)] text-xs text-[var(--brand-gray)]">
-                    <Shield className="w-3 h-3 text-[var(--success)]" />
-                    app.finybuddy.com/dashboard
-                  </div>
-                </div>
-                <div className="text-[10px] px-2.5 py-1.5 rounded-lg bg-[var(--background)] border border-[var(--border)] text-[var(--brand-gray)] font-medium">Mar 2026</div>
-              </div>
-
-              <div className="grid lg:grid-cols-12 min-h-[620px]">
-                <aside className="lg:col-span-3 border-b lg:border-b-0 lg:border-r border-[var(--border)] bg-[var(--background-secondary)]/55 p-4 sm:p-5">
-                  <div className="flex items-center gap-3 mb-6">
-                    <Image src="/assets/finy-mascota-minimalista.png" alt="Finy" width={34} height={34} className="rounded-xl w-8 h-8 object-contain" />
-                    <div>
-                      <p className="text-xs text-[var(--brand-gray)]">Buenos dias</p>
-                      <p className="text-sm font-semibold">Panel principal</p>
-                    </div>
-                  </div>
-
-                  <div className="space-y-1.5">
-                    {[
-                      { label: "Dashboard", icon: LayoutDashboard, active: true },
-                      { label: "Operaciones", icon: CreditCard },
-                      { label: "Prevision", icon: Target },
-                      { label: "Calendario", icon: Calendar },
-                      { label: "Ahorro", icon: PiggyBank },
-                      { label: "FinyBot", icon: Sparkles },
-                    ].map((item) => (
-                      <div
-                        key={item.label}
-                        className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl border transition-colors ${item.active ? "border-[var(--brand-cyan)]/25 bg-[var(--brand-cyan)]/8" : "border-transparent"}`}
-                      >
-                        <item.icon className={`w-4 h-4 ${item.active ? "text-[var(--brand-cyan)]" : "text-[var(--brand-gray)]"}`} />
-                        <span className={`text-sm ${item.active ? "font-semibold" : "text-[var(--brand-gray)]"}`}>{item.label}</span>
-                      </div>
-                    ))}
-                  </div>
-
-                  <div className="mt-6 p-3.5 rounded-xl border border-[var(--brand-cyan)]/20 bg-[var(--brand-cyan)]/5">
-                    <p className="text-[10px] uppercase tracking-wider text-[var(--brand-gray)] mb-1">Regla 50/30/20</p>
-                    <p className="text-lg font-bold">20% ahorro</p>
-                    <p className="text-xs text-[var(--brand-gray)]">Objetivo mensual completado</p>
-                  </div>
-                </aside>
-
-                <main className="lg:col-span-9 p-4 sm:p-6">
-                  <div className="grid sm:grid-cols-4 gap-3 mb-4">
-                    {[
-                      { label: "Ingresos", value: "2.850 €", icon: TrendingUp, tone: "text-[var(--success)]" },
-                      { label: "Gastos", value: "1.424 €", icon: TrendingDown, tone: "text-[var(--danger)]" },
-                      { label: "Ahorro", value: "570 €", icon: PiggyBank, tone: "text-[var(--brand-cyan)]" },
-                      { label: "Balance", value: "+1.426 €", icon: BarChart3, tone: "text-[var(--brand-purple)]" },
-                    ].map((kpi) => (
-                      <div key={kpi.label} className="p-3.5 rounded-xl border border-[var(--border)] bg-[var(--background-secondary)]/60">
-                        <div className="flex items-center justify-between mb-1.5">
-                          <span className="text-[11px] text-[var(--brand-gray)] font-medium">{kpi.label}</span>
-                          <kpi.icon className={kpi.tone + " w-3.5 h-3.5"} />
-                        </div>
-                        <p className={kpi.tone + " text-lg font-bold tabular-nums"}>{kpi.value}</p>
-                      </div>
-                    ))}
-                  </div>
-
-                  <div className="grid xl:grid-cols-5 gap-4">
-                    <div className="xl:col-span-3 p-4 rounded-2xl border border-[var(--border)] bg-[var(--background-secondary)]/60">
-                      <div className="flex items-center justify-between mb-3">
-                        <h3 className="text-sm font-semibold flex items-center gap-2">
-                          <Target className="w-4 h-4 text-[var(--brand-purple)]" />
-                          Prevision vs realidad
-                        </h3>
-                        <span className="text-[11px] text-[var(--brand-gray)]">Ultimos 30 dias</span>
-                      </div>
-                      <div className="space-y-3">
-                        {[
-                          { c: "Vivienda", plan: 650, real: 650 },
-                          { c: "Comida", plan: 280, real: 252 },
-                          { c: "Transporte", plan: 120, real: 94 },
-                          { c: "Ocio", plan: 140, real: 176 },
-                          { c: "Suministros", plan: 90, real: 84 },
-                        ].map((row) => {
-                          const pct = Math.round((row.real / row.plan) * 100);
-                          return (
-                            <div key={row.c}>
-                              <div className="flex items-center justify-between text-xs mb-1">
-                                <span className="text-[var(--brand-gray)]">{row.c}</span>
-                                <span className={row.real > row.plan ? "text-[var(--danger)] font-semibold" : "text-[var(--success)] font-semibold"}>
-                                  {row.real} € / {row.plan} €
-                                </span>
-                              </div>
-                              <div className="h-2 rounded-full bg-[var(--border)] overflow-hidden">
-                                <div className="h-full rounded-full" style={{ width: `${Math.min(pct, 100)}%`, backgroundColor: row.real > row.plan ? "var(--danger)" : "var(--brand-cyan)" }} />
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-
-                    <div className="xl:col-span-2 space-y-4">
-                      <div className="p-4 rounded-2xl border border-[var(--border)] bg-[var(--background-secondary)]/60">
-                        <h3 className="text-sm font-semibold mb-3 flex items-center gap-2">
-                          <CreditCard className="w-4 h-4 text-[var(--brand-cyan)]" />
-                          Operaciones recientes
-                        </h3>
-                        <div className="space-y-2.5 text-xs">
-                          {[
-                            ["Amazon", "Compras online", "-34,50 €"],
-                            ["Alquiler", "Vivienda", "-650,00 €"],
-                            ["Nomina", "Ingreso", "+2.850,00 €"],
-                            ["Transfer ahorro", "Ahorro", "-200,00 €"],
-                          ].map(([name, cat, amount]) => (
-                            <div key={name} className="flex items-center justify-between p-2.5 rounded-lg border border-[var(--border)] bg-[var(--background)]/80">
-                              <div>
-                                <p className="font-medium">{name}</p>
-                                <p className="text-[10px] text-[var(--brand-gray)]">{cat}</p>
-                              </div>
-                              <p className={"font-semibold tabular-nums " + (String(amount).startsWith("+") ? "text-[var(--success)]" : "text-[var(--danger)]")}>{amount}</p>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-
-                      <div className="p-4 rounded-2xl border border-[var(--brand-cyan)]/20 bg-gradient-to-br from-[var(--brand-cyan)]/5 to-[var(--brand-purple)]/5">
-                        <div className="flex items-center gap-2 mb-2">
-                          <Image src="/assets/finy-mascota-minimalista.png" alt="Finy" width={24} height={24} className="object-contain" />
-                          <p className="text-xs font-semibold text-[var(--brand-cyan)]">Sugerencia de Finy</p>
-                        </div>
-                        <p className="text-sm leading-relaxed">
-                          Estas a 1% de tu objetivo de ahorro. Si reduces ocio en 15 €, cierras marzo al 20%.
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </main>
-              </div>
-            </div>
+          <div className="inline-flex items-center gap-3 px-5 sm:px-7 py-3 sm:py-4 rounded-2xl bg-white/[0.06] border border-white/[0.10] backdrop-blur-sm">
+            <Volume2 className="w-5 h-5 text-[var(--brand-yellow)] shrink-0" />
+            <p className="text-white/80 text-sm sm:text-base font-semibold italic">&ldquo;Si tienes que escribir tus gastos, ya has perdido.&rdquo;</p>
           </div>
         </div>
       </section>
 
-      {/* Section divider */}
-      <div className="section-divider" />
-
-      {/* ───── FEATURES - BENTO GRID ───── */}
-      <section id="features" className="py-24 sm:py-32 px-6 sm:px-8 relative overflow-hidden">
+      {/* METODO 3FINY */}
+      <section id="method" className="py-20 sm:py-32 px-5 sm:px-8 relative overflow-hidden">
         <GridBackground />
-        <div className="absolute bottom-0 right-0 w-[500px] h-[500px] bg-[var(--brand-purple)]/5 rounded-full blur-[120px] pointer-events-none" />
-
-        <div className="max-w-7xl mx-auto relative z-10">
-          <div className="text-center mb-16 sm:mb-20 reveal">
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[var(--brand-cyan)]/10 border border-[var(--brand-cyan)]/20 text-[var(--brand-cyan)] text-sm font-medium mb-6">
-              <Zap className="w-4 h-4" />
-              Funcionalidades
-            </div>
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-black mb-5 tracking-tight">
-              Todo lo que necesitas, <br className="hidden sm:block" /><span className="gradient-brand-text">nada que no</span>
-            </h2>
-            <p className="text-[var(--brand-gray)] max-w-2xl mx-auto text-lg leading-relaxed">
-              Un producto completo con flujo unificado. Registras, analizas, comparas y ejecutas decisiones en el mismo lugar.
-            </p>
-          </div>
-
-          {/* Bento Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
-            {/* Card 1 - Large: Dashboard */}
-            <div className="reveal reveal-delay-1 lg:col-span-2 feature-card rounded-3xl border border-[var(--border)] bg-[var(--background)] p-7 sm:p-8 relative overflow-hidden group">
-              <div className="absolute top-0 right-0 w-40 h-40 bg-[var(--brand-cyan)]/5 rounded-full blur-[60px] group-hover:bg-[var(--brand-cyan)]/10 transition-all duration-700 pointer-events-none" />
-              <div className="relative z-10">
-                <div className="w-12 h-12 rounded-2xl bg-[var(--brand-cyan)]/10 flex items-center justify-center mb-5">
-                  <LayoutDashboard className="w-6 h-6 text-[var(--brand-cyan)]" />
-                </div>
-                <h3 className="text-xl sm:text-2xl font-bold mb-3">Dashboard inteligente</h3>
-                <p className="text-[var(--brand-gray)] text-base leading-relaxed mb-6 max-w-lg">
-                  KPIs en tiempo real, graficos de tendencia y alertas automaticas. Todo tu panorama financiero en una sola pantalla.
-                </p>
-                <div className="flex flex-wrap gap-2.5">
-                  {["KPIs en tiempo real", "Graficos mensuales", "Alertas por desviacion", "Regla 50/30/20"].map((tag) => (
-                    <span key={tag} className="px-3.5 py-1.5 rounded-xl text-xs font-medium border border-[var(--border)] bg-[var(--background-secondary)]/80">{tag}</span>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            {/* Card 2 - FinyBot AI */}
-            <div className="reveal reveal-delay-2 feature-card rounded-3xl border border-[var(--border)] bg-[var(--background)] p-7 sm:p-8 relative overflow-hidden group">
-              <div className="absolute bottom-0 left-0 w-32 h-32 bg-[var(--brand-purple)]/5 rounded-full blur-[50px] group-hover:bg-[var(--brand-purple)]/10 transition-all duration-700 pointer-events-none" />
-              <div className="relative z-10">
-                <div className="w-12 h-12 rounded-2xl bg-[var(--brand-purple)]/10 flex items-center justify-center mb-5">
-                  <Sparkles className="w-6 h-6 text-[var(--brand-purple)]" />
-                </div>
-                <h3 className="text-xl font-bold mb-3">FinyBot IA</h3>
-                <p className="text-[var(--brand-gray)] text-sm leading-relaxed">
-                  Chat y voz con inteligencia artificial. Analiza tus datos y propone acciones concretas para mejorar tu economia.
-                </p>
-                <div className="mt-5 flex items-center gap-2">
-                  <Crown className="w-4 h-4 text-[var(--brand-purple)]" />
-                  <span className="text-xs font-medium text-[var(--brand-purple)]">Incluido en Pro</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Card 3 - Prevision */}
-            <div className="reveal reveal-delay-1 feature-card rounded-3xl border border-[var(--border)] bg-[var(--background)] p-7 sm:p-8 relative overflow-hidden group">
-              <div className="absolute top-0 left-0 w-32 h-32 bg-[var(--warning)]/5 rounded-full blur-[50px] group-hover:bg-[var(--warning)]/10 transition-all duration-700 pointer-events-none" />
-              <div className="relative z-10">
-                <div className="w-12 h-12 rounded-2xl bg-[var(--warning)]/10 flex items-center justify-center mb-5">
-                  <Target className="w-6 h-6 text-[var(--warning)]" />
-                </div>
-                <h3 className="text-xl font-bold mb-3">Presupuestos</h3>
-                <p className="text-[var(--brand-gray)] text-sm leading-relaxed">
-                  Planifica por categoria y compara con la realidad. Detecta desviaciones antes de que sean un problema.
-                </p>
-              </div>
-            </div>
-
-            {/* Card 4 - Ahorro */}
-            <div className="reveal reveal-delay-2 feature-card rounded-3xl border border-[var(--border)] bg-[var(--background)] p-7 sm:p-8 relative overflow-hidden group">
-              <div className="absolute bottom-0 right-0 w-32 h-32 bg-[var(--brand-cyan)]/5 rounded-full blur-[50px] group-hover:bg-[var(--brand-cyan)]/10 transition-all duration-700 pointer-events-none" />
-              <div className="relative z-10">
-                <div className="w-12 h-12 rounded-2xl bg-[var(--brand-cyan)]/10 flex items-center justify-center mb-5">
-                  <PiggyBank className="w-6 h-6 text-[var(--brand-cyan)]" />
-                </div>
-                <h3 className="text-xl font-bold mb-3">Metas de ahorro</h3>
-                <p className="text-[var(--brand-gray)] text-sm leading-relaxed">
-                  Define objetivos, haz seguimiento visual del progreso y recibe sugerencias para alcanzarlos antes.
-                </p>
-                <div className="mt-5 flex items-center gap-2">
-                  <Crown className="w-4 h-4 text-[var(--brand-purple)]" />
-                  <span className="text-xs font-medium text-[var(--brand-purple)]">Incluido en Pro</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Card 5 - Large: Workflow */}
-            <div className="reveal reveal-delay-3 lg:col-span-2 feature-card rounded-3xl border border-[var(--brand-purple)]/20 bg-gradient-to-br from-[var(--brand-purple)]/[0.03] to-[var(--brand-cyan)]/[0.03] p-7 sm:p-8 relative overflow-hidden group">
-              <div className="relative z-10">
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[var(--brand-purple)]/10 to-[var(--brand-cyan)]/10 flex items-center justify-center">
-                    <Zap className="w-6 h-6 text-[var(--brand-purple)]" />
-                  </div>
-                  <div>
-                    <h3 className="text-xl sm:text-2xl font-bold">Flujo de trabajo integrado</h3>
-                    <p className="text-sm text-[var(--brand-gray)]">De la operacion a la decision en 3 pasos</p>
-                  </div>
-                </div>
-
-                <div className="grid sm:grid-cols-3 gap-4">
-                  {[
-                    { step: "01", title: "Captura", desc: "Texto, voz o importacion automatica de movimientos.", color: "var(--brand-cyan)" },
-                    { step: "02", title: "Contexto", desc: "Dashboard y modulos conectados muestran el impacto real.", color: "var(--brand-purple)" },
-                    { step: "03", title: "Accion", desc: "FinyBot propone ajustes y te lleva al modulo correcto.", color: "var(--success)" },
-                  ].map((item) => (
-                    <div key={item.step} className="p-4 rounded-2xl border border-[var(--border)] bg-[var(--background)]/80 backdrop-blur-sm">
-                      <span className="text-xs font-bold mb-3 block" style={{ color: item.color }}>{item.step}</span>
-                      <h4 className="font-bold mb-1.5">{item.title}</h4>
-                      <p className="text-sm text-[var(--brand-gray)] leading-relaxed">{item.desc}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            {/* Small cards row */}
-            <div className="reveal reveal-delay-1 feature-card rounded-3xl border border-[var(--border)] bg-[var(--background)] p-7 sm:p-8 relative overflow-hidden group">
-              <div className="relative z-10">
-                <div className="w-12 h-12 rounded-2xl bg-[var(--danger)]/10 flex items-center justify-center mb-5">
-                  <CreditCard className="w-6 h-6 text-[var(--danger)]" />
-                </div>
-                <h3 className="text-xl font-bold mb-3">Gestion de deudas</h3>
-                <p className="text-[var(--brand-gray)] text-sm leading-relaxed">
-                  Visualiza tus deudas, intereses y plan de pago. Sigue el progreso hasta la libertad financiera.
-                </p>
-              </div>
-            </div>
-
-            <div className="reveal reveal-delay-2 feature-card rounded-3xl border border-[var(--border)] bg-[var(--background)] p-7 sm:p-8 relative overflow-hidden group">
-              <div className="relative z-10">
-                <div className="w-12 h-12 rounded-2xl bg-[var(--success)]/10 flex items-center justify-center mb-5">
-                  <Calendar className="w-6 h-6 text-[var(--success)]" />
-                </div>
-                <h3 className="text-xl font-bold mb-3">Calendario financiero</h3>
-                <p className="text-[var(--brand-gray)] text-sm leading-relaxed">
-                  Visualiza operaciones por fecha, planifica pagos futuros y no te pierdas ninguna fecha importante.
-                </p>
-              </div>
-            </div>
-
-            <div className="reveal reveal-delay-3 feature-card rounded-3xl border border-[var(--border)] bg-[var(--background)] p-7 sm:p-8 relative overflow-hidden group">
-              <div className="relative z-10">
-                <div className="w-12 h-12 rounded-2xl bg-[var(--info)]/10 flex items-center justify-center mb-5">
-                  <BarChart3 className="w-6 h-6 text-[var(--info)]" />
-                </div>
-                <h3 className="text-xl font-bold mb-3">Exportacion de datos</h3>
-                <p className="text-[var(--brand-gray)] text-sm leading-relaxed">
-                  Descarga tus datos en CSV o JSON. Tus finanzas son tuyas, siempre accesibles y portables.
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Section divider */}
-      <div className="section-divider" />
-
-      {/* ───── FINY AI INTERACTIVE DEMO ───── */}
-      <section id="demo" className="py-24 sm:py-32 px-4 sm:px-8 relative overflow-hidden">
-        <GridBackground />
-        <div className="absolute top-1/4 left-0 w-96 h-96 bg-[var(--brand-cyan)]/8 rounded-full blur-[120px] pointer-events-none" />
-        <div className="absolute bottom-1/4 right-0 w-96 h-96 bg-[var(--brand-purple)]/8 rounded-full blur-[120px] pointer-events-none" />
-
+        <div className="absolute top-0 left-0 w-[400px] h-[400px] bg-[var(--brand-cyan)]/[0.03] rounded-full blur-[120px] pointer-events-none" />
         <div className="max-w-6xl mx-auto relative z-10">
           <div className="text-center mb-12 sm:mb-16 reveal">
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[var(--brand-cyan)]/10 border border-[var(--brand-cyan)]/20 text-[var(--brand-cyan)] text-sm font-medium mb-6">
-              <Sparkles className="w-4 h-4" />
-              Finy AI en accion
-            </div>
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-black mb-5 tracking-tight">
-              De caos financiero a{" "}
-              <span className="gradient-brand-text">claridad total</span>
-            </h2>
-            <p className="text-[var(--brand-gray)] max-w-2xl mx-auto text-base sm:text-lg leading-relaxed">
-              Tus movimientos bancarios transformados en decisiones financieras inteligentes. Automatico. En milisegundos.
-            </p>
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[var(--brand-cyan)]/10 border border-[var(--brand-cyan)]/20 text-[var(--brand-cyan)] text-sm font-semibold mb-6"><Zap className="w-4 h-4" />El metodo</div>
+            <h2 className="text-2xl sm:text-4xl md:text-5xl font-black mb-4 sm:mb-5 tracking-[-0.02em] px-2">Un sistema simple que cambia<br className="hidden sm:block" /> <span className="gradient-brand-text">como funciona tu dinero</span></h2>
+            <p className="text-[var(--brand-gray)] max-w-xl mx-auto text-base sm:text-lg leading-relaxed px-2">Tres pasos. Sin complicaciones. Resultados desde el primer mes.</p>
           </div>
-
-          <div className="reveal-scale">
-            <FinyAIDemo />
-          </div>
-        </div>
-      </section>
-
-      {/* Section divider */}
-      <div className="section-divider" />
-
-      {/* ───── TESTIMONIALS ───── */}
-      <section id="testimonials" className="py-28 sm:py-36 px-6 sm:px-8 bg-[var(--background-secondary)] relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-[var(--brand-purple)]/[0.03] rounded-full blur-[140px] pointer-events-none" />
-        <div className="max-w-6xl mx-auto relative z-10">
-          <div className="text-center mb-16 reveal">
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[var(--brand-purple)]/10 border border-[var(--brand-purple)]/20 text-[var(--brand-purple)] text-sm font-semibold mb-6">
-              <CheckCircle className="w-4 h-4" />
-              Testimonios
-            </div>
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-black mb-5 tracking-[-0.02em]">
-              Lo que dicen nuestros <span className="gradient-brand-text">usuarios</span>
-            </h2>
-            <p className="text-[var(--brand-gray)] max-w-2xl mx-auto text-lg leading-relaxed">
-              Personas reales que han transformado su relacion con el dinero usando FinyBuddy.
-            </p>
-          </div>
-          <div className="grid md:grid-cols-3 gap-6">
-            {TESTIMONIALS.map((t, i) => (
-              <div key={t.name} className={`reveal reveal-delay-${i + 1} testimonial-card p-7 sm:p-8`}>
-                <div className="flex gap-1 mb-5">
-                  {[...Array(5)].map((_, j) => (
-                    <svg key={j} className="w-4 h-4 star-gold" fill="currentColor" viewBox="0 0 20 20">
-                      <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                    </svg>
-                  ))}
-                </div>
-                <p className="text-[15px] leading-relaxed mb-7">&ldquo;{t.quote}&rdquo;</p>
-                <div className="flex items-center gap-3 pt-5 border-t border-[var(--border)]">
-                  <div className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-sm" style={{ backgroundColor: t.color }}>{t.avatar}</div>
-                  <div><p className="text-sm font-semibold">{t.name}</p><p className="text-xs text-[var(--brand-gray)]">{t.role}</p></div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5 sm:gap-6">
+            {[
+              { num: "01", name: "Fotografia", icon: Eye, title: "Detecta en que se te va el dinero", desc: "Sin hacer nada. El sistema analiza tus movimientos y te muestra un mapa claro de tu dinero: donde entra, donde sale y que sobra.", color: "var(--brand-cyan)" },
+              { num: "02", name: "Fugas", icon: AlertTriangle, title: "Identifica hasta 200 EUR en gastos innecesarios", desc: "Suscripciones olvidadas, gastos hormiga, categorias infladas. FinyBuddy los detecta y te avisa antes de que se acumulen.", color: "var(--danger)" },
+              { num: "03", name: "Flujo", icon: RefreshCw, title: "Reorganiza tu dinero para ahorrar automaticamente", desc: "Con la regla 50/30/20 personalizada, tu dinero se redistribuye. Ahorras sin pensar, cada mes, sin esfuerzo.", color: "var(--success)" },
+            ].map((step) => (
+              <div key={step.num} className="reveal feature-card border border-[var(--border)] p-6 sm:p-8 group">
+                <div className="card-glow top-0 right-0" style={{ background: `color-mix(in srgb, ${step.color} 8%, transparent)` }} />
+                <div className="relative z-10">
+                  <p className="text-xs font-black tracking-widest mb-4 sm:mb-5" style={{ color: step.color }}>{step.num} — {step.name.toUpperCase()}</p>
+                  <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl flex items-center justify-center mb-5 sm:mb-6 group-hover:scale-110 transition-transform duration-500" style={{ backgroundColor: `color-mix(in srgb, ${step.color} 12%, transparent)` }}>
+                    <step.icon className="w-6 h-6 sm:w-7 sm:h-7" style={{ color: step.color }} />
+                  </div>
+                  <h3 className="text-lg sm:text-xl font-bold mb-3 leading-snug">{step.title}</h3>
+                  <p className="text-[var(--brand-gray)] text-sm leading-relaxed">{step.desc}</p>
                 </div>
               </div>
             ))}
@@ -1533,171 +973,233 @@ export default function HomePage() {
 
       <div className="section-divider" />
 
-      {/* ───── PRICING ───── */}
-      <section id="pricing" className="py-24 sm:py-32 px-6 sm:px-8 relative overflow-hidden">
+      {/* AI DEMO - SIMULADOR */}
+      <section id="demo" className="py-20 sm:py-32 px-4 sm:px-8 relative overflow-hidden">
         <GridBackground />
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[400px] bg-[var(--brand-purple)]/5 rounded-full blur-[120px] pointer-events-none" />
+        <div className="absolute top-1/4 left-0 w-[500px] h-[500px] bg-[var(--brand-cyan)]/[0.05] rounded-full blur-[140px] pointer-events-none" />
+        <div className="absolute bottom-1/4 right-0 w-[500px] h-[500px] bg-[var(--brand-purple)]/[0.05] rounded-full blur-[140px] pointer-events-none" />
+        <div className="max-w-6xl mx-auto relative z-10">
+          <div className="text-center mb-10 sm:mb-14 reveal">
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[var(--brand-cyan)]/10 border border-[var(--brand-cyan)]/20 text-[var(--brand-cyan)] text-sm font-semibold mb-6"><Sparkles className="w-4 h-4" />Simulador en vivo</div>
+            <h2 className="text-2xl sm:text-4xl md:text-5xl font-black mb-4 sm:mb-5 tracking-[-0.02em] px-2">Mira como tu caos financiero se convierte<br className="hidden sm:block" /> en <span className="gradient-brand-text">claridad total</span></h2>
+            <p className="text-[var(--brand-gray)] max-w-2xl mx-auto text-sm sm:text-lg leading-relaxed px-2">Movimientos reales. Categorizacion automatica. Decisiones inteligentes. En tiempo real.</p>
+          </div>
+          <div className="reveal-scale"><FinyAIDemo /></div>
+        </div>
+      </section>
 
+      <div className="section-divider" />
+
+      {/* ESCENARIOS REALES */}
+      <section className="py-20 sm:py-32 px-5 sm:px-8 bg-[var(--background-secondary)] relative overflow-hidden">
+        <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-[var(--brand-purple)]/[0.03] rounded-full blur-[140px] pointer-events-none" />
         <div className="max-w-5xl mx-auto relative z-10">
-          <div className="text-center mb-14 reveal">
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[var(--brand-purple)]/10 border border-[var(--brand-purple)]/20 text-[var(--brand-purple)] text-sm font-medium mb-6">
-              <Crown className="w-4 h-4" />
-              Planes y precios
+          <div className="text-center mb-12 sm:mb-16 reveal">
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[var(--brand-purple)]/10 border border-[var(--brand-purple)]/20 text-[var(--brand-purple)] text-sm font-semibold mb-6"><Target className="w-4 h-4" />Resultados reales</div>
+            <h2 className="text-2xl sm:text-4xl md:text-5xl font-black mb-4 sm:mb-5 tracking-[-0.02em] px-2">Esto es lo que pasa cuando tu dinero<br className="hidden sm:block" /> <span className="gradient-brand-text">esta bajo control</span></h2>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
+            {[
+              { icon: Plane, title: "Vacaciones sin culpa", desc: "Llegas al verano con el dinero ya reservado. Sin darte cuenta, sin agobios.", color: "#3B82F6", bg: "from-blue-500/5 to-cyan-500/5" },
+              { icon: PiggyBank, title: "Ahorras por primera vez", desc: "Empiezas a guardar dinero cada mes aunque nunca lo hayas conseguido antes.", color: "#10B981", bg: "from-emerald-500/5 to-green-500/5" },
+              { icon: AlertTriangle, title: "Descubres tus fugas", desc: "Te das cuenta de que estabas perdiendo 100-300 EUR al mes sin saberlo.", color: "#EF4444", bg: "from-red-500/5 to-orange-500/5" },
+              { icon: Home, title: "Objetivos grandes", desc: "Por primera vez tienes un plan real para ese coche, ese viaje o esa entrada del piso.", color: "#8B5CF6", bg: "from-violet-500/5 to-purple-500/5" },
+            ].map((s) => (
+              <div key={s.title} className={`reveal feature-card border border-[var(--border)] p-6 sm:p-8 bg-gradient-to-br ${s.bg} group`}>
+                <div className="relative z-10 flex gap-4 sm:gap-5">
+                  <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform duration-500" style={{ backgroundColor: `${s.color}12` }}>
+                    <s.icon className="w-6 h-6 sm:w-7 sm:h-7" style={{ color: s.color }} />
+                  </div>
+                  <div>
+                    <h3 className="text-lg sm:text-xl font-bold mb-2">{s.title}</h3>
+                    <p className="text-[var(--brand-gray)] text-sm leading-relaxed">{s.desc}</p>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <div className="section-divider" />
+
+      {/* AUTOMATIZACION */}
+      <section className="py-20 sm:py-32 px-5 sm:px-8 relative overflow-hidden">
+        <GridBackground />
+        <div className="max-w-5xl mx-auto relative z-10">
+          <div className="text-center mb-12 sm:mb-16 reveal">
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[var(--brand-cyan)]/10 border border-[var(--brand-cyan)]/20 text-[var(--brand-cyan)] text-sm font-semibold mb-6"><RefreshCw className="w-4 h-4" />Ecosistema</div>
+            <h2 className="text-2xl sm:text-4xl md:text-5xl font-black mb-4 sm:mb-5 tracking-[-0.02em] px-2">Todo conectado.<br /><span className="gradient-brand-text">Todo automatico.</span></h2>
+          </div>
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5">
+            {[
+              { icon: MessageCircle, title: "Telegram", desc: "Controla tu dinero desde cualquier sitio" },
+              { icon: Bell, title: "Alertas email", desc: "Nunca mas un pago olvidado" },
+              { icon: Calendar, title: "Calendario", desc: "Anticipa lo que viene cada mes" },
+              { icon: BarChart3, title: "Modulos", desc: "Todo se actualiza en tiempo real" },
+            ].map((item) => (
+              <div key={item.title} className="reveal feature-card border border-[var(--border)] p-4 sm:p-6 text-center group">
+                <div className="relative z-10">
+                  <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-[var(--brand-cyan)]/10 flex items-center justify-center mx-auto mb-3 sm:mb-4 group-hover:scale-110 transition-transform duration-500"><item.icon className="w-5 h-5 sm:w-6 sm:h-6 text-[var(--brand-cyan)]" /></div>
+                  <h3 className="text-sm sm:text-base font-bold mb-1">{item.title}</h3>
+                  <p className="text-[var(--brand-gray)] text-xs sm:text-sm leading-relaxed">{item.desc}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <div className="section-divider" />
+
+      {/* DASHBOARD PREVIEW */}
+      <section className="py-20 sm:py-32 px-5 sm:px-8 bg-[var(--background-secondary)] relative overflow-hidden">
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[900px] h-[500px] bg-[var(--brand-cyan)]/[0.04] rounded-full blur-[140px] pointer-events-none" />
+        <div className="max-w-7xl mx-auto relative z-10">
+          <div className="text-center mb-12 sm:mb-16 reveal">
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[var(--brand-cyan)]/10 border border-[var(--brand-cyan)]/20 text-[var(--brand-cyan)] text-sm font-semibold mb-6"><LayoutDashboard className="w-4 h-4" />Tu panel de control</div>
+            <h2 className="text-2xl sm:text-4xl md:text-5xl font-black mb-4 sm:mb-5 tracking-[-0.02em] px-2">Asi se ve tener el <span className="gradient-brand-text">control total</span></h2>
+            <p className="text-[var(--brand-gray)] max-w-2xl mx-auto text-base sm:text-lg leading-relaxed px-2">No es una demo. Es exactamente lo que veras cuando entres.</p>
+          </div>
+          <div className="reveal-scale perspective-container">
+            <div className="relative">
+              <div className="rounded-2xl sm:rounded-3xl border border-[var(--border)] bg-[var(--background)]/95 backdrop-blur-xl shadow-[0_30px_80px_-20px_rgba(0,0,0,0.12)] overflow-hidden perspective-tilt">
+                <div className="flex items-center justify-between px-4 sm:px-6 py-3 border-b border-[var(--border)] bg-[var(--background-secondary)]/80">
+                  <div className="flex items-center gap-1.5 sm:gap-2"><div className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-[#FF5F57]" /><div className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-[#FFBD2E]" /><div className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-[#28CA41]" /></div>
+                  <div className="flex-1 max-w-md mx-4 hidden sm:block"><div className="flex items-center gap-2 px-4 py-1.5 rounded-lg bg-[var(--background)] border border-[var(--border)] text-xs text-[var(--brand-gray)]"><Shield className="w-3 h-3 text-[var(--success)]" />app.finybuddy.com/dashboard</div></div>
+                  <div className="text-[10px] px-2 py-1 rounded-lg bg-[var(--background)] border border-[var(--border)] text-[var(--brand-gray)] font-medium">Mar 2026</div>
+                </div>
+                <div className="grid lg:grid-cols-12 min-h-[500px] sm:min-h-[620px]">
+                  <aside className="lg:col-span-3 border-b lg:border-b-0 lg:border-r border-[var(--border)] bg-[var(--background-secondary)]/55 p-3 sm:p-5">
+                    <div className="flex items-center gap-3 mb-5 sm:mb-6"><Image src="/assets/finy-mascota-minimalista.png" alt="Finy" width={34} height={34} className="rounded-xl w-7 h-7 sm:w-8 sm:h-8 object-contain" /><div><p className="text-[10px] sm:text-xs text-[var(--brand-gray)]">Buenos dias</p><p className="text-xs sm:text-sm font-semibold">Panel principal</p></div></div>
+                    <div className="space-y-1">
+                      {[{ label: "Dashboard", icon: LayoutDashboard, active: true }, { label: "Operaciones", icon: CreditCard }, { label: "Prevision", icon: Target }, { label: "Calendario", icon: Calendar }, { label: "Ahorro", icon: PiggyBank }, { label: "FinyBot", icon: Sparkles }].map((item) => (
+                        <div key={item.label} className={`flex items-center gap-2 px-2.5 py-2 rounded-xl border ${item.active ? "border-[var(--brand-cyan)]/25 bg-[var(--brand-cyan)]/8" : "border-transparent"}`}><item.icon className={`w-3.5 h-3.5 ${item.active ? "text-[var(--brand-cyan)]" : "text-[var(--brand-gray)]"}`} /><span className={`text-xs sm:text-sm ${item.active ? "font-semibold" : "text-[var(--brand-gray)]"}`}>{item.label}</span></div>
+                      ))}
+                    </div>
+                    <div className="mt-5 p-3 rounded-xl border border-[var(--brand-cyan)]/20 bg-[var(--brand-cyan)]/5"><p className="text-[9px] sm:text-[10px] uppercase tracking-wider text-[var(--brand-gray)] mb-1">Regla 50/30/20</p><p className="text-base sm:text-lg font-bold">20% ahorro</p><p className="text-[10px] sm:text-xs text-[var(--brand-gray)]">Objetivo completado</p></div>
+                  </aside>
+                  <main className="lg:col-span-9 p-3 sm:p-6">
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3 mb-3 sm:mb-4">
+                      {[{ label: "Ingresos", value: "2.850 EUR", icon: TrendingUp, tone: "text-[var(--success)]" }, { label: "Gastos", value: "1.424 EUR", icon: TrendingDown, tone: "text-[var(--danger)]" }, { label: "Ahorro", value: "570 EUR", icon: PiggyBank, tone: "text-[var(--brand-cyan)]" }, { label: "Balance", value: "+1.426 EUR", icon: BarChart3, tone: "text-[var(--brand-purple)]" }].map((kpi) => (
+                        <div key={kpi.label} className="p-2.5 sm:p-3.5 rounded-xl border border-[var(--border)] bg-[var(--background-secondary)]/60"><div className="flex items-center justify-between mb-1"><span className="text-[10px] sm:text-[11px] text-[var(--brand-gray)] font-medium">{kpi.label}</span><kpi.icon className={kpi.tone + " w-3 h-3 sm:w-3.5 sm:h-3.5"} /></div><p className={kpi.tone + " text-sm sm:text-lg font-bold tabular-nums"}>{kpi.value}</p></div>
+                      ))}
+                    </div>
+                    <div className="grid xl:grid-cols-5 gap-3 sm:gap-4">
+                      <div className="xl:col-span-3 p-3 sm:p-4 rounded-2xl border border-[var(--border)] bg-[var(--background-secondary)]/60">
+                        <div className="flex items-center justify-between mb-3"><h3 className="text-xs sm:text-sm font-semibold flex items-center gap-2"><Target className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[var(--brand-purple)]" />Prevision vs realidad</h3><span className="text-[10px] text-[var(--brand-gray)]">30 dias</span></div>
+                        <div className="space-y-2.5 sm:space-y-3">
+                          {[{ c: "Vivienda", plan: 650, real: 650 },{ c: "Comida", plan: 280, real: 252 },{ c: "Transporte", plan: 120, real: 94 },{ c: "Ocio", plan: 140, real: 176 },{ c: "Suministros", plan: 90, real: 84 }].map((row) => { const pct = Math.round((row.real/row.plan)*100); return (<div key={row.c}><div className="flex items-center justify-between text-[10px] sm:text-xs mb-1"><span className="text-[var(--brand-gray)]">{row.c}</span><span className={(row.real>row.plan?"text-[var(--danger)]":"text-[var(--success)]")+" font-semibold"}>{row.real} / {row.plan} EUR</span></div><div className="h-1.5 sm:h-2 rounded-full bg-[var(--border)] overflow-hidden"><div className="h-full rounded-full" style={{width:`${Math.min(pct,100)}%`,backgroundColor:row.real>row.plan?"var(--danger)":"var(--brand-cyan)"}}/></div></div>);})}
+                        </div>
+                      </div>
+                      <div className="xl:col-span-2 space-y-3 sm:space-y-4">
+                        <div className="p-3 sm:p-4 rounded-2xl border border-[var(--border)] bg-[var(--background-secondary)]/60">
+                          <h3 className="text-xs sm:text-sm font-semibold mb-2 sm:mb-3 flex items-center gap-2"><CreditCard className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[var(--brand-cyan)]" />Recientes</h3>
+                          <div className="space-y-2 text-[10px] sm:text-xs">{[["Amazon","Compras","-34,50 EUR"],["Alquiler","Vivienda","-650,00 EUR"],["Nomina","Ingreso","+2.850,00 EUR"]].map(([n,c,a])=>(<div key={n} className="flex items-center justify-between p-2 rounded-lg border border-[var(--border)] bg-[var(--background)]/80"><div><p className="font-medium">{n}</p><p className="text-[9px] sm:text-[10px] text-[var(--brand-gray)]">{c}</p></div><p className={"font-semibold tabular-nums "+(String(a).startsWith("+")?"text-[var(--success)]":"text-[var(--danger)]")}>{a}</p></div>))}</div>
+                        </div>
+                        <div className="p-3 sm:p-4 rounded-2xl border border-[var(--brand-cyan)]/20 bg-gradient-to-br from-[var(--brand-cyan)]/5 to-[var(--brand-purple)]/5">
+                          <div className="flex items-center gap-2 mb-2"><Image src="/assets/finy-mascota-minimalista.png" alt="Finy" width={24} height={24} className="object-contain w-5 h-5 sm:w-6 sm:h-6" /><p className="text-[10px] sm:text-xs font-semibold text-[var(--brand-cyan)]">Sugerencia de Finy</p></div>
+                          <p className="text-xs sm:text-sm leading-relaxed">Estas a 1% de tu objetivo. Reduce ocio 15 EUR y cierras al 20%.</p>
+                        </div>
+                      </div>
+                    </div>
+                  </main>
+                </div>
+              </div>
+              <div className="dashboard-glow" />
             </div>
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-black mb-5 tracking-tight">
-              Un precio justo para <span className="gradient-brand-text">tu control financiero</span>
-            </h2>
-            <p className="text-[var(--brand-gray)] max-w-2xl mx-auto text-lg leading-relaxed">
-              {hasUsedTrial
-                ? "Plan Basic gratis para siempre. Desbloquea todo con Pro."
-                : "Empieza gratis con 15 dias de prueba Pro. Sin tarjeta de credito."}
-            </p>
-          </div>
-
-          <div className="reveal reveal-delay-2">
-            <PricingToggle isLoggedIn={isLoggedIn} hasUsedTrial={hasUsedTrial} />
           </div>
         </div>
       </section>
 
-      {/* ───── FINAL CTA ───── */}
-      <section className="relative py-24 sm:py-32 px-6 sm:px-8 overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-[var(--brand-purple)]/[0.04] via-transparent to-[var(--brand-cyan)]/[0.04]" />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-[var(--brand-cyan)]/5 rounded-full blur-[120px] pointer-events-none" />
+      <div className="section-divider" />
 
+      {/* TESTIMONIALS */}
+      <section id="testimonials" className="py-20 sm:py-32 px-5 sm:px-8 relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-[var(--brand-purple)]/[0.03] rounded-full blur-[140px] pointer-events-none" />
+        <div className="max-w-5xl mx-auto relative z-10">
+          <div className="text-center mb-12 sm:mb-16 reveal">
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[var(--brand-purple)]/10 border border-[var(--brand-purple)]/20 text-[var(--brand-purple)] text-sm font-semibold mb-6"><CheckCircle className="w-4 h-4" />Testimonios</div>
+            <h2 className="text-2xl sm:text-4xl md:text-5xl font-black mb-4 sm:mb-5 tracking-[-0.02em] px-2">Lo que dicen quienes ya <span className="gradient-brand-text">tienen el control</span></h2>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
+            {TESTIMONIALS.map((t, i) => (
+              <div key={t.name} className={`reveal reveal-delay-${i+1} testimonial-card p-5 sm:p-7`}>
+                <div className="flex gap-1 mb-4 sm:mb-5">{[...Array(5)].map((_,j)=>(<svg key={j} className="w-3.5 h-3.5 sm:w-4 sm:h-4 star-gold" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>))}</div>
+                <p className="text-[13px] sm:text-[15px] leading-relaxed mb-5 sm:mb-7">&ldquo;{t.quote}&rdquo;</p>
+                <div className="flex items-center gap-3 pt-4 sm:pt-5 border-t border-[var(--border)]">
+                  <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center text-white font-bold text-xs sm:text-sm" style={{backgroundColor:t.color}}>{t.avatar}</div>
+                  <div><p className="text-xs sm:text-sm font-semibold">{t.name}</p><p className="text-[10px] sm:text-xs text-[var(--brand-gray)]">{t.role}</p></div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <div className="section-divider" />
+
+      {/* PRICING */}
+      <section id="pricing" className="py-20 sm:py-32 px-5 sm:px-8 relative overflow-hidden">
+        <GridBackground />
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[700px] h-[500px] bg-[var(--brand-purple)]/[0.04] rounded-full blur-[140px] pointer-events-none" />
+        <div className="max-w-5xl mx-auto relative z-10">
+          <div className="text-center mb-10 sm:mb-14 reveal">
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[var(--brand-purple)]/10 border border-[var(--brand-purple)]/20 text-[var(--brand-purple)] text-sm font-semibold mb-6"><Crown className="w-4 h-4" />Planes</div>
+            <h2 className="text-2xl sm:text-4xl md:text-5xl font-black mb-4 sm:mb-5 tracking-[-0.02em] px-2">Un precio justo para <span className="gradient-brand-text">tu tranquilidad</span></h2>
+            <p className="text-[var(--brand-gray)] max-w-xl mx-auto text-base sm:text-lg leading-relaxed px-2">{hasUsedTrial ? "Plan Basic gratis para siempre. Desbloquea todo con Pro." : "Empieza gratis con 15 dias de prueba Pro. Sin tarjeta."}</p>
+          </div>
+          <div className="reveal reveal-delay-2"><PricingToggle isLoggedIn={isLoggedIn} hasUsedTrial={hasUsedTrial} /></div>
+        </div>
+      </section>
+
+      {/* FINAL CTA */}
+      <section className="relative py-20 sm:py-32 px-5 sm:px-8 overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-b from-[var(--background)] via-[var(--brand-purple)]/[0.04] to-[var(--background)]" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-[var(--brand-cyan)]/[0.04] rounded-full blur-[140px] pointer-events-none" />
         <div className="max-w-3xl mx-auto relative z-10 text-center reveal">
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[var(--brand-cyan)]/10 border border-[var(--brand-cyan)]/20 text-[var(--brand-cyan)] text-sm font-medium mb-8">
-            <Sparkles className="w-4 h-4" />
-            Empieza hoy
-          </div>
-          <Image src="/assets/finy-mascota-minimalista.png" alt="Finy" width={56} height={56} className="object-contain mx-auto mb-8" />
-          <h2 className="text-3xl sm:text-4xl md:text-5xl font-black mb-6 tracking-[-0.02em]">
-            ¿Listo para tomar el
-            <br />
-            <span className="gradient-brand-text">control de tu dinero?</span>
-          </h2>
-          <p className="text-[var(--brand-gray)] mb-10 text-lg leading-relaxed max-w-xl mx-auto">
-            {isLoggedIn
-              ? "Vuelve a tu dashboard y sigue gestionando tus finanzas con inteligencia."
-              : "Unite gratis y empieza a gestionar tus finanzas con inteligencia artificial hoy mismo."}
-          </p>
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <Link
-              href={isLoggedIn ? "/dashboard" : "/register"}
-              className="group inline-flex items-center justify-center gap-2.5 px-10 py-4.5 rounded-2xl bg-gradient-to-r from-[var(--brand-purple)] to-[var(--brand-cyan)] text-white font-bold text-base hover:opacity-90 transition-all hover:scale-[1.03] active:scale-[0.97] shadow-2xl shadow-[var(--brand-purple)]/25 animate-cta-glow"
-            >
-              {isLoggedIn ? (
-                <>
-                  <LayoutDashboard className="w-5 h-5" />
-                  Ir al Dashboard
-                </>
-              ) : (
-                <>
-                  Crear cuenta gratis
-                  <ArrowRight className="w-5 h-5 transition-transform group-hover:translate-x-1" />
-                </>
-              )}
-            </Link>
-            {!isLoggedIn && (
-              <p className="text-sm text-[var(--brand-gray)]">
-                Sin tarjeta de credito requerida
-              </p>
-            )}
-          </div>
+          <Image src="/assets/finy-mascota-minimalista.png" alt="Finy" width={56} height={56} className="object-contain mx-auto mb-6 sm:mb-8 w-12 h-12 sm:w-14 sm:h-14" />
+          <h2 className="text-2xl sm:text-4xl md:text-5xl font-black mb-4 sm:mb-6 tracking-[-0.02em] px-2">No es otra app.<br /><span className="gradient-brand-text">Es un sistema que funciona.</span></h2>
+          <p className="text-[var(--brand-gray)] mb-8 sm:mb-10 text-base sm:text-lg leading-relaxed max-w-xl mx-auto px-2">{isLoggedIn ? "Vuelve a tu dashboard y sigue con el control." : "Organiza tu dinero, detecta fugas y empieza a ahorrar sin esfuerzo."}</p>
+          <Link href={isLoggedIn ? "/dashboard" : "/register"} className="group w-full sm:w-auto inline-flex items-center justify-center gap-2.5 px-10 sm:px-12 py-4 sm:py-5 rounded-2xl bg-gradient-to-r from-[var(--brand-purple)] to-[var(--brand-cyan)] text-white font-bold text-base sm:text-lg shadow-2xl shadow-[var(--brand-purple)]/20 transition-all hover:scale-[1.03] active:scale-[0.97] animate-cta-glow">
+            {isLoggedIn ? (<><LayoutDashboard className="w-5 h-5" />Ir al Dashboard</>) : (<>Quiero tomar el control<ArrowRight className="w-5 h-5 transition-transform group-hover:translate-x-1" /></>)}
+          </Link>
+          {!isLoggedIn && <p className="mt-4 sm:mt-5 text-xs sm:text-sm text-[var(--brand-gray)]">Sin tarjeta de credito requerida</p>}
         </div>
       </section>
 
-      {/* ───── NEWSLETTER ───── */}
-      <section id="newsletter" className="py-24 sm:py-28 px-6 sm:px-8 bg-[var(--background-secondary)] border-t border-[var(--border)]">
+      {/* NEWSLETTER */}
+      <section id="newsletter" className="py-16 sm:py-24 px-5 sm:px-8 bg-[var(--background-secondary)] border-t border-[var(--border)]">
         <div className="max-w-2xl mx-auto text-center reveal">
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[var(--brand-cyan)]/10 border border-[var(--brand-cyan)]/20 text-[var(--brand-cyan)] text-sm font-medium mb-6">
-            <Mail className="w-4 h-4" />
-            Newsletter
-          </div>
-          <h2 className="text-3xl sm:text-4xl font-black mb-4 tracking-tight">
-            Consejos financieros cada semana
-          </h2>
-          <p className="text-lg text-[var(--brand-gray)] mb-10 leading-relaxed">
-            Recibe trucos de ahorro, novedades de FinyBuddy y consejos para mejorar tus finanzas personales.
-          </p>
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[var(--brand-cyan)]/10 border border-[var(--brand-cyan)]/20 text-[var(--brand-cyan)] text-sm font-semibold mb-6"><Mail className="w-4 h-4" />Newsletter</div>
+          <h2 className="text-2xl sm:text-3xl md:text-4xl font-black mb-3 sm:mb-4 tracking-[-0.02em] px-2">Consejos financieros cada semana</h2>
+          <p className="text-base sm:text-lg text-[var(--brand-gray)] mb-8 sm:mb-10 leading-relaxed px-2">Trucos de ahorro, novedades y consejos para mejorar tus finanzas personales.</p>
           <NewsletterForm />
         </div>
       </section>
 
-      {/* ───── FOOTER ───── */}
-      <footer className="py-16 px-6 sm:px-8 border-t border-[var(--border)] bg-[var(--background)]">
+      {/* FOOTER */}
+      <footer className="py-12 sm:py-16 px-5 sm:px-8 border-t border-[var(--border)] bg-[var(--background)]">
         <div className="max-w-7xl mx-auto">
-          <div className="grid grid-cols-1 md:grid-cols-12 gap-12 mb-12">
-            {/* Brand column */}
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-8 sm:gap-12 mb-10 sm:mb-14">
             <div className="md:col-span-5">
-              <Image
-                src="/assets/logo-finybuddy-wordmark.png"
-                alt="FinyBuddy"
-                width={130}
-                height={32}
-                className="object-contain mb-5"
-              />
-              <p className="text-sm text-[var(--brand-gray)] leading-relaxed max-w-sm mb-6">
-                Tu asistente financiero personal con IA. Controla tus finanzas de forma inteligente desde un solo lugar.
-              </p>
-              <div className="flex items-center gap-3">
-                {[
-                  { icon: Shield, text: "Privado" },
-                  { icon: Zap, text: "IA" },
-                  { icon: CheckCircle, text: "Gratis" },
-                ].map((badge) => (
-                  <div key={badge.text} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[var(--border)] bg-[var(--background-secondary)] text-xs font-medium text-[var(--brand-gray)]">
-                    <badge.icon className="w-3 h-3 text-[var(--brand-cyan)]" />
-                    {badge.text}
-                  </div>
+              <Image src="/assets/logo-finybuddy-wordmark.png" alt="FinyBuddy" width={120} height={30} className="object-contain mb-4 sm:mb-5" />
+              <p className="text-xs sm:text-sm text-[var(--brand-gray)] leading-relaxed max-w-sm mb-5 sm:mb-6">El sistema que organiza tu dinero, detecta fugas y te ayuda a ahorrar sin esfuerzo. No es otra app. Es un metodo.</p>
+              <div className="flex flex-wrap items-center gap-2">
+                {[{ icon: Shield, text: "Privado" }, { icon: Mic, text: "Voz" }, { icon: CheckCircle, text: "Gratis" }].map((b) => (
+                  <div key={b.text} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-[var(--border)] bg-[var(--background-secondary)] text-[10px] sm:text-xs font-medium text-[var(--brand-gray)]"><b.icon className="w-3 h-3 text-[var(--brand-cyan)]" />{b.text}</div>
                 ))}
               </div>
             </div>
-
-            {/* Links columns */}
-            <div className="md:col-span-7 grid grid-cols-2 sm:grid-cols-3 gap-8">
-              <div>
-                <h4 className="text-sm font-semibold mb-4">Producto</h4>
-                <ul className="space-y-3 text-sm text-[var(--brand-gray)]">
-                  <li><a href="#features" className="hover:text-[var(--foreground)] transition-colors">Funciones</a></li>
-                  <li><a href="#demo" className="hover:text-[var(--foreground)] transition-colors">Demo IA</a></li>
-                  <li><a href="#pricing" className="hover:text-[var(--foreground)] transition-colors">Planes</a></li>
-                  <li><a href="#newsletter" className="hover:text-[var(--foreground)] transition-colors">Newsletter</a></li>
-                </ul>
-              </div>
-              <div>
-                <h4 className="text-sm font-semibold mb-4">Legal</h4>
-                <ul className="space-y-3 text-sm text-[var(--brand-gray)]">
-                  <li><Link href="/terms" className="hover:text-[var(--foreground)] transition-colors">Terminos de uso</Link></li>
-                  <li><Link href="/privacy" className="hover:text-[var(--foreground)] transition-colors">Privacidad</Link></li>
-                </ul>
-              </div>
-              <div>
-                <h4 className="text-sm font-semibold mb-4">Soporte</h4>
-                <ul className="space-y-3 text-sm text-[var(--brand-gray)]">
-                  <li><a href="mailto:soporte@finybuddy.com" className="hover:text-[var(--foreground)] transition-colors">soporte@finybuddy.com</a></li>
-                  <li>
-                    <button
-                      onClick={toggleTheme}
-                      className="flex items-center gap-2 hover:text-[var(--foreground)] transition-colors"
-                    >
-                      {theme === "light" ? <Moon className="w-3.5 h-3.5" /> : <Sun className="w-3.5 h-3.5" />}
-                      {theme === "light" ? "Modo oscuro" : "Modo claro"}
-                    </button>
-                  </li>
-                </ul>
-              </div>
+            <div className="md:col-span-7 grid grid-cols-2 sm:grid-cols-3 gap-6 sm:gap-8">
+              <div><h4 className="text-xs sm:text-sm font-semibold mb-3 sm:mb-4">Producto</h4><ul className="space-y-2 sm:space-y-3 text-xs sm:text-sm text-[var(--brand-gray)]"><li><a href="#method" className="hover:text-[var(--foreground)] transition-colors">Metodo 3Finy</a></li><li><a href="#demo" className="hover:text-[var(--foreground)] transition-colors">Simulador</a></li><li><a href="#testimonials" className="hover:text-[var(--foreground)] transition-colors">Testimonios</a></li><li><a href="#pricing" className="hover:text-[var(--foreground)] transition-colors">Planes</a></li></ul></div>
+              <div><h4 className="text-xs sm:text-sm font-semibold mb-3 sm:mb-4">Legal</h4><ul className="space-y-2 sm:space-y-3 text-xs sm:text-sm text-[var(--brand-gray)]"><li><Link href="/terms" className="hover:text-[var(--foreground)] transition-colors">Terminos</Link></li><li><Link href="/privacy" className="hover:text-[var(--foreground)] transition-colors">Privacidad</Link></li></ul></div>
+              <div><h4 className="text-xs sm:text-sm font-semibold mb-3 sm:mb-4">Soporte</h4><ul className="space-y-2 sm:space-y-3 text-xs sm:text-sm text-[var(--brand-gray)]"><li><a href="mailto:soporte@finybuddy.com" className="hover:text-[var(--foreground)] transition-colors">soporte@finybuddy.com</a></li><li><button onClick={toggleTheme} className="flex items-center gap-2 hover:text-[var(--foreground)] transition-colors">{theme==="light"?<Moon className="w-3.5 h-3.5"/>:<Sun className="w-3.5 h-3.5"/>}{theme==="light"?"Modo oscuro":"Modo claro"}</button></li></ul></div>
             </div>
           </div>
-
-          {/* Bottom bar */}
-          <div className="pt-8 border-t border-[var(--border)] flex flex-col sm:flex-row items-center justify-between gap-4">
-            <p className="text-sm text-[var(--brand-gray)]">
-              © {new Date().getFullYear()} FinyBuddy. Todos los derechos reservados.
-            </p>
-            <p className="text-xs text-[var(--brand-gray)]/60">
-              Hecho con cuidado para tus finanzas personales.
-            </p>
+          <div className="pt-6 sm:pt-8 border-t border-[var(--border)] flex flex-col sm:flex-row items-center justify-between gap-3">
+            <p className="text-xs sm:text-sm text-[var(--brand-gray)]">&copy; {new Date().getFullYear()} FinyBuddy. Todos los derechos reservados.</p>
+            <p className="text-[10px] sm:text-xs text-[var(--brand-gray)]/50">Hecho con cuidado para tus finanzas personales.</p>
           </div>
         </div>
       </footer>
