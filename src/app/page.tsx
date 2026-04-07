@@ -37,6 +37,17 @@ import {
   Wifi,
   Dumbbell,
   Gift,
+  Mic,
+  Phone,
+  MessageCircle,
+  Bell,
+  Volume2,
+  Plane,
+  Eye,
+  AlertTriangle,
+  TrendingDown as Leak,
+  RefreshCw,
+  Send,
 } from "lucide-react";
 
 // ─── Testimonials ───
